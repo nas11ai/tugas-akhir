@@ -1,0 +1,39 @@
+version: '3.4'
+
+services:
+  ipfs0:
+    container_name: ipfs0
+    image: ipfs/go-ipfs:release
+    ports:
+      - "4001:4001" # ipfs swarm
+      - "5001:5001" # ipfs api
+      - "8081:8080" # ipfs gateway
+    volumes:
+      - /private/var/services/librum/ipfs/ipfs0:/data/ipfs
+    networks:
+      - ipfs-network
+
+  cluster0:
+    container_name: cluster0
+    image: ipfs/ipfs-cluster:latest
+    depends_on:
+      - ipfs0
+    environment:
+      CLUSTER_PEERNAME: cluster0
+      CLUSTER_SECRET: ${CLUSTER_SECRET}
+      CLUSTER_IPFSHTTP_NODEMULTIADDRESS: /dns4/ipfs0/tcp/5001
+      CLUSTER_CRDT_TRUSTEDPEERS: '*' # Trust all peers in Cluster
+      CLUSTER_RESTAPI_HTTPLISTENMULTIADDRESS: /ip4/0.0.0.0/tcp/9094 # expose API
+      CLUSTER_MONITORPINGINTERVAL: 2s # Speed up peer discovery
+    ports:
+      - "9094:9094" # http api
+      - "9095:9095" # proxy api
+      - "9096:9096" # cluster swarm, other peers connect via this port
+    volumes:
+      - /private/var/services/librum/ipfs/cluster0:/data/ipfs-cluster
+    networks:
+      - ipfs-network
+
+networks:
+  ipfs-network:
+    external: true
