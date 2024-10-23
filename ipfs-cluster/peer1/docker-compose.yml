@@ -4,7 +4,13 @@ services:
 
   ipfs1:
     container_name: ipfs1
-    image: ipfs/go-ipfs:release
+    image: nas11ai/ipfs-kubo-s3:latest
+    environment:
+      AWS_REGION: ${AWS_REGION}
+      CLUSTER_S3_BUCKET: ${CLUSTER_S3_BUCKET}
+      CLUSTER_PEERNAME: ${CLUSTER_PEERNAME}
+      CLUSTER_AWS_KEY: ${CLUSTER_AWS_KEY}
+      CLUSTER_AWS_SECRET: ${CLUSTER_AWS_SECRET}
     ports:
       - "4101:4001" # ipfs swarm 
       - "5101:5001" # ipfs api 
@@ -34,7 +40,7 @@ services:
     networks:
       - ipfs-network
     command:
-      - "daemon --bootstrap /ip4/172.18.0.3/tcp/9096/p2p/12D3KooWKEWfcHHVxU8RvExsS4pFRXZnqRyQAhEXEc2vqezf2Gzy"
+      - "daemon --bootstrap ${BOOTSTRAP_PEER_IP}"
 
 networks:
   ipfs-network:
