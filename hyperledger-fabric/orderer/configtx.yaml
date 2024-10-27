@@ -1,0 +1,151 @@
+Organizations:
+    - &OrdererOrg
+        Name: OrdererOrg
+        ID: OrdererMSP
+        MSPDir: crypto-config/ordererOrganizations/itk.com/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('OrdererMSP.member')"
+            Writers:
+                Type: Signature
+                Rule: "OR('OrdererMSP.member')"
+            Admins:
+                Type: Signature
+                Rule: "OR('OrdererMSP.admin')"
+
+    - &Rektor
+        Name: RektorMSP
+        ID: RektorMSP
+        MSPDir: crypto-config/peerOrganizations/rektor.itk.com/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('RektorMSP.admin', 'RektorMSP.peer', 'RektorMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('RektorMSP.admin', 'RektorMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('RektorMSP.admin')"
+        AnchorPeers:
+            - Host: peer0.rektor.itk.com
+              Port: 7051
+
+    - &Akademik
+        Name: AkademikMSP
+        ID: AkademikMSP
+        MSPDir: crypto-config/peerOrganizations/akademik.itk.com/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('AkademikMSP.admin', 'AkademikMSP.peer', 'AkademikMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('AkademikMSP.admin', 'AkademikMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('AkademikMSP.admin')"
+        AnchorPeers:
+            - Host: peer0.akademik.itk.com
+              Port: 8051
+
+Capabilities:
+    Channel: &ChannelCapabilities
+        V2_0: true
+    Orderer: &OrdererCapabilities
+        V2_0: true
+    Application: &ApplicationCapabilities
+        V2_0: true
+
+Application: &ApplicationDefaults
+    Organizations:
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+    Capabilities:
+        <<: *ApplicationCapabilities
+
+Orderer: &OrdererDefaults
+    OrdererType: etcdraft
+    EtcdRaft:
+        Consenters:
+            - Host: orderer0.itk.com
+              Port: 7050
+              ClientTLSCert: crypto-config/ordererOrganizations/itk.com/orderers/orderer0.itk.com/tls/server.crt
+              ServerTLSCert: crypto-config/ordererOrganizations/itk.com/orderers/orderer0.itk.com/tls/server.crt
+            - Host: orderer1.itk.com
+              Port: 8050
+              ClientTLSCert: crypto-config/ordererOrganizations/itk.com/orderers/orderer1.itk.com/tls/server.crt
+              ServerTLSCert: crypto-config/ordererOrganizations/itk.com/orderers/orderer1.itk.com/tls/server.crt
+            - Host: orderer2.itk.com
+              Port: 9050
+              ClientTLSCert: crypto-config/ordererOrganizations/itk.com/orderers/orderer2.itk.com/tls/server.crt
+              ServerTLSCert: crypto-config/ordererOrganizations/itk.com/orderers/orderer2.itk.com/tls/server.crt
+    Addresses:
+        - orderer0.itk.com:7050
+        - orderer1.itk.com:8050
+        - orderer2.itk.com:9050
+    BatchTimeout: 2s
+    BatchSize:
+        MaxMessageCount: 10
+        AbsoluteMaxBytes: 99 MB
+        PreferredMaxBytes: 512 KB
+    Organizations:
+        - *OrdererOrg
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+        BlockValidation:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+
+Channel: &ChannelDefaults
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+    Capabilities:
+        <<: *ChannelCapabilities
+
+Profiles:
+    IjazahChannelGenesis:
+        <<: *ChannelDefaults
+        Orderer:
+            <<: *OrdererDefaults
+            Organizations:
+                - *OrdererOrg
+            Capabilities:
+                <<: *OrdererCapabilities
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                - *Rektor
+                - *Akademik
+            Capabilities:
+                <<: *ApplicationCapabilities
+        Consortiums:
+            SampleConsortium:
+                Organizations:
+                    - *Rektor
+                    - *Akademik

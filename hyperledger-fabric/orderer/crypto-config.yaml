@@ -1,0 +1,40 @@
+OrdererOrgs:
+  - Name: Orderer
+    Domain: itk.com
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: orderer0
+        SANS:
+          - localhost
+          - 127.0.0.1
+          - orderer0.itk.com
+          - 172.20.0.2  # IP dari docker network
+      - Hostname: orderer1
+        SANS:
+          - localhost
+          - 127.0.0.1
+          - orderer1.itk.com
+          - 172.20.0.7
+      - Hostname: orderer2
+        SANS:
+          - localhost
+          - 127.0.0.1
+          - orderer2.itk.com
+          - 172.20.0.6
+
+PeerOrgs:
+  - Name: Rektor
+    Domain: rektor.itk.com
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+    Users:
+      Count: 1
+
+  - Name: Akademik
+    Domain: akademik.itk.com
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+    Users:
+      Count: 1
