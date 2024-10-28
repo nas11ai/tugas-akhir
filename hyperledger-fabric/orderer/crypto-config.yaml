@@ -28,6 +28,11 @@ PeerOrgs:
     EnableNodeOUs: true
     Template:
       Count: 1
+      SANS:
+        - localhost
+        - 127.0.0.1
+        - rektor.itk.com
+        - 172.20.0.8  # IP peer rektor di docker network
     Users:
       Count: 1
 
@@ -36,5 +41,10 @@ PeerOrgs:
     EnableNodeOUs: true
     Template:
       Count: 1
+      SANS:
+        - localhost
+        - 127.0.0.1
+        - akademik.itk.com
+        - 172.20.0.10  # IP peer akademik di docker network
     Users:
       Count: 1

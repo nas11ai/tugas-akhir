@@ -2,8 +2,7 @@
 cryptogen generate --config=./crypto-config.yaml
 
 # Generate genesis block
-mkdir artifacts
-configtxgen -profile IjazahChannelGenesis -outputBlock ./artifacts/ijazahChannel.block -channelID ijazahChannel
+configtxgen -profile IjazahChannelGenesis -outputBlock ./artifacts/ijazah-channel.block -channelID ijazah-channel
 
 # Start network
 docker-compose up -d
