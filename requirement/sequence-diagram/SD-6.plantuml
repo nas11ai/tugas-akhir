@@ -1,0 +1,42 @@
+@startuml SD-6
+
+title Detail Sertifikat Ijazah
+
+actor       Akademik                      as user
+boundary    "Antarmuka Web"               as ui
+control     API                           as api
+entity      "Hyperledger Fabric"          as fabric
+entity      IPFS                          as ipfs
+
+user -> ui : Akses halaman permintaan sertifikat ijazah
+ui -> api : GET request
+api -> fabric: Query data
+fabric -> api: Data permintaan
+api -> ui: Data permintaan
+ui -> user: Tampilkan permintaan
+
+user -> ui : Menekan tombol detail sertifikat ijazah
+ui -> api : GET request
+api -> fabric: Query chaincode
+
+alt#Gold #LightBlue ID valid di Hyperledger Fabric
+    fabric -> api: ID sertifikat ijazah
+    api -> ipfs: GET request
+
+    alt#Gold #LightBlue ID valid di IPFS
+        ipfs -> api: Mengirimkan file sertifikat ijazah
+        api -> ui: Mengirimkan file sertifikat ijazah
+        ui -> user: Menampilkan file sertifikat ijazah
+    else #Pink ID tidak valid di IPFS
+        fabric -> api: Mengirim pesan error
+        api -> ui: Mengirim pesan error
+        ui -> user: Menampilkan pesan error
+    end
+
+else #Pink ID tidak valid di Hyperledger Fabric
+    fabric -> api: Mengirim pesan error
+    api -> ui: Mengirim pesan error
+    ui -> user: Menampilkan pesan error
+end
+
+@enduml

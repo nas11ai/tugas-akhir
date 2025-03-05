@@ -1,0 +1,42 @@
+@startuml SD-5
+
+title Proses Menghapus (//Soft Delete//) Sertifikat Ijazah
+
+actor       Akademik                      as user
+boundary    "Antarmuka Web"               as ui
+control     API                           as api
+entity      "Hyperledger Fabric"          as fabric
+
+user -> ui : Akses halaman permintaan sertifikat ijazah
+ui -> api : GET request
+api -> fabric: Query data
+fabric -> api: Data permintaan
+api -> ui: Data permintaan
+ui -> user: Tampilkan permintaan
+
+user -> ui : Menekan tombol hapus sertifikat ijazah
+ui -> user: Menampilkan form validasi
+user-> ui: Menekan tombol hapus
+ui -> api : DELETE request
+
+alt#Gold #LightBlue Request valid
+    api -> fabric: Invoke chaincode
+
+    alt#Gold #LightBlue Request valid
+        fabric -> fabric: Ubah data jadi invalid
+        fabric -> api: Sukses ubah data
+        api -> api: Menyembunyikan data dari tampilan
+        api -> ui: Sukses menghapus sertifikat ijazah
+        ui -> user: Menampilkan pesan sukses
+    else #Pink Data tidak valid
+        fabric -> api: Mengirim pesan error
+        api -> ui: Mengirim pesan error
+        ui -> user: Menampilkan pesan error
+    end
+
+else #Pink Data tidak valid
+    api -> ui: Mengirim pesan error
+    ui -> user: Menampilkan pesan error
+end
+
+@enduml

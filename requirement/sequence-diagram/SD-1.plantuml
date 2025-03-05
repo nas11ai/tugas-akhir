@@ -1,0 +1,35 @@
+@startuml SD-1
+
+title Cari Sertifikat Ijazah
+
+actor       User                        as user
+boundary    "Antarmuka Web"             as ui
+control     API                         as api
+entity      "Hyperledger Fabric"        as fabric
+entity      IPFS                        as ipfs
+
+user -> ui : Input ID sertifikat ijazah
+ui -> api : //GET request by ID//
+api -> fabric: //Query chaincode by ID//
+
+alt#Gold #LightBlue ID valid di Hyperleder Fabric
+    fabric -> api: Mengirim pesan ID valid
+    api -> ipfs: //GET request by ID//
+
+    alt#Gold #LightBlue ID valid di IPFS
+       ipfs -> api: Mengirim file sertifikat ijazah
+       api -> ui: Mengirim file sertifikat ijazah
+       ui -> user: Menampilkan file sertifikat ijazah
+    else #Pink ID tidak valid di IPFS
+        ipfs -> api: Mengirim pesan error
+        api -> ui: Mengirim pesan error
+        ui -> user: Menampilkan pesan error
+    end
+
+else #Pink ID tidak valid di Hyperledger Fabric
+    fabric -> api: Mengirim pesan error
+    api -> ui: Mengirim pesan error
+    ui -> user: Menampilkan pesan error
+end
+
+@enduml

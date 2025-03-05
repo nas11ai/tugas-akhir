@@ -1,0 +1,46 @@
+@startuml SD-2
+
+title Proses Tanda Tangan Sertifikat Ijazah
+
+actor       Rektor                        as user
+boundary    "Antarmuka Web"             as ui
+control     API                         as api
+entity      "Hyperledger Fabric"        as fabric
+entity      IPFS                        as ipfs
+
+user -> ui : Akses halaman permintaan tanda tangan
+ui -> api : GET request
+api -> fabric: Query data
+fabric -> api: Data permintaan
+api -> ui: Data permintaan
+ui -> user: Tampilkan permintaan
+
+user -> ui : Akses detail permintaan
+ui -> api : GET request
+api -> fabric: Query data
+fabric -> api: Data detail
+api -> ui: Data detail
+ui -> user: Tampilkan detail
+
+alt#Gold #LightBlue Data valid
+    user -> ui: Tandatangani sertifikat ijazah
+    ui -> api: PUT request
+    api -> ipfs: POST request
+    ipfs -> ipfs: Simpan sertifikat ijazah
+    ipfs -> api: ID sertifikat ijazah
+    api -> fabric: Invoke chaincode
+    fabric -> fabric: Simpan ID sertifikat ijazah
+    fabric -> api: Sukses simpan data
+    api -> ui: Sukses simpan data
+    ui -> user: Tampilkan pesan sukses
+else #Pink Data tidak valid
+    user -> ui: Tolak tanda tangan
+    ui -> api: PUT request
+    api -> fabric: Invoke chaincode
+    fabric -> fabric: Simpan status sertifikat ijazah tidak valid
+    fabric -> api: Sukses simpan data
+    api -> ui: Sukses simpan data
+    ui -> user: Tampilkan pesan sukses
+end
+
+@enduml
