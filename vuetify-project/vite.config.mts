@@ -33,6 +33,7 @@ export default defineConfig({
       },
     }),
   ],
+  assetsInclude: ['**/*.svg'],
   define: { 'process.env': {} },
   resolve: {
     alias: {
