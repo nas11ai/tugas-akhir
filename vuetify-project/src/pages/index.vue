@@ -20,4 +20,5 @@ import BaseLayout from '@/layouts/BaseLayout.vue';
 import logo from '@/assets/logo.png';
 
 const searchQuery = ref('');
+defineExpose({ searchQuery });
 </script>
