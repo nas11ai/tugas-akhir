@@ -9,7 +9,7 @@
         </v-app-bar>
 
         <!-- Main Content -->
-        <div>
+        <div class="pa-16">
             <slot></slot>
         </div>
     </v-app>
