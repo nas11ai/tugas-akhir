@@ -5,7 +5,7 @@
             <v-btn color="blue" outlined @click="goBack">Kembali</v-btn>
 
             <!-- Gambar Sertifikat -->
-            <v-row class="my-4 px-4">
+            <v-row class="my-4">
                 <v-col cols="12">
                     <v-sheet class="pa-4" outlined>
                         <v-img aspect-ratio="16/9" cover class="w-100" max-height="500"
