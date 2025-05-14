@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@helia/unixfs": "^5.0.2",
+    "blockstore-fs": "^2.0.2",
     "express": "^5.1.0",
     "fabric-network": "^2.2.20",
     "helia": "^5.4.1",
