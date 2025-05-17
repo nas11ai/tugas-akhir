@@ -1,4 +1,4 @@
-version: '3.4'
+version: "3.4"
 
 services:
   ipfs0:
@@ -17,7 +17,8 @@ services:
     volumes:
       - /private/var/services/librum/ipfs/ipfs0:/data/ipfs
     networks:
-      - ipfs-network
+      ipfs-network:
+        ipv4_address: 172.19.0.3
 
   cluster0:
     container_name: cluster0
@@ -28,7 +29,7 @@ services:
       CLUSTER_PEERNAME: cluster0
       CLUSTER_SECRET: ${CLUSTER_SECRET}
       CLUSTER_IPFSHTTP_NODEMULTIADDRESS: /dns4/ipfs0/tcp/5001
-      CLUSTER_CRDT_TRUSTEDPEERS: '*' # Trust all peers in Cluster
+      CLUSTER_CRDT_TRUSTEDPEERS: "*" # Trust all peers in Cluster
       CLUSTER_RESTAPI_HTTPLISTENMULTIADDRESS: /ip4/0.0.0.0/tcp/9094 # expose API
       CLUSTER_MONITORPINGINTERVAL: 2s # Speed up peer discovery
     ports:
@@ -38,7 +39,8 @@ services:
     volumes:
       - /private/var/services/librum/ipfs/cluster0:/data/ipfs-cluster
     networks:
-      - ipfs-network
+      ipfs-network:
+        ipv4_address: 172.19.0.4
 
 networks:
   ipfs-network:
