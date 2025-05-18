@@ -36,6 +36,7 @@ services:
       - CORE_PEER_TLS_CLIENTROOTCAS_FILES=/etc/hyperledger/fabric/tls/ca.crt:/etc/hyperledger/fabric/tls/orderer-ca.crt
       - CORE_PEER_TLS_CLIENTCERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_CLIENTKEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - ORDERER_CA=/etc/hyperledger/fabric/tls/orderer-ca.crt
 
       # CouchDB configuration
       - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
@@ -46,7 +47,12 @@ services:
       # Operation and metrics
       - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:9443
 
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/admin-msp
+
+      # BCCSP environment variables
+      # - CORE_PEER_BCCSP_DEFAULT=SW
+      # - CORE_PEER_BCCSP_SW_HASH=SHA2
+      # - CORE_PEER_BCCSP_SW_SECURITY=256
 
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
     command: peer node start
@@ -56,6 +62,8 @@ services:
       - ./crypto-config/peerOrganizations/rektor.itk.com/peers/peer0.rektor.itk.com/tls:/etc/hyperledger/fabric/tls
       - peer0.rektor.itk.com:/var/hyperledger/production
       - ./crypto-config/ordererOrganizations/itk.com/tlsca/tlsca.itk.com-cert.pem:/etc/hyperledger/fabric/tls/orderer-ca.crt
+      - ./crypto-config/peerOrganizations/rektor.itk.com/users/Admin@rektor.itk.com/msp:/etc/hyperledger/fabric/admin-msp
+      # - ./core.yaml:/etc/hyperledger/fabric/core.yaml
     ports:
       - 7051:7051
       - 7052:7052
