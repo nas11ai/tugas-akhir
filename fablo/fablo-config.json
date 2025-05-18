@@ -1,0 +1,84 @@
+{
+  "$schema": "https://github.com/hyperledger-labs/fablo/releases/download/2.2.0/schema.json",
+  "global": {
+    "fabricVersion": "2.5.0",
+    "tls": true,
+    "tools": {
+      "explorer": true
+    }
+  },
+  "orgs": [
+    {
+      "organization": {
+        "name": "Orderer",
+        "domain": "orderer.itk.ac.id"
+      },
+      "orderers": [
+        {
+          "groupName": "raft-group",
+          "type": "raft",
+          "instances": 3
+        }
+      ]
+    },
+    {
+      "organization": {
+        "name": "Akademik",
+        "domain": "akademik.itk.ac.id"
+      },
+      "ca": {
+        "db": "postgres"
+      },
+      "peer": {
+        "instances": 1,
+        "db": "CouchDb"
+      },
+      "tools": {
+        "fabloRest": true
+      }
+    },
+    {
+      "organization": {
+        "name": "Rektor",
+        "domain": "rektor.itk.ac.id"
+      },
+      "ca": {
+        "db": "postgres"
+      },
+      "peer": {
+        "instances": 1,
+        "db": "CouchDb"
+      },
+      "tools": {
+        "fabloRest": true
+      }
+    }
+  ],
+  "channels": [
+    {
+      "name": "ijazah-channel",
+      "orgs": [
+        {
+          "name": "Akademik",
+          "peers": ["peer0", "peer1"]
+        },
+        {
+          "name": "Rektor",
+          "peers": ["peer0", "peer1"]
+        }
+      ]
+    }
+  ],
+  "chaincodes": [
+    {
+      "name": "ijazah-chaincode",
+      "version": "1.0.0",
+      "lang": "node",
+      "channel": "ijazah-channel",
+      "directory": "../chaincode/dist"
+    }
+  ],
+  "hooks": {
+    "postGenerate": "perl -i -pe 's/MaxMessageCount: 10/MaxMessageCount: 1/g' \"./fablo-target/fabric-config/configtx.yaml\""
+  }
+}
