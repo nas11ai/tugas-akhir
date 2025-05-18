@@ -21,3 +21,4 @@ BCCSP:
     Security: 256
     FileKeystore:
       KeyStore:
+mspConfigPath: ./admin-msp

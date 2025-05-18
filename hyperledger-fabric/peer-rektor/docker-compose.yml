@@ -63,7 +63,7 @@ services:
       - peer0.rektor.itk.com:/var/hyperledger/production
       - ./crypto-config/ordererOrganizations/itk.com/tlsca/tlsca.itk.com-cert.pem:/etc/hyperledger/fabric/tls/orderer-ca.crt
       - ./crypto-config/peerOrganizations/rektor.itk.com/users/Admin@rektor.itk.com/msp:/etc/hyperledger/fabric/admin-msp
-      # - ./core.yaml:/etc/hyperledger/fabric/core.yaml
+      - ./core.yaml:/etc/hyperledger/fabric/core.yaml
     ports:
       - 7051:7051
       - 7052:7052

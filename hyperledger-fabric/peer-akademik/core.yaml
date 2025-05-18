@@ -1,3 +1,13 @@
+peer:
+  BCCSP:
+    Default: SW
+    SW:
+      Hash: SHA2
+      Security: 256
+      FileKeystore:
+        KeyStore: /etc/hyperledger/fabric/admin-msp/keystore
+  mspConfigPath: /etc/hyperledger/fabric/admin-msp
+
 chaincode:
   externalBuilders:
     - name: external-builder
@@ -14,10 +24,3 @@ chaincode:
         - CORE_PEER_TLS_ENABLED
         - CORE_PEER_TLS_ROOTCERT_FILE
         - CORE_PEER_ID
-BCCSP:
-  Default: SW
-  SW:
-    Hash: SHA2
-    Security: 256
-    FileKeystore:
-      KeyStore:

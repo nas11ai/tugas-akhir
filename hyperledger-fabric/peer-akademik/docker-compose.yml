@@ -63,7 +63,7 @@ services:
       - peer0.akademik.itk.com:/var/hyperledger/production
       - ./crypto-config/ordererOrganizations/itk.com/tlsca/tlsca.itk.com-cert.pem:/etc/hyperledger/fabric/tls/orderer-ca.crt
       - ./crypto-config/peerOrganizations/akademik.itk.com/users/Admin@akademik.itk.com/msp:/etc/hyperledger/fabric/admin-msp
-      # - ./core.yaml:/etc/hyperledger/fabric/core.yaml
+      - ./core.yaml:/etc/hyperledger/fabric/core.yaml
     ports:
       - 7151:7051
       - 7152:7052
