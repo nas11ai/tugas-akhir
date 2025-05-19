@@ -1,0 +1,11 @@
+PeerOrgs:
+  - Name: Orderer
+    Domain: orderer.itk.ac.id
+    Specs:
+      - Hostname: orderer0.raft-group
+      - Hostname: orderer1.raft-group
+      - Hostname: orderer2.raft-group
+    Template:
+      Count: 0
+    Users:
+      Count: 1

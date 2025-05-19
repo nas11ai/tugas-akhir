@@ -1,0 +1,8 @@
+PeerOrgs:
+  - Name: Akademik
+    Domain: akademik.itk.ac.id
+    Specs:
+    Template:
+      Count: 1
+    Users:
+      Count: 1

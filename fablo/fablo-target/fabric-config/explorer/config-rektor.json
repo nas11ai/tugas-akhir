@@ -1,0 +1,9 @@
+{
+  "network-configs": {
+    "network-rektor": {
+      "name": "Network of Rektor",
+      "profile": "/opt/explorer/app/platform/fabric/connection-profile/connection-profile-rektor.json"
+    }
+  },
+  "license": "Apache-2.0"
+}

@@ -1,0 +1,52 @@
+{
+  "name": "fablo-test-network-rektor",
+  "description": "Connection profile for Rektor in Fablo network",
+  "version": "1.0.0",
+  "client": {
+    "organization": "Rektor"
+  },
+  "organizations": {
+    "Rektor": {
+      "mspid": "RektorMSP",
+      "peers": [
+        "peer0.akademik.itk.ac.id",
+        "peer0.rektor.itk.ac.id"
+      ],
+      "certificateAuthorities": [
+        "ca.rektor.itk.ac.id"
+      ]
+    }
+  },
+  "peers": {
+    "peer0.akademik.itk.ac.id": {
+      "url": "grpcs://localhost:7041",
+      "tlsCACerts": {
+        "path": "/home/nas11ai/projects/tugas-akhir/fablo/fablo-target/fabric-config/crypto-config/peerOrganizations/akademik.itk.ac.id/peers/peer0.akademik.itk.ac.id/tls/ca.crt"
+      },
+      "grpcOptions": {
+        "ssl-target-name-override": "peer0.akademik.itk.ac.id"
+      }
+    },
+    "peer0.rektor.itk.ac.id": {
+      "url": "grpcs://localhost:7061",
+      "tlsCACerts": {
+        "path": "/home/nas11ai/projects/tugas-akhir/fablo/fablo-target/fabric-config/crypto-config/peerOrganizations/rektor.itk.ac.id/peers/peer0.rektor.itk.ac.id/tls/ca.crt"
+      },
+      "grpcOptions": {
+        "ssl-target-name-override": "peer0.rektor.itk.ac.id"
+      }
+    }
+  },
+  "certificateAuthorities": {
+    "ca.rektor.itk.ac.id": {
+      "url": "https://localhost:7060",
+      "caName": "ca.rektor.itk.ac.id",
+      "tlsCACerts": {
+        "path": "/home/nas11ai/projects/tugas-akhir/fablo/fablo-target/fabric-config/crypto-config/peerOrganizations/rektor.itk.ac.id/ca/ca.rektor.itk.ac.id-cert.pem"
+      },
+      "httpOptions": {
+        "verify": false
+      }
+    }
+  }
+}

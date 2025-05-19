@@ -1,0 +1,218 @@
+################################################################################
+#   SECTION: Capabilities
+################################################################################
+Capabilities:
+    Channel: &ChannelCapabilities
+        V2_0: true
+    Orderer: &OrdererCapabilities
+        V2_0: true
+    Application: &ApplicationCapabilities
+        V2_5: true
+
+################################################################################
+#   CHANNEL Defaults
+################################################################################
+Channel: &ChannelDefaults
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+    Capabilities:
+        <<: *ChannelCapabilities
+
+################################################################################
+#   Section: Organizations
+################################################################################
+Organizations:
+    - &Orderer
+      Name: OrdererMSP
+      ID: OrdererMSP
+      MSPDir: crypto-config/peerOrganizations/orderer.itk.ac.id/msp
+
+      Policies:
+          Readers:
+              Type: Signature
+              Rule: "OR('OrdererMSP.member')"
+          Writers:
+              Type: Signature
+              Rule: "OR('OrdererMSP.member')"
+          Admins:
+              Type: Signature
+              Rule: "OR('OrdererMSP.admin')"
+          Endorsement:
+              Type: Signature
+              Rule: "OR('OrdererMSP.member')"
+
+      AnchorPeers:
+
+    - &Akademik
+      Name: AkademikMSP
+      ID: AkademikMSP
+      MSPDir: crypto-config/peerOrganizations/akademik.itk.ac.id/msp
+
+      Policies:
+          Readers:
+              Type: Signature
+              Rule: "OR('AkademikMSP.member')"
+          Writers:
+              Type: Signature
+              Rule: "OR('AkademikMSP.member')"
+          Admins:
+              Type: Signature
+              Rule: "OR('AkademikMSP.admin')"
+          Endorsement:
+              Type: Signature
+              Rule: "OR('AkademikMSP.member')"
+
+      AnchorPeers:
+          - Host: peer0.akademik.itk.ac.id
+            Port: 7041
+
+    - &Rektor
+      Name: RektorMSP
+      ID: RektorMSP
+      MSPDir: crypto-config/peerOrganizations/rektor.itk.ac.id/msp
+
+      Policies:
+          Readers:
+              Type: Signature
+              Rule: "OR('RektorMSP.member')"
+          Writers:
+              Type: Signature
+              Rule: "OR('RektorMSP.member')"
+          Admins:
+              Type: Signature
+              Rule: "OR('RektorMSP.admin')"
+          Endorsement:
+              Type: Signature
+              Rule: "OR('RektorMSP.member')"
+
+      AnchorPeers:
+          - Host: peer0.rektor.itk.ac.id
+            Port: 7061
+
+################################################################################
+#   SECTION: Application
+################################################################################
+Application: &ApplicationDefaults
+    Organizations:
+    # Policies defines the set of policies at this level of the config tree
+    # For Application policies, their canonical path is
+    #   /Channel/Application/<PolicyName>
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+        Endorsement:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Endorsement"
+    Capabilities:
+        <<: *ApplicationCapabilities
+
+################################################################################
+#   SECTION: Orderer
+################################################################################
+Orderer: &Raft-groupDefaults
+    OrdererType: etcdraft
+    Addresses:
+        - orderer0.raft-group.orderer.itk.ac.id:7030
+        - orderer1.raft-group.orderer.itk.ac.id:7031
+        - orderer2.raft-group.orderer.itk.ac.id:7032
+    EtcdRaft:
+        Consenters:
+            - Host: orderer0.raft-group.orderer.itk.ac.id
+              Port: 7030
+              ClientTLSCert: crypto-config/peerOrganizations/orderer.itk.ac.id/peers/orderer0.raft-group.orderer.itk.ac.id/tls/server.crt
+              ServerTLSCert: crypto-config/peerOrganizations/orderer.itk.ac.id/peers/orderer0.raft-group.orderer.itk.ac.id/tls/server.crt
+
+            - Host: orderer1.raft-group.orderer.itk.ac.id
+              Port: 7031
+              ClientTLSCert: crypto-config/peerOrganizations/orderer.itk.ac.id/peers/orderer1.raft-group.orderer.itk.ac.id/tls/server.crt
+              ServerTLSCert: crypto-config/peerOrganizations/orderer.itk.ac.id/peers/orderer1.raft-group.orderer.itk.ac.id/tls/server.crt
+
+            - Host: orderer2.raft-group.orderer.itk.ac.id
+              Port: 7032
+              ClientTLSCert: crypto-config/peerOrganizations/orderer.itk.ac.id/peers/orderer2.raft-group.orderer.itk.ac.id/tls/server.crt
+              ServerTLSCert: crypto-config/peerOrganizations/orderer.itk.ac.id/peers/orderer2.raft-group.orderer.itk.ac.id/tls/server.crt
+
+    BatchTimeout: 2s
+    BatchSize:
+        MaxMessageCount: 1
+        AbsoluteMaxBytes: 99 MB
+        PreferredMaxBytes: 512 KB
+    Organizations:
+    # Policies defines the set of policies at this level of the config tree
+    # For Orderer policies, their canonical path is
+    #   /Channel/Orderer/<PolicyName>
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+        # BlockValidation specifies what signatures must be included in the block
+        # from the orderer for the peer to validate it.
+        BlockValidation:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+    Capabilities:
+        <<: *OrdererCapabilities
+
+################################################################################
+#   Profile
+################################################################################
+# https://github:com/hyperledger/fabric/blob/master/sampleconfig/configtx.yaml
+
+Profiles:
+    # Profile used to create Genesis block for group raft-group #
+    Raft-groupGenesis:
+        <<: *ChannelDefaults
+        Orderer:
+            <<: *Raft-groupDefaults
+            Organizations:
+                - *Orderer
+            Capabilities:
+                <<: *OrdererCapabilities
+        Consortiums:
+            SampleConsortium:
+                Organizations:
+                    - *Orderer
+                    - *Akademik
+                    - *Rektor
+
+    # Profile used to create channeltx for ijazah-channel #
+    IjazahChannel:
+        <<: *ChannelDefaults
+        Orderer:
+            <<: *Raft-groupDefaults
+            Organizations:
+                - *Orderer
+            Capabilities:
+                <<: *ApplicationCapabilities
+        Consortium: SampleConsortium
+        Consortiums:
+            SampleConsortium:
+                Organizations:
+                    - *Akademik
+                    - *Rektor
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                - *Akademik
+                - *Rektor

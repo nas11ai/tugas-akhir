@@ -75,7 +75,7 @@
       "version": "1.0.0",
       "lang": "node",
       "channel": "ijazah-channel",
-      "directory": "../chaincode/dist"
+      "directory": "./chaincode"
     }
   ],
   "hooks": {
