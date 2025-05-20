@@ -46,12 +46,12 @@ installChaincodes() {
     chaincodeBuild "ijazah-chaincode" "node" "$CHAINCODES_BASE_DIR/./chaincode" "16"
     chaincodePackage "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-chaincode" "$version" "node" printHeadline "Installing 'ijazah-chaincode' for Akademik" "U1F60E"
     chaincodeInstall "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-chaincode" "$version" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem"
-    chaincodeApprove "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" ""
+    chaincodeApprove "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "OR('AkademikMSP.peer','RektorMSP.peer')" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" ""
     printHeadline "Installing 'ijazah-chaincode' for Rektor" "U1F60E"
     chaincodeInstall "cli.rektor.itk.ac.id" "peer0.rektor.itk.ac.id:7061" "ijazah-chaincode" "$version" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem"
-    chaincodeApprove "cli.rektor.itk.ac.id" "peer0.rektor.itk.ac.id:7061" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" ""
+    chaincodeApprove "cli.rektor.itk.ac.id" "peer0.rektor.itk.ac.id:7061" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "OR('AkademikMSP.peer','RektorMSP.peer')" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" ""
     printItalics "Committing chaincode 'ijazah-chaincode' on channel 'ijazah-channel' as 'Akademik'" "U1F618"
-    chaincodeCommit "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" "peer0.akademik.itk.ac.id:7041,peer0.rektor.itk.ac.id:7061" "crypto-peer/peer0.akademik.itk.ac.id/tls/ca.crt,crypto-peer/peer0.rektor.itk.ac.id/tls/ca.crt" ""
+    chaincodeCommit "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "OR('AkademikMSP.peer','RektorMSP.peer')" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" "peer0.akademik.itk.ac.id:7041,peer0.rektor.itk.ac.id:7061" "crypto-peer/peer0.akademik.itk.ac.id/tls/ca.crt,crypto-peer/peer0.rektor.itk.ac.id/tls/ca.crt" ""
   else
     echo "Warning! Skipping chaincode 'ijazah-chaincode' installation. Chaincode directory is empty."
     echo "Looked in dir: '$CHAINCODES_BASE_DIR/./chaincode'"
@@ -78,12 +78,12 @@ installChaincode() {
       chaincodeBuild "ijazah-chaincode" "node" "$CHAINCODES_BASE_DIR/./chaincode" "16"
       chaincodePackage "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-chaincode" "$version" "node" printHeadline "Installing 'ijazah-chaincode' for Akademik" "U1F60E"
       chaincodeInstall "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-chaincode" "$version" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem"
-      chaincodeApprove "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" ""
+      chaincodeApprove "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "OR('AkademikMSP.peer','RektorMSP.peer')" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" ""
       printHeadline "Installing 'ijazah-chaincode' for Rektor" "U1F60E"
       chaincodeInstall "cli.rektor.itk.ac.id" "peer0.rektor.itk.ac.id:7061" "ijazah-chaincode" "$version" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem"
-      chaincodeApprove "cli.rektor.itk.ac.id" "peer0.rektor.itk.ac.id:7061" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" ""
+      chaincodeApprove "cli.rektor.itk.ac.id" "peer0.rektor.itk.ac.id:7061" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "OR('AkademikMSP.peer','RektorMSP.peer')" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" ""
       printItalics "Committing chaincode 'ijazah-chaincode' on channel 'ijazah-channel' as 'Akademik'" "U1F618"
-      chaincodeCommit "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" "peer0.akademik.itk.ac.id:7041,peer0.rektor.itk.ac.id:7061" "crypto-peer/peer0.akademik.itk.ac.id/tls/ca.crt,crypto-peer/peer0.rektor.itk.ac.id/tls/ca.crt" ""
+      chaincodeCommit "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "OR('AkademikMSP.peer','RektorMSP.peer')" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" "peer0.akademik.itk.ac.id:7041,peer0.rektor.itk.ac.id:7061" "crypto-peer/peer0.akademik.itk.ac.id/tls/ca.crt,crypto-peer/peer0.rektor.itk.ac.id/tls/ca.crt" ""
 
     else
       echo "Warning! Skipping chaincode 'ijazah-chaincode' install. Chaincode directory is empty."
@@ -102,11 +102,11 @@ runDevModeChaincode() {
   if [ "$chaincodeName" = "ijazah-chaincode" ]; then
     local version="1.0.0"
     printHeadline "Approving 'ijazah-chaincode' for Akademik (dev mode)" "U1F60E"
-    chaincodeApprove "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-channel" "ijazah-chaincode" "1.0.0" "orderer0.raft-group.orderer.itk.ac.id:7030" "" "false" "" ""
+    chaincodeApprove "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-channel" "ijazah-chaincode" "1.0.0" "orderer0.raft-group.orderer.itk.ac.id:7030" "OR('AkademikMSP.peer','RektorMSP.peer')" "false" "" ""
     printHeadline "Approving 'ijazah-chaincode' for Rektor (dev mode)" "U1F60E"
-    chaincodeApprove "cli.rektor.itk.ac.id" "peer0.rektor.itk.ac.id:7061" "ijazah-channel" "ijazah-chaincode" "1.0.0" "orderer0.raft-group.orderer.itk.ac.id:7030" "" "false" "" ""
+    chaincodeApprove "cli.rektor.itk.ac.id" "peer0.rektor.itk.ac.id:7061" "ijazah-channel" "ijazah-chaincode" "1.0.0" "orderer0.raft-group.orderer.itk.ac.id:7030" "OR('AkademikMSP.peer','RektorMSP.peer')" "false" "" ""
     printItalics "Committing chaincode 'ijazah-chaincode' on channel 'ijazah-channel' as 'Akademik' (dev mode)" "U1F618"
-    chaincodeCommit "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-channel" "ijazah-chaincode" "1.0.0" "orderer0.raft-group.orderer.itk.ac.id:7030" "" "false" "" "peer0.akademik.itk.ac.id:7041,peer0.rektor.itk.ac.id:7061" "" ""
+    chaincodeCommit "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-channel" "ijazah-chaincode" "1.0.0" "orderer0.raft-group.orderer.itk.ac.id:7030" "OR('AkademikMSP.peer','RektorMSP.peer')" "false" "" "peer0.akademik.itk.ac.id:7041,peer0.rektor.itk.ac.id:7061" "" ""
 
   fi
 }
@@ -130,12 +130,12 @@ upgradeChaincode() {
       chaincodeBuild "ijazah-chaincode" "node" "$CHAINCODES_BASE_DIR/./chaincode" "16"
       chaincodePackage "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-chaincode" "$version" "node" printHeadline "Installing 'ijazah-chaincode' for Akademik" "U1F60E"
       chaincodeInstall "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-chaincode" "$version" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem"
-      chaincodeApprove "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" ""
+      chaincodeApprove "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "OR('AkademikMSP.peer','RektorMSP.peer')" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" ""
       printHeadline "Installing 'ijazah-chaincode' for Rektor" "U1F60E"
       chaincodeInstall "cli.rektor.itk.ac.id" "peer0.rektor.itk.ac.id:7061" "ijazah-chaincode" "$version" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem"
-      chaincodeApprove "cli.rektor.itk.ac.id" "peer0.rektor.itk.ac.id:7061" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" ""
+      chaincodeApprove "cli.rektor.itk.ac.id" "peer0.rektor.itk.ac.id:7061" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "OR('AkademikMSP.peer','RektorMSP.peer')" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" ""
       printItalics "Committing chaincode 'ijazah-chaincode' on channel 'ijazah-channel' as 'Akademik'" "U1F618"
-      chaincodeCommit "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" "peer0.akademik.itk.ac.id:7041,peer0.rektor.itk.ac.id:7061" "crypto-peer/peer0.akademik.itk.ac.id/tls/ca.crt,crypto-peer/peer0.rektor.itk.ac.id/tls/ca.crt" ""
+      chaincodeCommit "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "ijazah-channel" "ijazah-chaincode" "$version" "orderer0.raft-group.orderer.itk.ac.id:7030" "OR('AkademikMSP.peer','RektorMSP.peer')" "false" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" "peer0.akademik.itk.ac.id:7041,peer0.rektor.itk.ac.id:7061" "crypto-peer/peer0.akademik.itk.ac.id/tls/ca.crt,crypto-peer/peer0.rektor.itk.ac.id/tls/ca.crt" ""
 
     else
       echo "Warning! Skipping chaincode 'ijazah-chaincode' upgrade. Chaincode directory is empty."
