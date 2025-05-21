@@ -1,3 +1,6 @@
 node_modules/
+logger/
+logs/
+src/config/serviceAccountKey.json
 package-lock.json
 .env
