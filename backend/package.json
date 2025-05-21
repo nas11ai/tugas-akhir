@@ -2,22 +2,54 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "license": "ISC",
-  "author": "",
-  "type": "module",
-  "main": "index.js",
+  "main": "dist/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
+    "lint": "eslint . --ext .ts",
+    "test": "jest"
   },
+  "keywords": [
+    "hyperledger",
+    "fabric",
+    "ipfs",
+    "blockchain",
+    "certificates"
+  ],
+  "author": "",
+  "license": "MIT",
   "dependencies": {
+    "@helia/dag-json": "^4.0.5",
+    "@helia/strings": "^4.0.5",
     "@helia/unixfs": "^5.0.2",
-    "blockstore-fs": "^2.0.2",
+    "axios": "^1.9.0",
+    "compression": "^1.8.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "fabric-network": "^2.2.20",
+    "express-validator": "^7.2.1",
+    "firebase-admin": "^13.4.0",
+    "helmet": "^8.1.0",
     "helia": "^5.4.1",
     "morgan": "^1.10.0",
-    "multer": "^1.4.5-lts.2",
-    "uint8arrays": "^5.1.0",
+    "multer": "^2.0.0",
     "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "@types/compression": "^1.7.5",
+    "@types/cors": "^2.8.18",
+    "@types/express": "^5.0.2",
+    "@types/morgan": "^1.9.9",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.15.21",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
+    "eslint": "^9.27.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.3.4",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.8.3"
   }
 }
