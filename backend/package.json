@@ -23,6 +23,7 @@
     "@helia/dag-json": "^4.0.5",
     "@helia/strings": "^4.0.5",
     "@helia/unixfs": "^5.0.2",
+    "@libp2p/interface-peer-discovery": "^2.0.0",
     "axios": "^1.9.0",
     "compression": "^1.8.0",
     "cors": "^2.8.5",
@@ -30,8 +31,9 @@
     "express": "^5.1.0",
     "express-validator": "^7.2.1",
     "firebase-admin": "^13.4.0",
-    "helmet": "^8.1.0",
     "helia": "^5.4.1",
+    "helmet": "^8.1.0",
+    "kubo-rpc-client": "^5.1.0",
     "morgan": "^1.10.0",
     "multer": "^2.0.0",
     "winston": "^3.17.0"
