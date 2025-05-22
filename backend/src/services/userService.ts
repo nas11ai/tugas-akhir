@@ -1,53 +1,20 @@
-import { FirestoreUser, Organization, Role, User, UserCredentials, UserWithCredentials } from "../models/user";
+import {
+  FirestoreUser,
+  Organization,
+  Role,
+  User,
+  UserCredentials,
+  UserWithCredentials,
+} from "../models/user";
 import { logger } from "../utils/logger";
 import { firestoreService } from "./firestoreService";
-export {Organization, Role, User, UserCredentials, UserWithCredentials} from "../models/user";
-
-// export enum Organization {
-//   AKADEMIK = "akademik",
-//   REKTOR = "rektor",
-// }
-
-// export enum Role {
-//   ADMIN = "admin",
-//   USER = "user",
-// }
-
-// export interface UserCredentials {
-//   username: string;
-//   password: string;
-//   accessToken?: string; // Token dari Fablo REST API setelah enroll
-//   tokenExpiry?: Date; // Waktu expired token
-// }
-
-// export interface User {
-//   uid: string;
-//   email: string;
-//   displayName?: string;
-//   photoURL?: string;
-//   role: Role;
-//   organization: Organization;
-//   createdAt: Date;
-//   updatedAt: Date;
-//   isActive: boolean;
-// }
-
-// export interface UserWithCredentials extends User {
-//   credentials: UserCredentials;
-// }
-
-// export interface FirestoreUser {
-//   uid: string;
-//   email: string;
-//   displayName?: string;
-//   photoURL?: string;
-//   role: Role;
-//   organization: Organization;
-//   createdAt: FirebaseFirestore.Timestamp;
-//   updatedAt: FirebaseFirestore.Timestamp;
-//   isActive: boolean;
-//   credentials?: UserCredentials;
-// }
+export {
+  Organization,
+  Role,
+  User,
+  UserCredentials,
+  UserWithCredentials,
+} from "../models/user";
 
 /**
  * Service for managing user data and credentials
