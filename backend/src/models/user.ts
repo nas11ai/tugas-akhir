@@ -9,8 +9,10 @@ export enum Role {
 }
 
 export interface UserCredentials {
-  certificate: string;
-  privateKey: string;
+  username: string;
+  password: string;
+  accessToken?: string; // Token dari Fablo REST API setelah enroll
+  tokenExpiry?: Date; // Waktu expired token
 }
 
 export interface User {
