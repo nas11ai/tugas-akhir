@@ -1,4 +1,4 @@
-import { checkIpfsClusterHealth } from "../config/ipfsClusterConfig";
+import { checkIpfsClusterHealth } from "../config/ipfsCluster";
 import { logger } from "../utils/logger";
 
 // Panggil fungsi health check
