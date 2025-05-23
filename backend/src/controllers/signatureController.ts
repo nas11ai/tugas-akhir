@@ -63,7 +63,7 @@ export class SignatureController {
 
       // Create signature using fabric service
       const newSignature = await fabricService.createSignature(
-        req.user.organization,
+        req.user.organization as Organization,
         req.token,
         signatureData
       );
@@ -145,7 +145,7 @@ export class SignatureController {
 
       // Update signature using fabric service
       const updatedSignature = await fabricService.updateSignature(
-        req.user.organization,
+        req.user.organization as Organization,
         req.token,
         id,
         signatureData
@@ -356,7 +356,7 @@ export class SignatureController {
       logger.info(`Setting signature ${id} as active`);
 
       const activeSignature = await fabricService.setActiveSignature(
-        req.user.organization,
+        req.user.organization as Organization,
         req.token,
         id
       );
@@ -426,7 +426,7 @@ export class SignatureController {
 
       // Update signature to set IsActive to false
       const updatedSignature = await fabricService.updateSignature(
-        req.user.organization,
+        req.user.organization as Organization,
         req.token,
         id,
         { IsActive: false }
@@ -496,7 +496,7 @@ export class SignatureController {
       logger.info(`Deleting signature with ID: ${id}`);
 
       const result = await fabricService.deleteSignature(
-        req.user.organization,
+        req.user.organization as Organization,
         req.token,
         id
       );
@@ -603,7 +603,7 @@ export class SignatureController {
       };
 
       const newSignature = await fabricService.createSignature(
-        req.user.organization,
+        req.user.organization as Organization,
         req.token,
         signatureData
       );
@@ -674,7 +674,7 @@ export class SignatureController {
 
       // Get all signatures
       const signatures = await fabricService.getAllSignatures(
-        req.user.organization,
+        req.user.organization as Organization,
         req.token
       );
 
