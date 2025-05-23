@@ -223,7 +223,7 @@ export class IjazahController {
 
       // If user is authenticated, use their credentials
       if (req.user && req.token) {
-        userOrganization = req.user.organization;
+        userOrganization = req.user.organization as Organization;
         userToken = req.token;
       } else {
         // For public access, use admin credentials from AKADEMIK organization
@@ -346,7 +346,7 @@ export class IjazahController {
       logger.info("Getting all ijazah certificates");
 
       const ijazahList = await fabricService.getAllIjazah(
-        req.user.organization,
+        req.user.organization as Organization,
         req.token
       );
 
@@ -413,7 +413,7 @@ export class IjazahController {
       logger.info(`Getting ijazah certificates with status: ${status}`);
 
       const ijazahList = await fabricService.getIjazahByStatus(
-        req.user.organization,
+        req.user.organization as Organization,
         req.token,
         status
       );
@@ -511,7 +511,7 @@ export class IjazahController {
       logger.info(`Updating ijazah status to ${status} for ID: ${id}`);
 
       const updatedIjazah = await fabricService.updateIjazahStatus(
-        req.user.organization,
+        req.user.organization as Organization,
         req.token,
         id,
         status
@@ -630,7 +630,7 @@ export class IjazahController {
 
       // Get ijazah data first
       const ijazah = await fabricService.getIjazah(
-        req.user.organization,
+        req.user.organization as Organization,
         req.token,
         id
       );
@@ -695,7 +695,7 @@ export class IjazahController {
 
       // Get ijazah data first
       const ijazah = await fabricService.getIjazah(
-        req.user.organization,
+        req.user.organization as Organization,
         req.token,
         id
       );

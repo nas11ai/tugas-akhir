@@ -1,34 +1,45 @@
 import { Request, Response, NextFunction } from "express";
 import { auth, db } from "../config/firebase";
 import { logger } from "../utils/logger";
-import { User } from "../models/user";
 
-// Extend Express Request interface to include user
+// Extend Request interface to include user and token
 declare global {
   namespace Express {
     interface Request {
-      user?: User;
+      user?: {
+        uid: string;
+        email: string;
+        displayName: string;
+        photoURL?: string;
+        role: string;
+        organization: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isActive: boolean;
+      };
       token?: string;
     }
   }
 }
 
 /**
- * Authentication middleware to verify Firebase ID token
+ * Authentication middleware
+ * Verifies Firebase JWT token and loads user data
  */
 export const authenticate = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         message: "Unauthorized: No token provided",
       });
+      return;
     }
 
     // Extract token
@@ -42,20 +53,22 @@ export const authenticate = async (
     const userDoc = await db.collection("users").doc(uid).get();
 
     if (!userDoc.exists) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         message: "Forbidden: User not registered in the system",
       });
+      return;
     }
 
     const userData = userDoc.data() as any;
 
     // Check if user is active
     if (!userData.isActive) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         message: "Forbidden: User account is inactive",
       });
+      return;
     }
 
     // Add user data to request
@@ -76,9 +89,96 @@ export const authenticate = async (
     next();
   } catch (error) {
     logger.error("Authentication error:", error);
-    return res.status(401).json({
+    res.status(401).json({
       success: false,
       message: "Unauthorized: Invalid token",
     });
+    return;
   }
+};
+
+/**
+ * Authorization middleware - requires admin role
+ */
+export const requireAdmin = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (!req.user || req.user.role !== "admin") {
+    res.status(403).json({
+      success: false,
+      error: "Admin access required",
+    });
+    return;
+  }
+  next();
+};
+
+/**
+ * Authorization middleware - requires AKADEMIK organization
+ */
+export const requireAkademik = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (!req.user || req.user.organization !== "AKADEMIK") {
+    res.status(403).json({
+      success: false,
+      error: "AKADEMIK organization access required",
+    });
+    return;
+  }
+  next();
+};
+
+/**
+ * Authorization middleware - requires REKTOR organization
+ */
+export const requireRektor = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (!req.user || req.user.organization !== "REKTOR") {
+    res.status(403).json({
+      success: false,
+      error: "REKTOR organization access required",
+    });
+    return;
+  }
+  next();
+};
+
+/**
+ * Authorization middleware - requires specific role
+ */
+export const requireRole = (role: string) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user || req.user.role !== role) {
+      res.status(403).json({
+        success: false,
+        error: `${role} role required`,
+      });
+      return;
+    }
+    next();
+  };
+};
+
+/**
+ * Authorization middleware - requires specific organization
+ */
+export const requireOrganization = (organization: string) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user || req.user.organization !== organization) {
+      res.status(403).json({
+        success: false,
+        error: `${organization} organization access required`,
+      });
+      return;
+    }
+    next();
+  };
 };

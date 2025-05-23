@@ -197,7 +197,7 @@ export class SignatureController {
       logger.info(`Getting signature with ID: ${id}`);
 
       const signature = await fabricService.getSignature(
-        req.user.organization,
+        req.user.organization as Organization,
         req.token,
         id
       );
@@ -246,7 +246,7 @@ export class SignatureController {
       logger.info("Getting all signatures");
 
       const signatures = await fabricService.getAllSignatures(
-        req.user.organization,
+        req.user.organization as Organization,
         req.token
       );
 
@@ -288,7 +288,7 @@ export class SignatureController {
       logger.info("Getting active signature");
 
       const activeSignature = await fabricService.getActiveSignature(
-        req.user.organization,
+        req.user.organization as Organization,
         req.token
       );
 
