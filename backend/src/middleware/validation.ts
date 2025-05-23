@@ -359,3 +359,103 @@ export const validateUrl = [
     .isURL()
     .withMessage("Must be a valid URL"),
 ];
+
+// Validation rules for user creation
+export const validateCreateUser = [
+  body("uid")
+    .notEmpty()
+    .withMessage("UID is required")
+    .isLength({ min: 1, max: 128 })
+    .withMessage("UID must be between 1 and 128 characters"),
+
+  body("email")
+    .isEmail()
+    .withMessage("Valid email is required")
+    .normalizeEmail(),
+
+  body("displayName")
+    .notEmpty()
+    .withMessage("Display name is required")
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Display name must be between 1 and 100 characters"),
+
+  body("photoURL")
+    .optional()
+    .isURL()
+    .withMessage("Photo URL must be a valid URL"),
+
+  body("role")
+    .isIn(["user", "admin", "akademik", "rektor"])
+    .withMessage("Role must be one of: user, admin, akademik, rektor"),
+
+  body("organization")
+    .isIn(["AKADEMIK", "REKTOR"])
+    .withMessage("Organization must be one of: AKADEMIK, REKTOR"),
+
+  body("isActive")
+    .optional()
+    .isBoolean()
+    .withMessage("isActive must be a boolean value"),
+];
+
+// Validation rules for user update
+export const validateUpdateUser = [
+  body("email")
+    .optional()
+    .isEmail()
+    .withMessage("Valid email is required")
+    .normalizeEmail(),
+
+  body("displayName")
+    .optional()
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Display name must be between 1 and 100 characters"),
+
+  body("photoURL")
+    .optional()
+    .isURL()
+    .withMessage("Photo URL must be a valid URL"),
+
+  body("role")
+    .optional()
+    .isIn(["user", "admin", "akademik", "rektor"])
+    .withMessage("Role must be one of: user, admin, akademik, rektor"),
+
+  body("organization")
+    .optional()
+    .isIn(["AKADEMIK", "REKTOR"])
+    .withMessage("Organization must be one of: AKADEMIK, REKTOR"),
+
+  body("isActive")
+    .optional()
+    .isBoolean()
+    .withMessage("isActive must be a boolean value"),
+];
+
+// Validation rules for user credentials
+export const validateUserCredentials = [
+  body("username")
+    .notEmpty()
+    .withMessage("Username is required")
+    .isLength({ min: 3, max: 50 })
+    .withMessage("Username must be between 3 and 50 characters")
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage(
+      "Username can only contain letters, numbers, hyphens, and underscores"
+    ),
+
+  body("password")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long")
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .withMessage(
+      "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+    ),
+];
+
+// Validation for organization parameter
+export const validateOrganizationParam = [
+  param("organization")
+    .isIn(["AKADEMIK", "REKTOR"])
+    .withMessage("Organization must be one of: AKADEMIK, REKTOR"),
+];

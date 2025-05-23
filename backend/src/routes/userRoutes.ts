@@ -1,446 +1,137 @@
-import { Request, Response } from "express";
-import { validationResult } from "express-validator";
-import { logger } from "../utils/logger";
+import { Router } from "express";
+import { authenticate, requireAdmin } from "../middleware/auth";
 import {
-  userService,
-  User,
-  UserCredentials,
-  Organization,
-  Role,
-} from "../services/userService";
+  validate,
+  validateUidParam,
+  validateUserCredentials,
+  validateCreateUser,
+  validateUpdateUser,
+  validateOrganizationParam,
+} from "../middleware/validation";
+import {
+  createUser,
+  getCurrentUser,
+  getUserById,
+  updateUser,
+  setUserCredentials,
+  removeUserCredentials,
+  getUsersByOrganization,
+  getActiveUsers,
+  activateUser,
+  deactivateUser,
+} from "../controllers/userController";
+
+const router = Router();
 
 /**
- * Create a new user
+ * @route   POST /api/users
+ * @desc    Create a new user
+ * @access  Admin only
  */
-export const createUser = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({
-        success: false,
-        error: "Validation failed",
-        details: errors.array(),
-      });
-      return;
-    }
-
-    const userData = req.body;
-
-    // Create user without credentials initially
-    const newUser: Omit<User, "createdAt" | "updatedAt"> = {
-      uid: userData.uid,
-      email: userData.email,
-      displayName: userData.displayName,
-      photoURL: userData.photoURL,
-      role: userData.role as Role,
-      organization: userData.organization as Organization,
-      isActive: userData.isActive !== undefined ? userData.isActive : true,
-    };
-
-    const user = await userService.createUser(newUser);
-
-    logger.info(`User ${user.uid} created successfully`);
-
-    res.status(201).json({
-      success: true,
-      data: {
-        message: "User created successfully",
-        user: user,
-      },
-    });
-  } catch (error) {
-    logger.error("Error creating user:", error);
-
-    if (error instanceof Error && error.message.includes("already exists")) {
-      res.status(409).json({
-        success: false,
-        error: "User with this UID already exists",
-      });
-      return;
-    }
-
-    res.status(500).json({
-      success: false,
-      error: "Failed to create user",
-    });
-  }
-};
+router.post(
+  "/",
+  authenticate,
+  requireAdmin,
+  validate(validateCreateUser),
+  createUser
+);
 
 /**
- * Get current user profile
+ * @route   GET /api/users/me
+ * @desc    Get current user profile
+ * @access  Private (authenticated users)
  */
-export const getCurrentUser = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const user = req.user!;
-
-    // Return user without credentials for security
-    const userProfile: User = {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName,
-      photoURL: user.photoURL,
-      role: user.role as Role,
-      organization: user.organization as Organization,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      isActive: user.isActive,
-    };
-
-    res.json({
-      success: true,
-      data: userProfile,
-    });
-  } catch (error) {
-    logger.error("Error getting current user:", error);
-    res.status(500).json({
-      success: false,
-      error: "Failed to get user profile",
-    });
-  }
-};
+router.get("/me", authenticate, getCurrentUser);
 
 /**
- * Get user by ID
+ * @route   GET /api/users/:uid
+ * @desc    Get user by ID
+ * @access  Private (authenticated users)
  */
-export const getUserById = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { uid } = req.params;
-
-    const user = await userService.getUserById(uid);
-
-    if (!user) {
-      res.status(404).json({
-        success: false,
-        error: "User not found",
-      });
-      return;
-    }
-
-    res.json({
-      success: true,
-      data: user,
-    });
-  } catch (error) {
-    logger.error("Error getting user by ID:", error);
-    res.status(500).json({
-      success: false,
-      error: "Failed to get user",
-    });
-  }
-};
+router.get("/:uid", authenticate, validate(validateUidParam), getUserById);
 
 /**
- * Update user profile
+ * @route   PUT /api/users/:uid
+ * @desc    Update user profile
+ * @access  Private (users can update own profile, admin can update any)
  */
-export const updateUser = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({
-        success: false,
-        error: "Validation failed",
-        details: errors.array(),
-      });
-      return;
-    }
-
-    const { uid } = req.params;
-    const updateData = req.body;
-    const currentUser = req.user!;
-
-    // Users can only update their own profile unless they're admin
-    if (currentUser.uid !== uid && currentUser.role !== "admin") {
-      res.status(403).json({
-        success: false,
-        error: "You can only update your own profile",
-      });
-      return;
-    }
-
-    // Only admins can change role and organization
-    if (currentUser.role !== "admin") {
-      delete updateData.role;
-      delete updateData.organization;
-      delete updateData.isActive;
-    }
-
-    const updatedUser = await userService.updateUser(uid, updateData);
-
-    logger.info(`User ${uid} updated successfully`);
-
-    res.json({
-      success: true,
-      data: {
-        message: "User updated successfully",
-        user: updatedUser,
-      },
-    });
-  } catch (error) {
-    logger.error("Error updating user:", error);
-
-    if (error instanceof Error && error.message.includes("not found")) {
-      res.status(404).json({
-        success: false,
-        error: "User not found",
-      });
-      return;
-    }
-
-    res.status(500).json({
-      success: false,
-      error: "Failed to update user",
-    });
-  }
-};
+router.put(
+  "/:uid",
+  authenticate,
+  validate(validateUidParam),
+  validate(validateUpdateUser),
+  updateUser
+);
 
 /**
- * Set user credentials (certificate and private key)
+ * @route   POST /api/users/:uid/credentials
+ * @desc    Set user credentials (fabric username/password)
+ * @access  Private (users can set own credentials, admin can set any)
  */
-export const setUserCredentials = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({
-        success: false,
-        error: "Validation failed",
-        details: errors.array(),
-      });
-      return;
-    }
-
-    const { uid } = req.params;
-    const { username, password } = req.body;
-    const currentUser = req.user!;
-
-    // Only admins can set credentials for other users
-    if (currentUser.uid !== uid && currentUser.role !== "admin") {
-      res.status(403).json({
-        success: false,
-        error: "You can only set credentials for your own account",
-      });
-      return;
-    }
-
-    const credentials: UserCredentials = {
-      username,
-      password,
-    };
-
-    await userService.setUserCredentials(uid, credentials);
-
-    logger.info(`Credentials set for user ${uid}`);
-
-    res.json({
-      success: true,
-      data: {
-        message: "User credentials set successfully",
-      },
-    });
-  } catch (error) {
-    logger.error("Error setting user credentials:", error);
-
-    if (error instanceof Error && error.message.includes("not found")) {
-      res.status(404).json({
-        success: false,
-        error: "User not found",
-      });
-      return;
-    }
-
-    res.status(500).json({
-      success: false,
-      error: "Failed to set user credentials",
-    });
-  }
-};
+router.post(
+  "/:uid/credentials",
+  authenticate,
+  validate(validateUidParam),
+  validate(validateUserCredentials),
+  setUserCredentials
+);
 
 /**
- * Remove user credentials
+ * @route   DELETE /api/users/:uid/credentials
+ * @desc    Remove user credentials
+ * @access  Private (users can remove own credentials, admin can remove any)
  */
-export const removeUserCredentials = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { uid } = req.params;
-    const currentUser = req.user!;
-
-    // Only admins can remove credentials for other users
-    if (currentUser.uid !== uid && currentUser.role !== "admin") {
-      res.status(403).json({
-        success: false,
-        error: "You can only remove credentials for your own account",
-      });
-      return;
-    }
-
-    await userService.removeUserCredentials(uid);
-
-    logger.info(`Credentials removed for user ${uid}`);
-
-    res.json({
-      success: true,
-      data: {
-        message: "User credentials removed successfully",
-      },
-    });
-  } catch (error) {
-    logger.error("Error removing user credentials:", error);
-    res.status(500).json({
-      success: false,
-      error: "Failed to remove user credentials",
-    });
-  }
-};
+router.delete(
+  "/:uid/credentials",
+  authenticate,
+  validate(validateUidParam),
+  removeUserCredentials
+);
 
 /**
- * Get users by organization (admin only)
+ * @route   GET /api/users/organization/:organization
+ * @desc    Get users by organization
+ * @access  Admin only
  */
-export const getUsersByOrganization = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { organization } = req.params;
-
-    if (!Object.values(Organization).includes(organization as Organization)) {
-      res.status(400).json({
-        success: false,
-        error: "Invalid organization",
-      });
-      return;
-    }
-
-    const users = await userService.getUsersByOrganization(
-      organization as Organization
-    );
-
-    res.json({
-      success: true,
-      data: users,
-    });
-  } catch (error) {
-    logger.error("Error getting users by organization:", error);
-    res.status(500).json({
-      success: false,
-      error: "Failed to get users",
-    });
-  }
-};
+router.get(
+  "/organization/:organization",
+  authenticate,
+  requireAdmin,
+  validate(validateOrganizationParam),
+  getUsersByOrganization
+);
 
 /**
- * Get active users (admin only)
+ * @route   GET /api/users/active
+ * @desc    Get all active users
+ * @access  Admin only
  */
-export const getActiveUsers = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const users = await userService.getActiveUsers();
-
-    res.json({
-      success: true,
-      data: users,
-    });
-  } catch (error) {
-    logger.error("Error getting active users:", error);
-    res.status(500).json({
-      success: false,
-      error: "Failed to get active users",
-    });
-  }
-};
+router.get("/active", authenticate, requireAdmin, getActiveUsers);
 
 /**
- * Activate user (admin only)
+ * @route   PUT /api/users/:uid/activate
+ * @desc    Activate user
+ * @access  Admin only
  */
-export const activateUser = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { uid } = req.params;
-
-    await userService.activateUser(uid);
-
-    logger.info(`User ${uid} activated`);
-
-    res.json({
-      success: true,
-      data: {
-        message: "User activated successfully",
-      },
-    });
-  } catch (error) {
-    logger.error("Error activating user:", error);
-
-    if (error instanceof Error && error.message.includes("not found")) {
-      res.status(404).json({
-        success: false,
-        error: "User not found",
-      });
-      return;
-    }
-
-    res.status(500).json({
-      success: false,
-      error: "Failed to activate user",
-    });
-  }
-};
+router.put(
+  "/:uid/activate",
+  authenticate,
+  requireAdmin,
+  validate(validateUidParam),
+  activateUser
+);
 
 /**
- * Deactivate user (admin only)
+ * @route   PUT /api/users/:uid/deactivate
+ * @desc    Deactivate user
+ * @access  Admin only
  */
-export const deactivateUser = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { uid } = req.params;
+router.put(
+  "/:uid/deactivate",
+  authenticate,
+  requireAdmin,
+  validate(validateUidParam),
+  deactivateUser
+);
 
-    await userService.deactivateUser(uid);
-
-    logger.info(`User ${uid} deactivated`);
-
-    res.json({
-      success: true,
-      data: {
-        message: "User deactivated successfully",
-      },
-    });
-  } catch (error) {
-    logger.error("Error deactivating user:", error);
-
-    if (error instanceof Error && error.message.includes("not found")) {
-      res.status(404).json({
-        success: false,
-        error: "User not found",
-      });
-      return;
-    }
-
-    res.status(500).json({
-      success: false,
-      error: "Failed to deactivate user",
-    });
-  }
-};
+export default router;
