@@ -11,7 +11,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import * as fs from "fs";
 import * as path from "path";
-import { IJAZAH_STATUS } from "../config/fabric";
+import { IJAZAH_STATUS } from "../configs/fabric";
 
 interface CertificateGenerationOptions {
   templatePath?: string;

@@ -1,4 +1,4 @@
-import { auth } from "../config/firebase";
+import { auth } from "../configs/firebase";
 import { logger } from "../utils/logger";
 import * as admin from "firebase-admin";
 

@@ -1,14 +1,14 @@
 import { Router } from "express";
 import multer from "multer";
 import { signatureController } from "../controllers/signatureController";
-import { authenticate, requireRektor } from "../middleware/auth";
+import { authenticate, requireRektor } from "../middlewares/auth";
 import {
   validate,
   validateIdParam,
   validateCreateSignature,
   validateUpdateSignature,
   validateUrl,
-} from "../middleware/validation";
+} from "../middlewares/validation";
 
 // Configure multer for signature file uploads
 const storage = multer.memoryStorage();

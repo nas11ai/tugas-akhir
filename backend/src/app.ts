@@ -5,7 +5,7 @@ import compression from "compression";
 import morgan from "morgan";
 import dotenv from "dotenv";
 import apiRoutes from "./routes";
-import { errorHandler, notFoundHandler } from "./middleware/error";
+import { errorHandler, notFoundHandler } from "./middlewares/error";
 import { logger } from "./utils/logger";
 
 // Load environment variables

@@ -5,10 +5,17 @@ import {
   akademikClient,
   rektorClient,
   setFabricAuthHeader,
-} from "../config/fabric";
+} from "../configs/fabric";
 import { Organization } from "../models/user";
 import dotenv from "dotenv";
-import { FabloEnrollResponse, FabloIdentitiesResponse, FabloIdentity, FabloInvokeRequest, FabloRegisterResponse, FabloResponse } from "../models/fablo";
+import {
+  FabloEnrollResponse,
+  FabloIdentitiesResponse,
+  FabloIdentity,
+  FabloInvokeRequest,
+  FabloRegisterResponse,
+  FabloResponse,
+} from "../models/fablo";
 
 dotenv.config();
 

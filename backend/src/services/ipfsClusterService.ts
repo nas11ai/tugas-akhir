@@ -1,5 +1,5 @@
 import FormData from "form-data";
-import { getClusterClient, getIpfsGatewayUrl } from "../config/ipfsCluster";
+import { getClusterClient, getIpfsGatewayUrl } from "../configs/ipfsCluster";
 import { logger } from "../utils/logger";
 
 /**

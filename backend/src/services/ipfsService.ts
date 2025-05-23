@@ -1,5 +1,5 @@
 import { logger } from "../utils/logger";
-import { getIpfsGatewayUrl } from "../config/ipfsCluster";
+import { getIpfsGatewayUrl } from "../configs/ipfsCluster";
 import { ipfsClusterService } from "./ipfsClusterService";
 
 /**

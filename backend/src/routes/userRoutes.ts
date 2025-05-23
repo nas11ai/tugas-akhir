@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticate, requireAdmin } from "../middleware/auth";
+import { authenticate, requireAdmin } from "../middlewares/auth";
 import {
   validate,
   validateUidParam,
@@ -7,7 +7,7 @@ import {
   validateCreateUser,
   validateUpdateUser,
   validateOrganizationParam,
-} from "../middleware/validation";
+} from "../middlewares/validation";
 import {
   createUser,
   getCurrentUser,

@@ -6,7 +6,7 @@ import {
   requireAdmin,
   requireAkademik,
   requireRektor,
-} from "../middleware/auth";
+} from "../middlewares/auth";
 import {
   validate,
   validateIdParam,
@@ -15,7 +15,7 @@ import {
   validateStatusUpdate,
   validateBulkIds,
   validateRejectionReason,
-} from "../middleware/validation";
+} from "../middlewares/validation";
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();

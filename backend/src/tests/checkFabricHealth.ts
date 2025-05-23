@@ -1,4 +1,4 @@
-import { checkFabricHealth } from "../config/fabric";
+import { checkFabricHealth } from "../configs/fabric";
 import { logger } from "../utils/logger";
 
 // Panggil fungsi health check

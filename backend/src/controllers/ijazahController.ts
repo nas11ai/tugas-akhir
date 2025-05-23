@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { validationResult } from "express-validator";
 import { fabricService } from "../services/fabricService";
-import { IJAZAH_STATUS } from "../config/fabric";
+import { IJAZAH_STATUS } from "../configs/fabric";
 import { logger } from "../utils/logger";
 import { Organization } from "../models/user";
 import { IjazahInput } from "../models/ijazah";

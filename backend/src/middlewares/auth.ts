@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { auth, db } from "../config/firebase";
+import { auth, db } from "../configs/firebase";
 import { logger } from "../utils/logger";
 
 // Extend Request interface to include user and token
