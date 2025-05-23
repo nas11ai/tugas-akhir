@@ -1,7 +1,64 @@
-import { body } from "express-validator";
+import { Request, Response, NextFunction } from "express";
+import {
+  ValidationChain,
+  validationResult,
+  param,
+  body,
+} from "express-validator";
 
 /**
- * Validation rules for creating ijazah certificate
+ * Middleware to handle validation results
+ */
+export const validate = (validations: ValidationChain[]) => {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    // Run all validations
+    for (const validation of validations) {
+      await validation.run(req);
+    }
+
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({
+        success: false,
+        message: "Validation error",
+        errors: errors.array(),
+      });
+      return;
+    }
+
+    next();
+  };
+};
+
+/**
+ * Validate ID parameter
+ */
+export const validateIdParam = [
+  param("id")
+    .notEmpty()
+    .withMessage("ID parameter is required")
+    .isLength({ min: 1, max: 128 })
+    .withMessage("ID must be between 1 and 128 characters"),
+];
+
+/**
+ * Validate UID parameter
+ */
+export const validateUidParam = [
+  param("uid")
+    .notEmpty()
+    .withMessage("UID parameter is required")
+    .isLength({ min: 1, max: 128 })
+    .withMessage("UID must be between 1 and 128 characters"),
+];
+
+/**
+ * Validation rules for creating ijazah
  */
 export const validateCreateIjazah = [
   body("nomorDokumen")
@@ -31,15 +88,14 @@ export const validateCreateIjazah = [
     .notEmpty()
     .withMessage("Tanggal lahir is required")
     .isISO8601()
-    .withMessage("Tanggal lahir must be a valid ISO date"),
+    .withMessage("Tanggal lahir must be a valid date"),
 
   body("nomorIndukKependudukan")
-    .notEmpty()
-    .withMessage("Nomor induk kependudukan is required")
+    .optional()
     .isLength({ min: 16, max: 16 })
-    .withMessage("Nomor induk kependudukan must be exactly 16 characters")
+    .withMessage("NIK must be exactly 16 characters")
     .isNumeric()
-    .withMessage("Nomor induk kependudukan must contain only numbers"),
+    .withMessage("NIK must contain only numbers"),
 
   body("programStudi")
     .notEmpty()
@@ -57,87 +113,63 @@ export const validateCreateIjazah = [
     .notEmpty()
     .withMessage("Tahun diterima is required")
     .isLength({ min: 4, max: 4 })
-    .withMessage("Tahun diterima must be exactly 4 characters")
+    .withMessage("Tahun diterima must be 4 characters")
     .isNumeric()
-    .withMessage("Tahun diterima must be a valid year"),
+    .withMessage("Tahun diterima must be a number"),
 
   body("nomorIndukMahasiswa")
     .notEmpty()
-    .withMessage("Nomor induk mahasiswa is required")
+    .withMessage("NIM is required")
     .isLength({ min: 1, max: 50 })
-    .withMessage("Nomor induk mahasiswa must be between 1 and 50 characters"),
+    .withMessage("NIM must be between 1 and 50 characters"),
 
   body("tanggalLulus")
     .notEmpty()
     .withMessage("Tanggal lulus is required")
     .isISO8601()
-    .withMessage("Tanggal lulus must be a valid ISO date"),
+    .withMessage("Tanggal lulus must be a valid date"),
 
   body("jenisPendidikan")
     .notEmpty()
     .withMessage("Jenis pendidikan is required")
-    .isLength({ min: 1, max: 100 })
-    .withMessage("Jenis pendidikan must be between 1 and 100 characters"),
+    .isIn(["D3", "D4", "S1", "S2", "S3"])
+    .withMessage("Jenis pendidikan must be one of: D3, D4, S1, S2, S3"),
 
   body("gelarPendidikan")
     .notEmpty()
     .withMessage("Gelar pendidikan is required")
-    .isLength({ min: 1, max: 100 })
-    .withMessage("Gelar pendidikan must be between 1 and 100 characters"),
+    .isLength({ min: 1, max: 50 })
+    .withMessage("Gelar pendidikan must be between 1 and 50 characters"),
 
   body("akreditasiProgramStudi")
-    .notEmpty()
-    .withMessage("Akreditasi program studi is required")
-    .isIn(["A", "B", "C", "Unggul", "Baik Sekali", "Baik"])
+    .optional()
+    .isIn(["A", "B", "C", "Baik Sekali", "Baik", "Unggul"])
     .withMessage(
-      "Akreditasi program studi must be one of: A, B, C, Unggul, Baik Sekali, Baik"
+      "Akreditasi must be one of: A, B, C, Baik Sekali, Baik, Unggul"
     ),
 
   body("keputusanAkreditasiProgramStudi")
-    .notEmpty()
-    .withMessage("Keputusan akreditasi program studi is required")
-    .isLength({ min: 1, max: 200 })
-    .withMessage(
-      "Keputusan akreditasi program studi must be between 1 and 200 characters"
-    ),
+    .optional()
+    .isLength({ max: 200 })
+    .withMessage("Keputusan akreditasi must not exceed 200 characters"),
 
   body("tempatIjazahDiberikan")
     .notEmpty()
     .withMessage("Tempat ijazah diberikan is required")
-    .isLength({ min: 1, max: 200 })
+    .isLength({ min: 1, max: 100 })
     .withMessage(
-      "Tempat ijazah diberikan must be between 1 and 200 characters"
+      "Tempat ijazah diberikan must be between 1 and 100 characters"
     ),
 
   body("tanggalIjazahDiberikan")
     .notEmpty()
     .withMessage("Tanggal ijazah diberikan is required")
     .isISO8601()
-    .withMessage("Tanggal ijazah diberikan must be a valid ISO date"),
-
-  body("ipfsCID")
-    .optional()
-    .isLength({ min: 1, max: 100 })
-    .withMessage("IPFS CID must be between 1 and 100 characters"),
-
-  body("signatureID")
-    .optional()
-    .isLength({ min: 1, max: 100 })
-    .withMessage("Signature ID must be between 1 and 100 characters"),
-
-  body("photoCID")
-    .optional()
-    .isLength({ min: 1, max: 100 })
-    .withMessage("Photo CID must be between 1 and 100 characters"),
-
-  body("Status")
-    .optional()
-    .isIn(["ACTIVE", "INACTIVE", "REVOKED"])
-    .withMessage("Status must be one of: ACTIVE, INACTIVE, REVOKED"),
+    .withMessage("Tanggal ijazah diberikan must be a valid date"),
 ];
 
 /**
- * Validation rules for updating ijazah certificate
+ * Validation rules for updating ijazah
  */
 export const validateUpdateIjazah = [
   body("nomorDokumen")
@@ -163,14 +195,14 @@ export const validateUpdateIjazah = [
   body("tanggalLahir")
     .optional()
     .isISO8601()
-    .withMessage("Tanggal lahir must be a valid ISO date"),
+    .withMessage("Tanggal lahir must be a valid date"),
 
   body("nomorIndukKependudukan")
     .optional()
     .isLength({ min: 16, max: 16 })
-    .withMessage("Nomor induk kependudukan must be exactly 16 characters")
+    .withMessage("NIK must be exactly 16 characters")
     .isNumeric()
-    .withMessage("Nomor induk kependudukan must contain only numbers"),
+    .withMessage("NIK must contain only numbers"),
 
   body("programStudi")
     .optional()
@@ -185,75 +217,53 @@ export const validateUpdateIjazah = [
   body("tahunDiterima")
     .optional()
     .isLength({ min: 4, max: 4 })
-    .withMessage("Tahun diterima must be exactly 4 characters")
+    .withMessage("Tahun diterima must be 4 characters")
     .isNumeric()
-    .withMessage("Tahun diterima must be a valid year"),
+    .withMessage("Tahun diterima must be a number"),
 
   body("nomorIndukMahasiswa")
     .optional()
     .isLength({ min: 1, max: 50 })
-    .withMessage("Nomor induk mahasiswa must be between 1 and 50 characters"),
+    .withMessage("NIM must be between 1 and 50 characters"),
 
   body("tanggalLulus")
     .optional()
     .isISO8601()
-    .withMessage("Tanggal lulus must be a valid ISO date"),
+    .withMessage("Tanggal lulus must be a valid date"),
 
   body("jenisPendidikan")
     .optional()
-    .isLength({ min: 1, max: 100 })
-    .withMessage("Jenis pendidikan must be between 1 and 100 characters"),
+    .isIn(["D3", "D4", "S1", "S2", "S3"])
+    .withMessage("Jenis pendidikan must be one of: D3, D4, S1, S2, S3"),
 
   body("gelarPendidikan")
     .optional()
-    .isLength({ min: 1, max: 100 })
-    .withMessage("Gelar pendidikan must be between 1 and 100 characters"),
+    .isLength({ min: 1, max: 50 })
+    .withMessage("Gelar pendidikan must be between 1 and 50 characters"),
 
   body("akreditasiProgramStudi")
     .optional()
-    .isIn(["A", "B", "C", "Unggul", "Baik Sekali", "Baik"])
+    .isIn(["A", "B", "C", "Baik Sekali", "Baik", "Unggul"])
     .withMessage(
-      "Akreditasi program studi must be one of: A, B, C, Unggul, Baik Sekali, Baik"
+      "Akreditasi must be one of: A, B, C, Baik Sekali, Baik, Unggul"
     ),
 
   body("keputusanAkreditasiProgramStudi")
     .optional()
-    .isLength({ min: 1, max: 200 })
-    .withMessage(
-      "Keputusan akreditasi program studi must be between 1 and 200 characters"
-    ),
+    .isLength({ max: 200 })
+    .withMessage("Keputusan akreditasi must not exceed 200 characters"),
 
   body("tempatIjazahDiberikan")
     .optional()
-    .isLength({ min: 1, max: 200 })
+    .isLength({ min: 1, max: 100 })
     .withMessage(
-      "Tempat ijazah diberikan must be between 1 and 200 characters"
+      "Tempat ijazah diberikan must be between 1 and 100 characters"
     ),
 
   body("tanggalIjazahDiberikan")
     .optional()
     .isISO8601()
-    .withMessage("Tanggal ijazah diberikan must be a valid ISO date"),
-
-  body("ipfsCID")
-    .optional()
-    .isLength({ min: 1, max: 100 })
-    .withMessage("IPFS CID must be between 1 and 100 characters"),
-
-  body("signatureID")
-    .optional()
-    .isLength({ min: 1, max: 100 })
-    .withMessage("Signature ID must be between 1 and 100 characters"),
-
-  body("photoCID")
-    .optional()
-    .isLength({ min: 1, max: 100 })
-    .withMessage("Photo CID must be between 1 and 100 characters"),
-
-  body("Status")
-    .optional()
-    .isIn(["ACTIVE", "INACTIVE", "REVOKED"])
-    .withMessage("Status must be one of: ACTIVE, INACTIVE, REVOKED"),
+    .withMessage("Tanggal ijazah diberikan must be a valid date"),
 ];
 
 /**
@@ -264,13 +274,17 @@ export const validateCreateSignature = [
     .notEmpty()
     .withMessage("Signature ID is required")
     .isLength({ min: 1, max: 100 })
-    .withMessage("Signature ID must be between 1 and 100 characters"),
+    .withMessage("Signature ID must be between 1 and 100 characters")
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage(
+      "Signature ID can only contain letters, numbers, hyphens, and underscores"
+    ),
 
   body("URL")
     .notEmpty()
     .withMessage("Signature URL is required")
     .isURL()
-    .withMessage("URL must be a valid URL"),
+    .withMessage("Signature URL must be a valid URL"),
 
   body("IsActive")
     .optional()
@@ -282,65 +296,66 @@ export const validateCreateSignature = [
  * Validation rules for updating signature
  */
 export const validateUpdateSignature = [
-  body("URL").optional().isURL().withMessage("URL must be a valid URL"),
+  body("URL")
+    .optional()
+    .isURL()
+    .withMessage("Signature URL must be a valid URL"),
 
   body("IsActive")
     .optional()
     .isBoolean()
     .withMessage("IsActive must be a boolean value"),
 ];
-import { Request, Response, NextFunction } from "express";
-import { validationResult, ValidationChain } from "express-validator";
-import { AppError } from "./error";
 
 /**
- * Middleware to validate request data using express-validator
- * @param validations Array of validation chains
- * @returns Middleware function
+ * Validation rules for status update
  */
-export const validate = (validations: ValidationChain[]) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    // Execute all validations
-    await Promise.all(validations.map((validation) => validation.run(req)));
-
-    // Get validation errors
-    const errors = validationResult(req);
-
-    // If no errors, continue
-    if (errors.isEmpty()) {
-      return next();
-    }
-
-    // Format errors for better readability
-    const extractedErrors: { [key: string]: string } = {};
-    errors.array().forEach((err) => {
-      if (err.type === "field" && err.path && err.msg) {
-        extractedErrors[err.path] = err.msg;
-      }
-    });
-
-    // Return error response
-    return res.status(400).json({
-      success: false,
-      message: "Validation error",
-      errors: extractedErrors,
-    });
-  };
-};
+export const validateStatusUpdate = [
+  body("status")
+    .notEmpty()
+    .withMessage("Status is required")
+    .isIn([
+      "menunggu tanda tangan rektor",
+      "disetujui rektor",
+      "ditolak rektor",
+      "aktif",
+      "dicabut",
+    ])
+    .withMessage("Invalid status value"),
+];
 
 /**
- * Middleware to validate request ID parameter
+ * Validation rules for bulk operations
  */
-export const validateIdParam = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const { id } = req.params;
+export const validateBulkIds = [
+  body("ijazahIds")
+    .isArray({ min: 1 })
+    .withMessage("ijazahIds must be a non-empty array"),
 
-  if (!id || id.trim() === "") {
-    return next(new AppError("ID parameter is required", 400));
-  }
+  body("ijazahIds.*")
+    .notEmpty()
+    .withMessage("Each ijazah ID must not be empty")
+    .isLength({ min: 1, max: 128 })
+    .withMessage("Each ijazah ID must be between 1 and 128 characters"),
+];
 
-  next();
-};
+/**
+ * Validation rules for rejection reason
+ */
+export const validateRejectionReason = [
+  body("rejectionReason")
+    .optional()
+    .isLength({ min: 1, max: 500 })
+    .withMessage("Rejection reason must be between 1 and 500 characters"),
+];
+
+/**
+ * Validation rules for URL validation
+ */
+export const validateUrl = [
+  body("url")
+    .notEmpty()
+    .withMessage("URL is required")
+    .isURL()
+    .withMessage("Must be a valid URL"),
+];
