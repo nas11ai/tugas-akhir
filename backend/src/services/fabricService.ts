@@ -60,6 +60,7 @@ export class FabricService {
   private async generateCertificatePDF(
     ijazahData: IjazahInput,
     photoBuffer?: Buffer,
+    signatureBuffer?: Buffer,
     signatureUrl?: string,
     options: CertificateGenerationOptions = {}
   ): Promise<Buffer> {
@@ -73,31 +74,61 @@ export class FabricService {
       logger.info(`Generating certificate PDF for ${ijazahData.nama}`);
 
       // For now, we'll create a simple text-based representation
-      // Replace this with actual PDF generation logic
+      // In production, this would involve:
+      // 1. Loading the PDF template
+      // 2. Positioning data at specific coordinates
+      // 3. Adding photo at designated position
+      // 4. Adding signature at rector signature position
+
+      const hasSignature = signatureBuffer || signatureUrl;
+      const signatureStatus = hasSignature
+        ? "[TANDA TANGAN REKTOR TERPASANG]"
+        : "[MENUNGGU TANDA TANGAN]";
+
       const certificateContent = `
+UNIVERSITAS CONTOH
 SERTIFIKAT IJAZAH
 ================
 
 Nomor Dokumen: ${ijazahData.nomorDokumen}
 Nomor Ijazah Nasional: ${ijazahData.nomorIjazahNasional}
+
+DENGAN INI MENYATAKAN BAHWA:
+
 Nama: ${ijazahData.nama}
-Tempat Lahir: ${ijazahData.tempatLahir || "N/A"}
-Tanggal Lahir: ${ijazahData.tanggalLahir}
+Tempat/Tanggal Lahir: ${ijazahData.tempatLahir || "N/A"}, ${
+        ijazahData.tanggalLahir
+      }
 NIK: ${ijazahData.nomorIndukKependudukan}
+NIM: ${ijazahData.nomorIndukMahasiswa}
+
+TELAH MENYELESAIKAN STUDI DAN BERHAK MENYANDANG GELAR:
+
 Program Studi: ${ijazahData.programStudi}
 Fakultas: ${ijazahData.fakultas}
-Tahun Diterima: ${ijazahData.tahunDiterima}
-NIM: ${ijazahData.nomorIndukMahasiswa}
-Tanggal Lulus: ${ijazahData.tanggalLulus}
 Jenis Pendidikan: ${ijazahData.jenisPendidikan}
 Gelar: ${ijazahData.gelarPendidikan}
-Akreditasi: ${ijazahData.akreditasiProgramStudi}
-Keputusan Akreditasi: ${ijazahData.keputusanAkreditasiProgramStudi}
-Tempat Diberikan: ${ijazahData.tempatIjazahDiberikan}
-Tanggal Diberikan: ${ijazahData.tanggalIjazahDiberikan}
 
-${photoBuffer ? "[FOTO MAHASISWA ATTACHED]" : "[NO PHOTO]"}
-${signatureUrl ? "[TANDA TANGAN REKTOR ATTACHED]" : "[MENUNGGU TANDA TANGAN]"}
+Tahun Diterima: ${ijazahData.tahunDiterima}
+Tanggal Lulus: ${ijazahData.tanggalLulus}
+
+Akreditasi Program Studi: ${ijazahData.akreditasiProgramStudi}
+Keputusan Akreditasi: ${ijazahData.keputusanAkreditasiProgramStudi}
+
+Diberikan di: ${ijazahData.tempatIjazahDiberikan}
+Tanggal: ${ijazahData.tanggalIjazahDiberikan}
+
+[POSISI FOTO MAHASISWA]
+${photoBuffer ? "[FOTO MAHASISWA - TERPASANG]" : "[FOTO MAHASISWA - TIDAK ADA]"}
+
+[POSISI TANDA TANGAN REKTOR]
+${signatureStatus}
+
+---
+Generated at: ${new Date().toISOString()}
+
+NOTE: This is a template placeholder. In production, this would be a proper PDF 
+with positioned elements at exact coordinates matching the official template.
       `;
 
       // Convert text to buffer (in real implementation, this would be actual PDF)
@@ -265,9 +296,13 @@ ${signatureUrl ? "[TANDA TANGAN REKTOR ATTACHED]" : "[MENUNGGU TANDA TANGAN]"}
       // Generate updated certificate PDF
       logger.info("Generating updated certificate PDF...");
 
-      // Get signature URL if exists
+      // Get signature data if exists and is approved
+      let signatureBuffer: Buffer | undefined;
       let signatureUrl: string | undefined;
-      if (existingIjazah.signatureID) {
+      if (
+        existingIjazah.signatureID &&
+        existingIjazah.Status === IJAZAH_STATUS.DISETUJUI
+      ) {
         try {
           const signatureStr = await fabloService.queryChaincode(
             organization,
@@ -279,6 +314,24 @@ ${signatureUrl ? "[TANDA TANGAN REKTOR ATTACHED]" : "[MENUNGGU TANDA TANGAN]"}
           );
           const signature: Signature = JSON.parse(signatureStr);
           signatureUrl = signature.URL;
+
+          // Download signature file for PDF generation
+          if (signatureUrl) {
+            try {
+              const fetch = require("node-fetch");
+              const signatureResponse = await fetch(signatureUrl);
+              if (signatureResponse.ok) {
+                signatureBuffer = Buffer.from(
+                  await signatureResponse.arrayBuffer()
+                );
+              }
+            } catch (downloadError) {
+              logger.warn(
+                `Failed to download signature from ${signatureUrl}:`,
+                downloadError
+              );
+            }
+          }
         } catch (error) {
           logger.warn(
             `Failed to get signature for ID: ${existingIjazah.signatureID}`,
@@ -290,6 +343,7 @@ ${signatureUrl ? "[TANDA TANGAN REKTOR ATTACHED]" : "[MENUNGGU TANDA TANGAN]"}
       const certificatePDF = await this.generateCertificatePDF(
         updatedData,
         photoFile,
+        signatureBuffer,
         signatureUrl
       );
 
@@ -344,6 +398,474 @@ ${signatureUrl ? "[TANDA TANGAN REKTOR ATTACHED]" : "[MENUNGGU TANDA TANGAN]"}
       return JSON.parse(blockchainResult);
     } catch (error) {
       logger.error("Error updating ijazah certificate:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Approve ijazah certificate with rector signature (REKTOR only)
+   */
+  async approveIjazah(
+    organization: Organization,
+    userToken: string,
+    ijazahId: string,
+    signatureId?: string
+  ): Promise<Ijazah> {
+    try {
+      // Validate access
+      this.validateRektorAccess(organization);
+
+      logger.info(`Approving ijazah certificate with ID: ${ijazahId}`);
+
+      // Get existing ijazah from blockchain
+      const existingIjazahStr = await fabloService.queryChaincode(
+        organization,
+        userToken,
+        {
+          method: "ReadIjazah",
+          args: [ijazahId],
+        }
+      );
+
+      const existingIjazah: Ijazah = JSON.parse(existingIjazahStr);
+
+      // Check if ijazah is in correct status for approval
+      if (existingIjazah.Status !== IJAZAH_STATUS.MENUNGGU_TTD) {
+        throw new Error(
+          `Cannot approve ijazah with status: ${existingIjazah.Status}`
+        );
+      }
+
+      // Get active signature if no specific signature provided
+      let activeSignature: Signature;
+      if (signatureId) {
+        const signatureStr = await fabloService.queryChaincode(
+          organization,
+          userToken,
+          {
+            method: "ReadSignature",
+            args: [signatureId],
+          }
+        );
+        activeSignature = JSON.parse(signatureStr);
+      } else {
+        const activeSignatureStr = await fabloService.queryChaincode(
+          organization,
+          userToken,
+          {
+            method: "GetActiveSignature",
+            args: [],
+          }
+        );
+        activeSignature = JSON.parse(activeSignatureStr);
+      }
+
+      if (!activeSignature) {
+        throw new Error("No active signature found for approval");
+      }
+
+      logger.info(`Using signature: ${activeSignature.ID} for approval`);
+
+      // Download signature file for PDF generation
+      let signatureBuffer: Buffer | undefined;
+      try {
+        const fetch = require("node-fetch");
+        const signatureResponse = await fetch(activeSignature.URL);
+        if (signatureResponse.ok) {
+          signatureBuffer = Buffer.from(await signatureResponse.arrayBuffer());
+          logger.info("Signature file downloaded successfully");
+        } else {
+          logger.warn(
+            `Failed to download signature file: HTTP ${signatureResponse.status}`
+          );
+        }
+      } catch (downloadError) {
+        logger.warn(
+          `Failed to download signature from ${activeSignature.URL}:`,
+          downloadError
+        );
+      }
+
+      // Get photo if exists
+      let photoBuffer: Buffer | undefined;
+      if (existingIjazah.photoCID) {
+        try {
+          const fetch = require("node-fetch");
+          const photoUrl = fabricService.getPhotoDownloadUrl(
+            existingIjazah.photoCID
+          );
+          if (photoUrl) {
+            const photoResponse = await fetch(photoUrl);
+            if (photoResponse.ok) {
+              photoBuffer = Buffer.from(await photoResponse.arrayBuffer());
+            }
+          }
+        } catch (downloadError) {
+          logger.warn(`Failed to download photo for approval:`, downloadError);
+        }
+      }
+
+      // Generate new certificate PDF with signature
+      logger.info("Generating approved certificate PDF with signature...");
+      const approvedCertificatePDF = await this.generateCertificatePDF(
+        existingIjazah,
+        photoBuffer,
+        signatureBuffer,
+        activeSignature.URL
+      );
+
+      // Unpin old certificate
+      if (existingIjazah.ipfsCID) {
+        try {
+          await ipfsClusterService.unpin(existingIjazah.ipfsCID);
+        } catch (error) {
+          logger.warn(
+            `Failed to unpin old certificate CID: ${existingIjazah.ipfsCID}`,
+            error
+          );
+        }
+      }
+
+      // Upload new approved certificate PDF to IPFS
+      logger.info("Uploading approved certificate PDF to IPFS...");
+      const certificateResult = await ipfsClusterService.add(
+        approvedCertificatePDF,
+        {
+          filename: `${ijazahId}_certificate_approved.pdf`,
+          local: false,
+        }
+      );
+
+      // Pin the approved certificate
+      await ipfsClusterService.pin(certificateResult.cid);
+      logger.info(
+        `Approved certificate PDF uploaded and pinned with CID: ${certificateResult.cid}`
+      );
+
+      // Update ijazah data with signature and new status
+      const approvedIjazah: Ijazah = {
+        ...existingIjazah,
+        ipfsCID: certificateResult.cid,
+        signatureID: activeSignature.ID,
+        Status: IJAZAH_STATUS.DISETUJUI,
+        UpdatedAt: new Date().toISOString(),
+      };
+
+      // Update in blockchain via chaincode
+      logger.info("Updating approved ijazah data in blockchain...");
+      const blockchainResult = await fabloService.invokeChaincode(
+        organization,
+        userToken,
+        {
+          method: "UpdateIjazah",
+          args: [JSON.stringify(approvedIjazah)],
+        }
+      );
+
+      logger.info(
+        `Ijazah certificate approved successfully with ID: ${ijazahId}`
+      );
+      return JSON.parse(blockchainResult);
+    } catch (error) {
+      logger.error("Error approving ijazah certificate:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reject ijazah certificate (REKTOR only)
+   */
+  async rejectIjazah(
+    organization: Organization,
+    userToken: string,
+    ijazahId: string,
+    rejectionReason?: string
+  ): Promise<Ijazah> {
+    try {
+      // Validate access
+      this.validateRektorAccess(organization);
+
+      logger.info(`Rejecting ijazah certificate with ID: ${ijazahId}`);
+
+      // Get existing ijazah from blockchain
+      const existingIjazahStr = await fabloService.queryChaincode(
+        organization,
+        userToken,
+        {
+          method: "ReadIjazah",
+          args: [ijazahId],
+        }
+      );
+
+      const existingIjazah: Ijazah = JSON.parse(existingIjazahStr);
+
+      // Check if ijazah is in correct status for rejection
+      if (existingIjazah.Status !== IJAZAH_STATUS.MENUNGGU_TTD) {
+        throw new Error(
+          `Cannot reject ijazah with status: ${existingIjazah.Status}`
+        );
+      }
+
+      // Update ijazah status to rejected
+      const rejectedIjazah: Ijazah = {
+        ...existingIjazah,
+        Status: IJAZAH_STATUS.DITOLAK,
+        UpdatedAt: new Date().toISOString(),
+        // Add rejection reason if provided (you might want to add this field to the model)
+        ...(rejectionReason && { rejectionReason }),
+      };
+
+      // Update in blockchain via chaincode
+      logger.info("Updating rejected ijazah status in blockchain...");
+      const blockchainResult = await fabloService.invokeChaincode(
+        organization,
+        userToken,
+        {
+          method: "UpdateIjazah",
+          args: [JSON.stringify(rejectedIjazah)],
+        }
+      );
+
+      logger.info(
+        `Ijazah certificate rejected successfully with ID: ${ijazahId}`
+      );
+      return JSON.parse(blockchainResult);
+    } catch (error) {
+      logger.error("Error rejecting ijazah certificate:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Activate approved ijazah certificate (REKTOR only)
+   * Changes status from "disetujui rektor" to "aktif"
+   */
+  async activateIjazah(
+    organization: Organization,
+    userToken: string,
+    ijazahId: string
+  ): Promise<Ijazah> {
+    try {
+      // Validate access
+      this.validateRektorAccess(organization);
+
+      logger.info(`Activating ijazah certificate with ID: ${ijazahId}`);
+
+      // Get existing ijazah from blockchain
+      const existingIjazahStr = await fabloService.queryChaincode(
+        organization,
+        userToken,
+        {
+          method: "ReadIjazah",
+          args: [ijazahId],
+        }
+      );
+
+      const existingIjazah: Ijazah = JSON.parse(existingIjazahStr);
+
+      // Check if ijazah is in correct status for activation
+      if (existingIjazah.Status !== IJAZAH_STATUS.DISETUJUI) {
+        throw new Error(
+          `Cannot activate ijazah with status: ${existingIjazah.Status}. Must be 'disetujui rektor' first.`
+        );
+      }
+
+      // Update ijazah status to active
+      const activatedIjazah: Ijazah = {
+        ...existingIjazah,
+        Status: IJAZAH_STATUS.AKTIF,
+        UpdatedAt: new Date().toISOString(),
+      };
+
+      // Update in blockchain via chaincode
+      logger.info("Updating activated ijazah status in blockchain...");
+      const blockchainResult = await fabloService.invokeChaincode(
+        organization,
+        userToken,
+        {
+          method: "UpdateIjazah",
+          args: [JSON.stringify(activatedIjazah)],
+        }
+      );
+
+      logger.info(
+        `Ijazah certificate activated successfully with ID: ${ijazahId}`
+      );
+      return JSON.parse(blockchainResult);
+    } catch (error) {
+      logger.error("Error activating ijazah certificate:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Regenerate certificate PDF with current signature (REKTOR only)
+   * Useful when signature is updated and certificates need to be regenerated
+   */
+  async regenerateCertificateWithSignature(
+    organization: Organization,
+    userToken: string,
+    ijazahId: string,
+    signatureId?: string
+  ): Promise<Ijazah> {
+    try {
+      // Validate access
+      this.validateRektorAccess(organization);
+
+      logger.info(
+        `Regenerating certificate with signature for ID: ${ijazahId}`
+      );
+
+      // Get existing ijazah from blockchain
+      const existingIjazahStr = await fabloService.queryChaincode(
+        organization,
+        userToken,
+        {
+          method: "ReadIjazah",
+          args: [ijazahId],
+        }
+      );
+
+      const existingIjazah: Ijazah = JSON.parse(existingIjazahStr);
+
+      // Can only regenerate approved or active certificates
+      if (
+        ![IJAZAH_STATUS.DISETUJUI, IJAZAH_STATUS.AKTIF].includes(
+          existingIjazah.Status as any
+        )
+      ) {
+        throw new Error(
+          `Cannot regenerate certificate with status: ${existingIjazah.Status}`
+        );
+      }
+
+      // Get signature to use
+      let targetSignature: Signature;
+      if (signatureId) {
+        const signatureStr = await fabloService.queryChaincode(
+          organization,
+          userToken,
+          {
+            method: "ReadSignature",
+            args: [signatureId],
+          }
+        );
+        targetSignature = JSON.parse(signatureStr);
+      } else if (existingIjazah.signatureID) {
+        const signatureStr = await fabloService.queryChaincode(
+          organization,
+          userToken,
+          {
+            method: "ReadSignature",
+            args: [existingIjazah.signatureID],
+          }
+        );
+        targetSignature = JSON.parse(signatureStr);
+      } else {
+        const activeSignatureStr = await fabloService.queryChaincode(
+          organization,
+          userToken,
+          {
+            method: "GetActiveSignature",
+            args: [],
+          }
+        );
+        targetSignature = JSON.parse(activeSignatureStr);
+      }
+
+      // Download signature and photo files
+      let signatureBuffer: Buffer | undefined;
+      let photoBuffer: Buffer | undefined;
+
+      // Download signature
+      try {
+        const fetch = require("node-fetch");
+        const signatureResponse = await fetch(targetSignature.URL);
+        if (signatureResponse.ok) {
+          signatureBuffer = Buffer.from(await signatureResponse.arrayBuffer());
+        }
+      } catch (error) {
+        logger.warn(`Failed to download signature:`, error);
+      }
+
+      // Download photo if exists
+      if (existingIjazah.photoCID) {
+        try {
+          const fetch = require("node-fetch");
+          const photoUrl = fabricService.getPhotoDownloadUrl(
+            existingIjazah.photoCID
+          );
+          if (photoUrl) {
+            const photoResponse = await fetch(photoUrl);
+            if (photoResponse.ok) {
+              photoBuffer = Buffer.from(await photoResponse.arrayBuffer());
+            }
+          }
+        } catch (error) {
+          logger.warn(`Failed to download photo:`, error);
+        }
+      }
+
+      // Generate new certificate PDF
+      logger.info("Regenerating certificate PDF with updated signature...");
+      const regeneratedCertificatePDF = await this.generateCertificatePDF(
+        existingIjazah,
+        photoBuffer,
+        signatureBuffer,
+        targetSignature.URL
+      );
+
+      // Unpin old certificate
+      if (existingIjazah.ipfsCID) {
+        try {
+          await ipfsClusterService.unpin(existingIjazah.ipfsCID);
+        } catch (error) {
+          logger.warn(
+            `Failed to unpin old certificate CID: ${existingIjazah.ipfsCID}`,
+            error
+          );
+        }
+      }
+
+      // Upload new certificate PDF to IPFS
+      logger.info("Uploading regenerated certificate PDF to IPFS...");
+      const certificateResult = await ipfsClusterService.add(
+        regeneratedCertificatePDF,
+        {
+          filename: `${ijazahId}_certificate_regenerated.pdf`,
+          local: false,
+        }
+      );
+
+      // Pin the regenerated certificate
+      await ipfsClusterService.pin(certificateResult.cid);
+      logger.info(
+        `Regenerated certificate PDF uploaded and pinned with CID: ${certificateResult.cid}`
+      );
+
+      // Update ijazah data
+      const regeneratedIjazah: Ijazah = {
+        ...existingIjazah,
+        ipfsCID: certificateResult.cid,
+        signatureID: targetSignature.ID,
+        UpdatedAt: new Date().toISOString(),
+      };
+
+      // Update in blockchain via chaincode
+      logger.info("Updating regenerated ijazah data in blockchain...");
+      const blockchainResult = await fabloService.invokeChaincode(
+        organization,
+        userToken,
+        {
+          method: "UpdateIjazah",
+          args: [JSON.stringify(regeneratedIjazah)],
+        }
+      );
+
+      logger.info(`Certificate regenerated successfully with ID: ${ijazahId}`);
+      return JSON.parse(blockchainResult);
+    } catch (error) {
+      logger.error("Error regenerating certificate:", error);
       throw error;
     }
   }
