@@ -736,6 +736,624 @@ export class IjazahController {
   }
 
   /**
+   * Validate ijazah certificate for public verification
+   * GET /api/ijazah/:id/validate
+   * Access: Public (no authentication required)
+   */
+  async validateIjazah(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { fabloService } = require("../services/fabloService");
+
+      logger.info(`Public validation request for ijazah ID: ${id}`);
+
+      // Use admin credentials for public validation
+      const userOrganization = Organization.AKADEMIK;
+      const adminUsername = process.env.ADMIN_USERNAME || "admin";
+      const adminPassword = process.env.ADMIN_PASSWORD || "adminpw";
+
+      let userToken: string;
+      try {
+        userToken = await fabloService.enrollUser(
+          userOrganization,
+          adminUsername,
+          adminPassword
+        );
+      } catch (enrollError) {
+        logger.error("Failed to get admin token for validation:", enrollError);
+        res.status(503).json({
+          success: false,
+          message: "Validation service temporarily unavailable",
+          validation: {
+            isValid: false,
+            error: "Unable to connect to verification service",
+          },
+        });
+        return;
+      }
+
+      try {
+        const ijazah = await fabricService.getIjazah(
+          userOrganization,
+          userToken,
+          id
+        );
+
+        // Prepare public validation response (limited information)
+        const validationData = {
+          certificateId: ijazah.ID,
+          holderName: ijazah.nama,
+          program: ijazah.programStudi,
+          faculty: ijazah.fakultas,
+          graduationDate: ijazah.tanggalLulus,
+          degree: ijazah.gelarPendidikan,
+          documentNumber: ijazah.nomorDokumen,
+          nationalCertificateNumber: ijazah.nomorIjazahNasional,
+          issuedDate: ijazah.tanggalIjazahDiberikan,
+          issuedPlace: ijazah.tempatIjazahDiberikan,
+          accreditation: ijazah.akreditasiProgramStudi,
+          status: ijazah.Status,
+          lastUpdated: ijazah.UpdatedAt,
+          validation: {
+            isValid: ijazah.Status === "aktif",
+            isAuthentic: true, // Verified from blockchain
+            status: ijazah.Status,
+            blockchainVerified: true,
+            verificationTimestamp: new Date().toISOString(),
+          },
+        };
+
+        res.status(200).json({
+          success: true,
+          message: "Certificate validation completed",
+          data: validationData,
+        });
+      } catch (notFoundError) {
+        // Certificate not found
+        res.status(404).json({
+          success: false,
+          message: "Certificate not found",
+          validation: {
+            isValid: false,
+            isAuthentic: false,
+            error: "Certificate ID not found in official records",
+            verificationTimestamp: new Date().toISOString(),
+          },
+        });
+      }
+    } catch (error) {
+      logger.error("Error in validateIjazah controller:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "Validation service error",
+        validation: {
+          isValid: false,
+          error: "Unable to complete validation at this time",
+          verificationTimestamp: new Date().toISOString(),
+        },
+      });
+    }
+  }
+
+  /**
+   * Get public verification info without sensitive data
+   * GET /api/ijazah/:id/verify
+   * Access: Public (no authentication required)
+   */
+  async verifyIjazah(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { fabloService } = require("../services/fabloService");
+
+      logger.info(`Public verification request for ijazah ID: ${id}`);
+
+      // Use admin credentials
+      const userOrganization = Organization.AKADEMIK;
+      const adminUsername = process.env.ADMIN_USERNAME || "admin";
+      const adminPassword = process.env.ADMIN_PASSWORD || "adminpw";
+
+      let userToken: string;
+      try {
+        userToken = await fabloService.enrollUser(
+          userOrganization,
+          adminUsername,
+          adminPassword
+        );
+      } catch (enrollError) {
+        logger.error(
+          "Failed to get admin token for verification:",
+          enrollError
+        );
+        res.status(503).json({
+          success: false,
+          message: "Verification service temporarily unavailable",
+        });
+        return;
+      }
+
+      try {
+        const ijazah = await fabricService.getIjazah(
+          userOrganization,
+          userToken,
+          id
+        );
+
+        // Return only verification status without full details
+        const verificationResult = {
+          exists: true,
+          isValid: ijazah.Status === "aktif",
+          status: ijazah.Status,
+          holderName: ijazah.nama,
+          graduationYear: new Date(ijazah.tanggalLulus).getFullYear(),
+          verificationTimestamp: new Date().toISOString(),
+        };
+
+        res.status(200).json({
+          success: true,
+          message: "Certificate verification completed",
+          data: verificationResult,
+        });
+      } catch (notFoundError) {
+        res.status(404).json({
+          success: false,
+          message: "Certificate not found",
+          data: {
+            exists: false,
+            isValid: false,
+            verificationTimestamp: new Date().toISOString(),
+          },
+        });
+      }
+    } catch (error) {
+      logger.error("Error in verifyIjazah controller:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "Verification service error",
+      });
+    }
+  }
+
+  /**
+   * Approve ijazah certificate with rector signature
+   * PUT /api/ijazah/:id/approve
+   * Access: REKTOR only
+   */
+  async approveIjazah(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!req.user || !req.token) {
+        res.status(401).json({
+          success: false,
+          message: "Authentication required",
+        });
+        return;
+      }
+
+      if (req.user.organization !== Organization.REKTOR) {
+        res.status(403).json({
+          success: false,
+          message:
+            "Access denied: Only REKTOR organization can approve ijazah certificates",
+        });
+        return;
+      }
+
+      const { id } = req.params;
+      const { signatureId } = req.body; // Optional specific signature ID
+
+      logger.info(`Approving ijazah certificate with ID: ${id}`);
+
+      const approvedIjazah = await fabricService.approveIjazah(
+        req.user.organization,
+        req.token,
+        id,
+        signatureId
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Ijazah certificate approved successfully",
+        data: {
+          ...approvedIjazah,
+          certificateUrl: approvedIjazah.ipfsCID
+            ? fabricService.getCertificateDownloadUrl(approvedIjazah.ipfsCID)
+            : null,
+          photoUrl: approvedIjazah.photoCID
+            ? fabricService.getPhotoDownloadUrl(approvedIjazah.photoCID)
+            : null,
+        },
+      });
+    } catch (error) {
+      logger.error("Error in approveIjazah controller:", error);
+
+      if (error instanceof Error) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Internal server error",
+        });
+      }
+    }
+  }
+
+  /**
+   * Reject ijazah certificate
+   * PUT /api/ijazah/:id/reject
+   * Access: REKTOR only
+   */
+  async rejectIjazah(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!req.user || !req.token) {
+        res.status(401).json({
+          success: false,
+          message: "Authentication required",
+        });
+        return;
+      }
+
+      if (req.user.organization !== Organization.REKTOR) {
+        res.status(403).json({
+          success: false,
+          message:
+            "Access denied: Only REKTOR organization can reject ijazah certificates",
+        });
+        return;
+      }
+
+      const { id } = req.params;
+      const { rejectionReason } = req.body; // Optional rejection reason
+
+      logger.info(`Rejecting ijazah certificate with ID: ${id}`);
+
+      const rejectedIjazah = await fabricService.rejectIjazah(
+        req.user.organization,
+        req.token,
+        id,
+        rejectionReason
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Ijazah certificate rejected successfully",
+        data: {
+          ...rejectedIjazah,
+          certificateUrl: rejectedIjazah.ipfsCID
+            ? fabricService.getCertificateDownloadUrl(rejectedIjazah.ipfsCID)
+            : null,
+          photoUrl: rejectedIjazah.photoCID
+            ? fabricService.getPhotoDownloadUrl(rejectedIjazah.photoCID)
+            : null,
+        },
+      });
+    } catch (error) {
+      logger.error("Error in rejectIjazah controller:", error);
+
+      if (error instanceof Error) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Internal server error",
+        });
+      }
+    }
+  }
+
+  /**
+   * Activate approved ijazah certificate
+   * PUT /api/ijazah/:id/activate
+   * Access: REKTOR only
+   */
+  async activateIjazah(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!req.user || !req.token) {
+        res.status(401).json({
+          success: false,
+          message: "Authentication required",
+        });
+        return;
+      }
+
+      if (req.user.organization !== Organization.REKTOR) {
+        res.status(403).json({
+          success: false,
+          message:
+            "Access denied: Only REKTOR organization can activate ijazah certificates",
+        });
+        return;
+      }
+
+      const { id } = req.params;
+
+      logger.info(`Activating ijazah certificate with ID: ${id}`);
+
+      const activatedIjazah = await fabricService.activateIjazah(
+        req.user.organization,
+        req.token,
+        id
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Ijazah certificate activated successfully",
+        data: {
+          ...activatedIjazah,
+          certificateUrl: activatedIjazah.ipfsCID
+            ? fabricService.getCertificateDownloadUrl(activatedIjazah.ipfsCID)
+            : null,
+          photoUrl: activatedIjazah.photoCID
+            ? fabricService.getPhotoDownloadUrl(activatedIjazah.photoCID)
+            : null,
+        },
+      });
+    } catch (error) {
+      logger.error("Error in activateIjazah controller:", error);
+
+      if (error instanceof Error) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Internal server error",
+        });
+      }
+    }
+  }
+
+  /**
+   * Regenerate certificate PDF with current or specified signature
+   * PUT /api/ijazah/:id/regenerate
+   * Access: REKTOR only
+   */
+  async regenerateCertificate(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!req.user || !req.token) {
+        res.status(401).json({
+          success: false,
+          message: "Authentication required",
+        });
+        return;
+      }
+
+      if (req.user.organization !== Organization.REKTOR) {
+        res.status(403).json({
+          success: false,
+          message:
+            "Access denied: Only REKTOR organization can regenerate certificates",
+        });
+        return;
+      }
+
+      const { id } = req.params;
+      const { signatureId } = req.body; // Optional specific signature ID
+
+      logger.info(`Regenerating certificate with signature for ID: ${id}`);
+
+      const regeneratedIjazah =
+        await fabricService.regenerateCertificateWithSignature(
+          req.user.organization,
+          req.token,
+          id,
+          signatureId
+        );
+
+      res.status(200).json({
+        success: true,
+        message: "Certificate regenerated successfully with signature",
+        data: {
+          ...regeneratedIjazah,
+          certificateUrl: regeneratedIjazah.ipfsCID
+            ? fabricService.getCertificateDownloadUrl(regeneratedIjazah.ipfsCID)
+            : null,
+          photoUrl: regeneratedIjazah.photoCID
+            ? fabricService.getPhotoDownloadUrl(regeneratedIjazah.photoCID)
+            : null,
+        },
+      });
+    } catch (error) {
+      logger.error("Error in regenerateCertificate controller:", error);
+
+      if (error instanceof Error) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Internal server error",
+        });
+      }
+    }
+  }
+
+  /**
+   * Get pending ijazah certificates awaiting rector approval
+   * GET /api/ijazah/pending
+   * Access: REKTOR only
+   */
+  async getPendingIjazah(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!req.user || !req.token) {
+        res.status(401).json({
+          success: false,
+          message: "Authentication required",
+        });
+        return;
+      }
+
+      if (req.user.organization !== Organization.REKTOR) {
+        res.status(403).json({
+          success: false,
+          message:
+            "Access denied: Only REKTOR organization can view pending certificates",
+        });
+        return;
+      }
+
+      logger.info("Getting pending ijazah certificates");
+
+      const pendingIjazah = await fabricService.getIjazahByStatus(
+        req.user.organization,
+        req.token,
+        IJAZAH_STATUS.MENUNGGU_TTD
+      );
+
+      // Add download URLs to each ijazah
+      const enrichedIjazahList = pendingIjazah.map((ijazah) => ({
+        ...ijazah,
+        certificateUrl: ijazah.ipfsCID
+          ? fabricService.getCertificateDownloadUrl(ijazah.ipfsCID)
+          : null,
+        photoUrl: ijazah.photoCID
+          ? fabricService.getPhotoDownloadUrl(ijazah.photoCID)
+          : null,
+      }));
+
+      res.status(200).json({
+        success: true,
+        message: "Pending ijazah certificates retrieved successfully",
+        data: enrichedIjazahList,
+        count: enrichedIjazahList.length,
+      });
+    } catch (error) {
+      logger.error("Error in getPendingIjazah controller:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+
+  /**
+   * Bulk approve multiple ijazah certificates
+   * POST /api/ijazah/bulk-approve
+   * Access: REKTOR only
+   */
+  async bulkApproveIjazah(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!req.user || !req.token) {
+        res.status(401).json({
+          success: false,
+          message: "Authentication required",
+        });
+        return;
+      }
+
+      if (req.user.organization !== Organization.REKTOR) {
+        res.status(403).json({
+          success: false,
+          message:
+            "Access denied: Only REKTOR organization can bulk approve certificates",
+        });
+        return;
+      }
+
+      const { ijazahIds, signatureId } = req.body;
+
+      if (!ijazahIds || !Array.isArray(ijazahIds) || ijazahIds.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: "ijazahIds array is required and must not be empty",
+        });
+        return;
+      }
+
+      logger.info(`Bulk approving ${ijazahIds.length} ijazah certificates`);
+
+      const results = [];
+      const errors = [];
+
+      for (const ijazahId of ijazahIds) {
+        try {
+          const approvedIjazah = await fabricService.approveIjazah(
+            req.user.organization,
+            req.token,
+            ijazahId,
+            signatureId
+          );
+          results.push({
+            ijazahId,
+            status: "approved",
+            data: approvedIjazah,
+          });
+        } catch (error) {
+          errors.push({
+            ijazahId,
+            status: "error",
+            error: error instanceof Error ? error.message : "Unknown error",
+          });
+        }
+      }
+
+      res.status(200).json({
+        success: true,
+        message: `Bulk approval completed. ${results.length} approved, ${errors.length} failed.`,
+        data: {
+          approved: results,
+          errors: errors,
+          summary: {
+            total: ijazahIds.length,
+            approved: results.length,
+            failed: errors.length,
+          },
+        },
+      });
+    } catch (error) {
+      logger.error("Error in bulkApproveIjazah controller:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+
+  /**
    * Get available status options
    * GET /api/ijazah/statuses
    * Access: All authenticated users
