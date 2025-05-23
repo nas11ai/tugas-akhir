@@ -12,16 +12,20 @@ import {
 /**
  * Create a new user
  */
-export const createUser = async (req: Request, res: Response) => {
+export const createUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: "Validation failed",
         details: errors.array(),
       });
+      return;
     }
 
     const userData = req.body;
@@ -52,10 +56,11 @@ export const createUser = async (req: Request, res: Response) => {
     logger.error("Error creating user:", error);
 
     if (error instanceof Error && error.message.includes("already exists")) {
-      return res.status(409).json({
+      res.status(409).json({
         success: false,
         error: "User with this UID already exists",
       });
+      return;
     }
 
     res.status(500).json({
@@ -68,7 +73,10 @@ export const createUser = async (req: Request, res: Response) => {
 /**
  * Get current user profile
  */
-export const getCurrentUser = async (req: Request, res: Response) => {
+export const getCurrentUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const user = req.user!;
 
@@ -101,17 +109,21 @@ export const getCurrentUser = async (req: Request, res: Response) => {
 /**
  * Get user by ID
  */
-export const getUserById = async (req: Request, res: Response) => {
+export const getUserById = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { uid } = req.params;
 
     const user = await userService.getUserById(uid);
 
     if (!user) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: "User not found",
       });
+      return;
     }
 
     res.json({
@@ -130,16 +142,20 @@ export const getUserById = async (req: Request, res: Response) => {
 /**
  * Update user profile
  */
-export const updateUser = async (req: Request, res: Response) => {
+export const updateUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: "Validation failed",
         details: errors.array(),
       });
+      return;
     }
 
     const { uid } = req.params;
@@ -148,10 +164,11 @@ export const updateUser = async (req: Request, res: Response) => {
 
     // Users can only update their own profile unless they're admin
     if (currentUser.uid !== uid && currentUser.role !== "admin") {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: "You can only update your own profile",
       });
+      return;
     }
 
     // Only admins can change role and organization
@@ -176,10 +193,11 @@ export const updateUser = async (req: Request, res: Response) => {
     logger.error("Error updating user:", error);
 
     if (error instanceof Error && error.message.includes("not found")) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: "User not found",
       });
+      return;
     }
 
     res.status(500).json({
@@ -192,16 +210,20 @@ export const updateUser = async (req: Request, res: Response) => {
 /**
  * Set user credentials (certificate and private key)
  */
-export const setUserCredentials = async (req: Request, res: Response) => {
+export const setUserCredentials = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: "Validation failed",
         details: errors.array(),
       });
+      return;
     }
 
     const { uid } = req.params;
@@ -210,10 +232,11 @@ export const setUserCredentials = async (req: Request, res: Response) => {
 
     // Only admins can set credentials for other users
     if (currentUser.uid !== uid && currentUser.role !== "admin") {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: "You can only set credentials for your own account",
       });
+      return;
     }
 
     const credentials: UserCredentials = {
@@ -235,10 +258,11 @@ export const setUserCredentials = async (req: Request, res: Response) => {
     logger.error("Error setting user credentials:", error);
 
     if (error instanceof Error && error.message.includes("not found")) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: "User not found",
       });
+      return;
     }
 
     res.status(500).json({
@@ -251,17 +275,21 @@ export const setUserCredentials = async (req: Request, res: Response) => {
 /**
  * Remove user credentials
  */
-export const removeUserCredentials = async (req: Request, res: Response) => {
+export const removeUserCredentials = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { uid } = req.params;
     const currentUser = req.user!;
 
     // Only admins can remove credentials for other users
     if (currentUser.uid !== uid && currentUser.role !== "admin") {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: "You can only remove credentials for your own account",
       });
+      return;
     }
 
     await userService.removeUserCredentials(uid);
@@ -286,15 +314,19 @@ export const removeUserCredentials = async (req: Request, res: Response) => {
 /**
  * Get users by organization (admin only)
  */
-export const getUsersByOrganization = async (req: Request, res: Response) => {
+export const getUsersByOrganization = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { organization } = req.params;
 
     if (!Object.values(Organization).includes(organization as Organization)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: "Invalid organization",
       });
+      return;
     }
 
     const users = await userService.getUsersByOrganization(
@@ -317,7 +349,10 @@ export const getUsersByOrganization = async (req: Request, res: Response) => {
 /**
  * Get active users (admin only)
  */
-export const getActiveUsers = async (req: Request, res: Response) => {
+export const getActiveUsers = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const users = await userService.getActiveUsers();
 
@@ -337,7 +372,10 @@ export const getActiveUsers = async (req: Request, res: Response) => {
 /**
  * Activate user (admin only)
  */
-export const activateUser = async (req: Request, res: Response) => {
+export const activateUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { uid } = req.params;
 
@@ -355,10 +393,11 @@ export const activateUser = async (req: Request, res: Response) => {
     logger.error("Error activating user:", error);
 
     if (error instanceof Error && error.message.includes("not found")) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: "User not found",
       });
+      return;
     }
 
     res.status(500).json({
@@ -371,7 +410,10 @@ export const activateUser = async (req: Request, res: Response) => {
 /**
  * Deactivate user (admin only)
  */
-export const deactivateUser = async (req: Request, res: Response) => {
+export const deactivateUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { uid } = req.params;
 
@@ -389,10 +431,11 @@ export const deactivateUser = async (req: Request, res: Response) => {
     logger.error("Error deactivating user:", error);
 
     if (error instanceof Error && error.message.includes("not found")) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: "User not found",
       });
+      return;
     }
 
     res.status(500).json({
