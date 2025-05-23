@@ -43,45 +43,49 @@ export const errorHandler = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): void => {
   // Log the error
   logger.error(`Error: ${err.message}`, { stack: err.stack });
 
   // If it's our custom error with status code
   if ("statusCode" in err && "isOperational" in err) {
-    return res.status(err.statusCode).json({
+    res.status(err.statusCode).json({
       success: false,
       message: err.message,
       stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
     });
+    return;
   }
 
   // If it's a Multer error
   if (err.name === "MulterError") {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       message: `File upload error: ${err.message}`,
     });
+    return;
   }
 
   // If it's a validation error
   if (err.name === "ValidationError") {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       message: err.message,
     });
+    return;
   }
 
   // For Firebase auth errors
   if (err.name === "FirebaseAuthError") {
-    return res.status(401).json({
+    res.status(401).json({
       success: false,
       message: "Authentication error: " + err.message,
     });
+    return;
   }
 
   // Default to 500 server error
-  return res.status(500).json({
+  res.status(500).json({
     success: false,
     message:
       process.env.NODE_ENV === "production"
