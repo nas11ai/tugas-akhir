@@ -1,6 +1,6 @@
 node_modules/
 logger/
 logs/
-src/config/serviceAccountKey.json
+src/configs/serviceAccountKey.json
 package-lock.json
 .env
