@@ -365,20 +365,9 @@ const formData = ref<IjazahFormData>({
 })
 
 // Options for select fields
-const jenisPendidikanOptions = [
-  'Sarjana (S1)',
-  'Magister (S2)',
-  'Doktor (S3)',
-  'Diploma III (D3)',
-  'Diploma IV (D4)',
-]
+const jenisPendidikanOptions = ['S1', 'S2', 'S3', 'D3', 'D4']
 
-const akreditasiOptions = [
-  'A (Unggul)',
-  'B (Baik Sekali)',
-  'C (Baik)',
-  'Belum Terakreditasi',
-]
+const akreditasiOptions = ['A', 'B', 'C']
 
 // Validation rules
 const requiredRules = [(v: string) => !!v || 'Field ini wajib diisi']
@@ -404,12 +393,6 @@ const photoRules = [
     // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       return 'Ukuran file maksimal 5MB'
-    }
-
-    // Check file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png']
-    if (!allowedTypes.includes(file.type)) {
-      return 'Format file harus JPG, JPEG, atau PNG'
     }
 
     return true

@@ -15,7 +15,10 @@
           hide-details
         ></v-text-field>
         <v-spacer></v-spacer>
-        <v-btn color="blue" dark>Tambah</v-btn>
+        <v-btn color="blue" dark @click="openAddDialog" :loading="loading">
+          <v-icon left>mdi-plus</v-icon>
+          Tambah
+        </v-btn>
       </div>
 
       <!-- Data Table -->
@@ -23,6 +26,7 @@
         :headers="headers"
         :items="items"
         :search="search"
+        :loading="tableLoading"
         class="elevation-1"
       >
         <template v-slot:[`item.select`]="{ item }">
@@ -34,7 +38,7 @@
         </template>
 
         <template v-slot:[`item.aksi`]="{ item }">
-          <v-btn icon @click="showDetail(item)">
+          <v-btn icon @click="showDetail(item)" :disabled="loading">
             <v-icon>mdi-eye</v-icon>
           </v-btn>
         </template>
@@ -48,7 +52,7 @@
     </v-card>
 
     <!-- Modal Detail -->
-    <v-dialog v-model="modal" max-width="500px">
+    <v-dialog v-model="detailModal" max-width="500px">
       <v-card>
         <v-card-title>Detail Sertifikat</v-card-title>
         <v-divider></v-divider>
@@ -68,19 +72,49 @@
         <v-divider></v-divider>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="blue" @click="modal = false">Tutup</v-btn>
+          <v-btn color="blue" @click="detailModal = false">Tutup</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Modal Form Tambah Ijazah -->
+    <AddIjazahModal
+      v-model="addModal"
+      @success="onAddSuccess"
+      @error="onAddError"
+    />
+
+    <!-- Snackbar untuk notifikasi -->
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      :timeout="4000"
+      top
+    >
+      {{ snackbar.message }}
+      <template v-slot:action="{ attrs }">
+        <v-btn text v-bind="attrs" @click="snackbar.show = false">
+          Tutup
+        </v-btn>
+      </template>
+    </v-snackbar>
   </BaseLayout>
 </template>
 
 <script lang="ts" setup>
 import BaseLayout from '@/layouts/BaseLayout.vue'
-import { ref } from 'vue'
+import AddIjazahModal from '@/components/AddIjazahModal.vue'
+import { ref, onMounted } from 'vue'
+import { apiService, apiHelper } from '@/config/axios'
+import type { Ijazah } from '@/config/ijazah'
 
+// Reactive data
 const search = ref('')
-const modal = ref(false)
+const detailModal = ref(false)
+const addModal = ref(false)
+const loading = ref(false)
+const tableLoading = ref(false)
+
 const selectedItem = ref<{
   id: string
   nama: string
@@ -91,6 +125,13 @@ const selectedItem = ref<{
 } | null>(null)
 
 const selectedItems = ref([])
+
+// Snackbar for notifications
+const snackbar = ref({
+  show: false,
+  message: '',
+  color: 'success',
+})
 
 const headers = [
   { title: 'Pilih', value: 'select', sortable: false },
@@ -112,41 +153,21 @@ const items = ref<
     noIjazah: string
     status: string
   }>
->([
-  {
-    id: 'uuid-001',
-    nama: 'Ahmad Setiawan',
-    nim: '2201001',
-    prodi: 'Teknik Informatika',
-    noIjazah: 'IJZ-001',
-    status: 'Pending',
-  },
-  {
-    id: 'uuid-002',
-    nama: 'Budi Santoso',
-    nim: '2201002',
-    prodi: 'Sistem Informasi',
-    noIjazah: 'IJZ-002',
-    status: 'Disetujui',
-  },
-  {
-    id: 'uuid-003',
-    nama: 'Citra Dewi',
-    nim: '2201003',
-    prodi: 'Teknik Elektro',
-    noIjazah: 'IJZ-003',
-    status: 'Ditolak',
-  },
-])
+>([])
 
+// Methods
 const getStatusColor = (status?: string) => {
-  switch (status) {
-    case 'Disetujui':
+  switch (status?.toLowerCase()) {
+    case 'disetujui':
+    case 'aktif':
       return 'green'
-    case 'Pending':
+    case 'pending':
+    case 'menunggu tanda tangan rektor':
       return 'orange'
-    case 'Ditolak':
+    case 'ditolak':
       return 'red'
+    case 'draft':
+      return 'grey'
     default:
       return 'gray'
   }
@@ -154,8 +175,90 @@ const getStatusColor = (status?: string) => {
 
 const showDetail = (item: (typeof items.value)[number]) => {
   selectedItem.value = item
-  modal.value = true
+  detailModal.value = true
 }
+
+const openAddDialog = () => {
+  addModal.value = true
+}
+
+const onAddSuccess = (message: string) => {
+  showSnackbar(message, 'success')
+  loadIjazahData() // Refresh data
+}
+
+const onAddError = (message: string) => {
+  showSnackbar(message, 'error')
+}
+
+const showSnackbar = (message: string, color: string = 'success') => {
+  snackbar.value = {
+    show: true,
+    message,
+    color,
+  }
+}
+
+// Load ijazah data from API
+const loadIjazahData = async () => {
+  tableLoading.value = true
+
+  try {
+    const response = await apiService.ijazah.getAll()
+
+    if (apiHelper.isSuccess(response)) {
+      // Transform API data to match table format
+      items.value = response.data.data.map((ijazah: Ijazah) => ({
+        id: ijazah.ID || ijazah.id,
+        nama: ijazah.nama,
+        nim: ijazah.nomorIndukMahasiswa,
+        prodi: ijazah.programStudi,
+        noIjazah: ijazah.nomorDokumen,
+        status: ijazah.Status,
+      }))
+    } else {
+      throw new Error(apiHelper.getErrorMessage(response))
+    }
+  } catch (error) {
+    console.error('Error loading ijazah data:', error)
+    showSnackbar('Gagal memuat data ijazah', 'error')
+
+    // Keep existing mock data as fallback
+    items.value = [
+      {
+        id: 'uuid-001',
+        nama: 'Ahmad Setiawan',
+        nim: '2201001',
+        prodi: 'Teknik Informatika',
+        noIjazah: 'IJZ-001',
+        status: 'Pending',
+      },
+      {
+        id: 'uuid-002',
+        nama: 'Budi Santoso',
+        nim: '2201002',
+        prodi: 'Sistem Informasi',
+        noIjazah: 'IJZ-002',
+        status: 'Disetujui',
+      },
+      {
+        id: 'uuid-003',
+        nama: 'Citra Dewi',
+        nim: '2201003',
+        prodi: 'Teknik Elektro',
+        noIjazah: 'IJZ-003',
+        status: 'Ditolak',
+      },
+    ]
+  } finally {
+    tableLoading.value = false
+  }
+}
+
+// Load data on component mount
+onMounted(() => {
+  loadIjazahData()
+})
 </script>
 
 <style scoped>
