@@ -87,10 +87,10 @@ const fetchUserData = async (firebaseUser) => {
 
     const response = await apiService.users.getCurrentUser()
 
-    const userData = apiHelper.getData(response)
+    const userResponse = apiHelper.getData(response)
 
-    console.log('User data fetched successfully:', userData)
-    user.value = userData
+    console.log('User data fetched successfully:', userResponse)
+    user.value = userResponse.data
   } catch (error) {
     console.error('Error fetching user data:', error)
 
