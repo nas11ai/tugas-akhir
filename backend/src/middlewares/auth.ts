@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { auth, db } from "../configs/firebase";
 import { logger } from "../utils/logger";
+import { Organization } from "../models/user";
 
 // Extend Request interface to include user and token
 declare global {
@@ -123,7 +124,7 @@ export const requireAkademik = (
   res: Response,
   next: NextFunction
 ): void => {
-  if (!req.user || req.user.organization !== "AKADEMIK") {
+  if (!req.user || req.user.organization !== Organization.AKADEMIK) {
     res.status(403).json({
       success: false,
       error: "AKADEMIK organization access required",
@@ -141,7 +142,7 @@ export const requireRektor = (
   res: Response,
   next: NextFunction
 ): void => {
-  if (!req.user || req.user.organization !== "REKTOR") {
+  if (!req.user || req.user.organization !== Organization.REKTOR) {
     res.status(403).json({
       success: false,
       error: "REKTOR organization access required",
