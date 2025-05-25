@@ -28,13 +28,7 @@ const router = Router();
  * @desc    Create a new user
  * @access  Admin only
  */
-router.post(
-  "/",
-  authenticate,
-  requireAdmin,
-  validate(validateCreateUser),
-  createUser
-);
+router.post("/", requireAdmin, validate(validateCreateUser), createUser);
 
 /**
  * @route   GET /api/users/me

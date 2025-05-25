@@ -1,4 +1,3 @@
-<!-- components/LoginDialog.vue -->
 <template>
   <v-dialog v-model="dialog" max-width="400" persistent>
     <v-card>
@@ -37,6 +36,9 @@
 import { ref, computed } from 'vue'
 import { auth, googleProvider, signInWithPopup } from '@/config/firebase'
 import { apiService, apiHelper } from '@/config/axios'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const props = defineProps({
   modelValue: Boolean,
@@ -57,29 +59,24 @@ const signInWithGoogle = async () => {
   error.value = ''
 
   try {
-    // Sign in with Firebase
     const result = await signInWithPopup(auth, googleProvider)
     const user = result.user
 
-    // Get Firebase ID token
     const idToken = await user.getIdToken()
 
-    // Store token in localStorage for axios interceptor
     localStorage.setItem('authToken', idToken)
 
     try {
-      // Use axios service to check if user exists in backend
       const response = await apiService.users.getCurrentUser()
 
-      // Handle successful response
       const userData = apiHelper.getData(response)
       emit('success', userData)
       emit('close')
+
+      await router.push('/rektor')
     } catch (apiError) {
-      // Handle API errors using helper
       const errorMessage = apiHelper.getErrorMessage(apiError)
 
-      // Check if it's a 404 (user not found)
       if (apiError.response?.status === 404) {
         error.value =
           'User not found. Please contact admin to register your account.'

@@ -136,7 +136,8 @@ export const apiService = {
 
     getCurrentUser: () => apiClient.get('/api/user/me'),
 
-    getAll: (params: Record<string, unknown> = {}) => apiClient.get('/api/user', { params }),
+    getAll: (params: Record<string, unknown> = {}) =>
+      apiClient.get('/api/user', { params }),
 
     getById: (id: string) => apiClient.get(`/api/user/${id}`),
 
@@ -178,7 +179,8 @@ export const apiService = {
     create: (ijazahData: IjazahInput) =>
       apiClient.post('/api/ijazah', ijazahData),
 
-    getAll: (params: Record<string, unknown> = {}) => apiClient.get('/api/ijazah', { params }),
+    getAll: (params: Record<string, unknown> = {}) =>
+      apiClient.get('/api/ijazah', { params }),
 
     getById: (id: string) => apiClient.get(`/api/ijazah/${id}`),
 
@@ -190,7 +192,8 @@ export const apiService = {
     // Status management
     getPending: () => apiClient.get('/api/ijazah/pending'),
 
-    getByStatus: (status: string) => apiClient.get(`/api/ijazah/status/${status}`),
+    getByStatus: (status: string) =>
+      apiClient.get(`/api/ijazah/status/${status}`),
 
     updateStatus: (id: string, statusData: string) =>
       apiClient.put(`/api/ijazah/${id}/status`, statusData),
@@ -235,7 +238,8 @@ export const apiService = {
         },
       }),
 
-    getAll: (params: Record<string, unknown> = {}) => apiClient.get('/api/signature', { params }),
+    getAll: (params: Record<string, unknown> = {}) =>
+      apiClient.get('/api/signature', { params }),
 
     getById: (id: string) => apiClient.get(`/api/signature/${id}`),
 
@@ -260,14 +264,16 @@ export const apiService = {
   },
 
   // Generic methods untuk custom calls
-  get: (url: string, config: AxiosRequestConfig = {}) => apiClient.get(url, config),
+  get: (url: string, config: AxiosRequestConfig = {}) =>
+    apiClient.get(url, config),
   post: (url: string, data: unknown = {}, config: AxiosRequestConfig = {}) =>
     apiClient.post(url, data, config),
   put: (url: string, data: unknown = {}, config: AxiosRequestConfig = {}) =>
     apiClient.put(url, data, config),
   patch: (url: string, data: unknown = {}, config: AxiosRequestConfig = {}) =>
     apiClient.patch(url, data, config),
-  delete: (url: string, config: AxiosRequestConfig = {}) => apiClient.delete(url, config),
+  delete: (url: string, config: AxiosRequestConfig = {}) =>
+    apiClient.delete(url, config),
 }
 
 // Helper functions untuk handling response
@@ -304,7 +310,8 @@ export const apiHelper = {
       if (apiHelper.isSuccess(response as AxiosResponse<ApiResponse>)) {
         onSuccess?.(response.data)
       } else {
-        const errorMessage = (response.data as ApiResponse)?.message || 'Operation failed'
+        const errorMessage =
+          (response.data as ApiResponse)?.message || 'Operation failed'
         onError?.(errorMessage)
       }
       return response
