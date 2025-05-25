@@ -69,11 +69,15 @@ const signInWithGoogle = async () => {
     try {
       const response = await apiService.users.getCurrentUser()
 
-      const userData = apiHelper.getData(response)
-      emit('success', userData)
+      const userResponse = apiHelper.getData(response)
+      emit('success', userResponse)
       emit('close')
 
-      await router.push('/rektor')
+      if (userResponse.data.organization) {
+        await router.push('/' + userResponse.data.organization.toLowerCase())
+      } else {
+        await router.push('/')
+      }
     } catch (apiError) {
       const errorMessage = apiHelper.getErrorMessage(apiError)
 
