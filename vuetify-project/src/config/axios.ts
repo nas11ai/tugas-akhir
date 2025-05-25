@@ -11,7 +11,7 @@ interface ApiResponse<T = unknown> {
   error?: string
 }
 
-interface ApiError {
+export interface ApiError {
   response?: {
     data?: {
       message?: string

@@ -21,7 +21,7 @@ export interface Ijazah {
   ipfsCID?: string // IPFS Content Identifier for certificate PDF
   signatureID?: string // Reference to the active signature
   photoCID?: string // IPFS Content Identifier for student photo
-  Status: string
+  Status: typeof IJAZAH_STATUS
 }
 
 export interface IjazahInput {
@@ -45,7 +45,7 @@ export interface IjazahInput {
   ipfsCID?: string // IPFS Content Identifier for certificate PDF
   signatureID?: string // Reference to the active signature
   photoCID?: string // IPFS Content Identifier for student photo
-  Status: string
+  Status: typeof IJAZAH_STATUS
 }
 
 export interface Signature {
