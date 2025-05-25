@@ -5,11 +5,10 @@
       <v-toolbar-title>CertiChain</v-toolbar-title>
       <v-spacer></v-spacer>
 
-      <div v-if="!user" class="d-flex ga-2">
+      <div v-if="!user" class="d-flex mr-4">
         <v-btn color="white" variant="outlined" @click="showLogin = true">
           Login
         </v-btn>
-        <v-btn color="accent" @click="showRegister = true"> Register </v-btn>
       </div>
 
       <div v-else class="d-flex align-center ga-3">
@@ -41,15 +40,6 @@
       @close="showLogin = false"
       @success="handleLoginSuccess"
     />
-
-    <!-- Loading Overlay -->
-    <v-overlay v-model="loading" class="align-center justify-center">
-      <v-progress-circular
-        color="primary"
-        indeterminate
-        size="64"
-      ></v-progress-circular>
-    </v-overlay>
   </v-app>
 </template>
 
@@ -57,58 +47,101 @@
 import { ref, onMounted } from 'vue'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { auth } from '@/config/firebase'
+import { apiService, apiHelper } from '@/config/axios'
 import LoginDialog from '@/components/LoginDialog.vue'
+import router from '@/router'
 
 const user = ref(null)
 const showLogin = ref(false)
-const showRegister = ref(false)
-const loading = ref(false)
 
 const handleLoginSuccess = (userData) => {
+  console.log('Login successful, setting user data:', userData)
   user.value = userData
-  console.log('Login successful:', userData)
 }
 
 const handleLogout = async () => {
   try {
+    // Sign out from Firebase
     await signOut(auth)
+
+    // Clear user data
     user.value = null
+
+    // Clear auth token
+    localStorage.removeItem('authToken')
+
+    console.log('Logout successful')
+
+    await router.push('/')
   } catch (error) {
     console.error('Logout error:', error)
   }
 }
 
+const fetchUserData = async (firebaseUser) => {
+  try {
+    console.log('Fetching user data for:', firebaseUser.email)
+
+    const idToken = await firebaseUser.getIdToken()
+    localStorage.setItem('authToken', idToken)
+
+    const response = await apiService.users.getCurrentUser()
+
+    const userData = apiHelper.getData(response)
+
+    console.log('User data fetched successfully:', userData)
+    user.value = userData
+  } catch (error) {
+    console.error('Error fetching user data:', error)
+
+    const errorMessage = apiHelper.getErrorMessage(error)
+
+    if (error.response?.status === 404) {
+      console.log('User not found in backend - new user needs registration')
+    } else {
+      console.error('API Error:', errorMessage)
+
+      user.value = null
+      localStorage.removeItem('authToken')
+    }
+  }
+}
+
 // Listen to Firebase auth state changes
 onMounted(() => {
+  console.log('Setting up auth state listener...')
+
   onAuthStateChanged(auth, async (firebaseUser) => {
+    console.log(
+      'Auth state changed:',
+      firebaseUser ? 'User signed in' : 'User signed out'
+    )
+
     if (firebaseUser) {
       try {
-        loading.value = true
-        const idToken = await firebaseUser.getIdToken()
-
-        // Get user data from backend
-        const response = await fetch('/api/users/me', {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-            'Content-Type': 'application/json',
-          },
-        })
-
-        if (response.ok) {
-          const result = await response.json()
-          user.value = result.data
-        } else {
-          user.value = null
-        }
+        await fetchUserData(firebaseUser)
       } catch (error) {
-        console.error('Error fetching user data:', error)
-        user.value = null
-      } finally {
-        loading.value = false
+        console.error('Failed to fetch user data:', error)
       }
     } else {
+      // User signed out
+      console.log('User signed out, clearing data')
       user.value = null
+      localStorage.removeItem('authToken')
     }
   })
 })
+
+// Debug function (remove in production)
+if (import.meta.env.VITE_APP_ENV === 'development') {
+  // Make debug functions available in console
+  window.debugAuth = {
+    getCurrentUser: () => user.value,
+    getToken: () => localStorage.getItem('authToken'),
+    clearUser: () => {
+      user.value = null
+    },
+    testFetchUser: () => fetchUserData(auth.currentUser),
+  }
+}
 </script>
