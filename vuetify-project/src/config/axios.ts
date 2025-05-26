@@ -34,7 +34,11 @@ const apiClient = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('fabricToken')
+    // TODO: delete fabric token later
+    let token = localStorage.getItem('fabricToken')
+    if (!token) {
+      token = localStorage.getItem('authToken')
+    }
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -81,12 +85,13 @@ apiClient.interceptors.response.use(
       const { status, data } = error.response
 
       switch (status) {
-        case 401:
-          // Unauthorized - redirect to login atau refresh token
-          console.error('Unauthorized access - redirecting to login')
-          localStorage.removeItem('authToken')
-          window.location.href = '/login'
-          break
+        // TODO: Handle 401 status code
+        // case 401:
+        //   // Unauthorized - redirect to login atau refresh token
+        //   console.error('Unauthorized access - redirecting to login')
+        //   localStorage.removeItem('authToken')
+        //   window.location.href = '/login'
+        //   break
 
         case 403:
           console.error('Forbidden access - insufficient permissions')

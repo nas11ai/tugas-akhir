@@ -100,7 +100,7 @@ const fetchUserData = async (firebaseUser) => {
     }
 
     if (!localStorage.getItem('fabricToken')) {
-      const enrollFabricCAResponse = await apiService.users.enrollFabricCA()
+      const enrollFabricCAResponse = await apiService.users.enrollFabricCA(userData.organization, userData.credentials.username, userData.credentials.password)
 
       localStorage.setItem('fabricToken', enrollFabricCAResponse.data.token)
     }
