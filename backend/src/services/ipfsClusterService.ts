@@ -1,5 +1,5 @@
 import FormData from "form-data";
-import { getClusterClient, getIpfsGatewayUrl } from "../configs/ipfsCluster";
+import { makeClusterRequest, getIpfsGatewayUrl } from "../configs/ipfsCluster";
 import { logger } from "../utils/logger";
 
 /**
@@ -22,10 +22,8 @@ export class IpfsClusterService {
     } = {}
   ): Promise<{ cid: string; url: string }> {
     try {
-      const client = await getClusterClient();
-
       const formData = new FormData();
-      formData.append("file", content, options.filename);
+      formData.append("file", content, options.filename || "file");
 
       const queryParams = new URLSearchParams();
       if (options.local !== undefined) {
@@ -39,12 +37,10 @@ export class IpfsClusterService {
         options.streamChannels === true ? "true" : "false"
       );
 
-      const url = `/add?${queryParams.toString()}`;
+      const endpoint = `/add?${queryParams.toString()}`;
 
-      const response = await client.post(url, formData, {
-        headers: {
-          ...formData.getHeaders(),
-        },
+      const response = await makeClusterRequest("POST", endpoint, formData, {
+        ...formData.getHeaders(),
       });
 
       if (!response.data || !response.data.cid) {
@@ -69,9 +65,7 @@ export class IpfsClusterService {
    */
   async pin(cid: string): Promise<boolean> {
     try {
-      const client = await getClusterClient();
-
-      const response = await client.post(`/pins/${cid}`);
+      const response = await makeClusterRequest("POST", `/pins/${cid}`);
 
       if (response.status >= 200 && response.status < 300) {
         logger.info(`CID ${cid} pinned successfully`);
@@ -87,15 +81,35 @@ export class IpfsClusterService {
   }
 
   /**
+   * Pin using IPFS path
+   * @param path The IPFS path to pin (e.g., /ipfs/QmHash or /ipns/example.com)
+   * @returns Success status
+   */
+  async pinPath(path: string): Promise<boolean> {
+    try {
+      const response = await makeClusterRequest("POST", `/pins/${path}`);
+
+      if (response.status >= 200 && response.status < 300) {
+        logger.info(`Path ${path} pinned successfully`);
+        return true;
+      } else {
+        logger.warn(`Failed to pin path ${path}: ${response.status}`);
+        return false;
+      }
+    } catch (error) {
+      logger.error(`Error pinning path ${path}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Unpin a CID from the IPFS Cluster
    * @param cid The content identifier to unpin
    * @returns Success status
    */
   async unpin(cid: string): Promise<boolean> {
     try {
-      const client = await getClusterClient();
-
-      const response = await client.delete(`/pins/${cid}`);
+      const response = await makeClusterRequest("DELETE", `/pins/${cid}`);
 
       if (response.status >= 200 && response.status < 300) {
         logger.info(`CID ${cid} unpinned successfully`);
@@ -111,15 +125,35 @@ export class IpfsClusterService {
   }
 
   /**
-   * Check if a CID is pinned in the IPFS Cluster
+   * Unpin using IPFS path
+   * @param path The IPFS path to unpin
+   * @returns Success status
+   */
+  async unpinPath(path: string): Promise<boolean> {
+    try {
+      const response = await makeClusterRequest("DELETE", `/pins/${path}`);
+
+      if (response.status >= 200 && response.status < 300) {
+        logger.info(`Path ${path} unpinned successfully`);
+        return true;
+      } else {
+        logger.warn(`Failed to unpin path ${path}: ${response.status}`);
+        return false;
+      }
+    } catch (error) {
+      logger.error(`Error unpinning path ${path}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check local status of a CID
    * @param cid The content identifier to check
    * @returns Status information about the pin
    */
   async status(cid: string): Promise<any> {
     try {
-      const client = await getClusterClient();
-
-      const response = await client.get(`/pins/${cid}`);
+      const response = await makeClusterRequest("GET", `/pins/${cid}`);
 
       if (response.status >= 200 && response.status < 300) {
         return response.data;
@@ -134,14 +168,12 @@ export class IpfsClusterService {
   }
 
   /**
-   * List all pinned CIDs in the IPFS Cluster
+   * List all tracked CIDs (local status)
    * @returns Array of pinned CIDs with their status
    */
   async list(): Promise<any[]> {
     try {
-      const client = await getClusterClient();
-
-      const response = await client.get("/pins");
+      const response = await makeClusterRequest("GET", "/pins");
 
       if (response.data && Array.isArray(response.data)) {
         return response.data;
@@ -155,15 +187,55 @@ export class IpfsClusterService {
   }
 
   /**
+   * Get allocations (pinset) - shows pins and their allocations
+   * @returns Array of pins and their allocations
+   */
+  async getAllocations(): Promise<any[]> {
+    try {
+      const response = await makeClusterRequest("GET", "/allocations");
+
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      } else {
+        return [];
+      }
+    } catch (error) {
+      logger.error("Error getting allocations:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get single pin allocation
+   * @param cid The content identifier
+   * @returns Allocation information
+   */
+  async getAllocation(cid: string): Promise<any> {
+    try {
+      const response = await makeClusterRequest("GET", `/allocations/${cid}`);
+
+      if (response.status >= 200 && response.status < 300) {
+        return response.data;
+      } else {
+        logger.warn(
+          `Failed to get allocation for CID ${cid}: ${response.status}`
+        );
+        return null;
+      }
+    } catch (error) {
+      logger.error(`Error getting allocation for CID ${cid}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Recover a CID in the IPFS Cluster
    * @param cid The content identifier to recover
    * @returns Success status
    */
   async recover(cid: string): Promise<boolean> {
     try {
-      const client = await getClusterClient();
-
-      const response = await client.post(`/pins/${cid}/recover`);
+      const response = await makeClusterRequest("POST", `/pins/${cid}/recover`);
 
       if (response.status >= 200 && response.status < 300) {
         logger.info(`CID ${cid} recovery triggered successfully`);
@@ -181,14 +253,35 @@ export class IpfsClusterService {
   }
 
   /**
-   * Get information about the IPFS Cluster
-   * @returns Cluster information
+   * Recover all pins in the cluster
+   * @returns Success status
+   */
+  async recoverAll(): Promise<boolean> {
+    try {
+      const response = await makeClusterRequest("POST", "/pins/recover");
+
+      if (response.status >= 200 && response.status < 300) {
+        logger.info("All pins recovery triggered successfully");
+        return true;
+      } else {
+        logger.warn(
+          `Failed to trigger recovery for all pins: ${response.status}`
+        );
+        return false;
+      }
+    } catch (error) {
+      logger.error("Error recovering all pins:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get information about the IPFS Cluster peer
+   * @returns Cluster peer information
    */
   async info(): Promise<any> {
     try {
-      const client = await getClusterClient();
-
-      const response = await client.get("/id");
+      const response = await makeClusterRequest("GET", "/id");
 
       if (response.status >= 200 && response.status < 300) {
         return response.data;
@@ -198,6 +291,145 @@ export class IpfsClusterService {
       }
     } catch (error) {
       logger.error("Error getting cluster info:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get cluster version
+   * @returns Version information
+   */
+  async getVersion(): Promise<any> {
+    try {
+      const response = await makeClusterRequest("GET", "/version");
+
+      if (response.status >= 200 && response.status < 300) {
+        return response.data;
+      } else {
+        logger.warn(`Failed to get cluster version: ${response.status}`);
+        return null;
+      }
+    } catch (error) {
+      logger.error("Error getting cluster version:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get cluster peers
+   * @returns Array of cluster peers
+   */
+  async getPeers(): Promise<any[]> {
+    try {
+      const response = await makeClusterRequest("GET", "/peers");
+
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      } else {
+        return [];
+      }
+    } catch (error) {
+      logger.error("Error getting peers:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a peer from the cluster
+   * @param peerID The peer ID to remove
+   * @returns Success status
+   */
+  async removePeer(peerID: string): Promise<boolean> {
+    try {
+      const response = await makeClusterRequest("DELETE", `/peers/${peerID}`);
+
+      if (response.status >= 200 && response.status < 300) {
+        logger.info(`Peer ${peerID} removed successfully`);
+        return true;
+      } else {
+        logger.warn(`Failed to remove peer ${peerID}: ${response.status}`);
+        return false;
+      }
+    } catch (error) {
+      logger.error(`Error removing peer ${peerID}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Trigger garbage collection on IPFS nodes
+   * @returns Success status
+   */
+  async gc(): Promise<boolean> {
+    try {
+      const response = await makeClusterRequest("POST", "/ipfs/gc");
+
+      if (response.status >= 200 && response.status < 300) {
+        logger.info("Garbage collection triggered successfully");
+        return true;
+      } else {
+        logger.warn(`Failed to trigger garbage collection: ${response.status}`);
+        return false;
+      }
+    } catch (error) {
+      logger.error("Error triggering garbage collection:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get health alerts
+   * @returns Array of alerts
+   */
+  async getHealthAlerts(): Promise<any[]> {
+    try {
+      const response = await makeClusterRequest("GET", "/health/alerts");
+
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      } else {
+        return [];
+      }
+    } catch (error) {
+      logger.error("Error getting health alerts:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get connection graph
+   * @returns Connection graph data
+   */
+  async getConnectionGraph(): Promise<any> {
+    try {
+      const response = await makeClusterRequest("GET", "/health/graph");
+
+      if (response.status >= 200 && response.status < 300) {
+        return response.data;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      logger.error("Error getting connection graph:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get bandwidth statistics
+   * @returns Bandwidth statistics
+   */
+  async getBandwidthStats(): Promise<any> {
+    try {
+      const response = await makeClusterRequest("GET", "/health/bandwidth");
+
+      if (response.status >= 200 && response.status < 300) {
+        return response.data;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      logger.error("Error getting bandwidth statistics:", error);
       throw error;
     }
   }
