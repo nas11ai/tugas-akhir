@@ -34,13 +34,15 @@ const apiClient = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    // TODO: delete fabric token later
-    let token = localStorage.getItem('fabricToken')
-    if (!token) {
-      token = localStorage.getItem('authToken')
+    const authToken = localStorage.getItem('authToken')
+    const fabricToken = localStorage.getItem('fabricToken')
+
+    if (authToken) {
+      config.headers.Authorization = `Bearer ${authToken}`
     }
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+
+    if (fabricToken) {
+      config.headers['X-Fabric-Token'] = fabricToken
     }
 
     if (
