@@ -181,8 +181,8 @@ class IjazahContract extends Contract {
   async CreateSignature(ctx, signatureStr) {
     // This function should be restricted to Rektor's MSP
     const clientMSPID = ctx.clientIdentity.getMSPID();
-    if (clientMSPID !== 'RektorMSP') {
-      throw new Error('Hanya Rektor yang dapat mengelola tanda tangan');
+    if (clientMSPID !== 'RektorMSP' && clientMSPID !== 'AkademikMSP') {
+      throw new Error('Hanya Rektor & Akademik yang dapat mengelola tanda tangan');
     }
 
     const signature = JSON.parse(signatureStr);
@@ -223,8 +223,8 @@ class IjazahContract extends Contract {
   async UpdateSignature(ctx, signatureStr) {
     // This function should be restricted to Rektor's MSP
     const clientMSPID = ctx.clientIdentity.getMSPID();
-    if (clientMSPID !== 'RektorMSP') {
-      throw new Error('Hanya Rektor yang dapat mengelola tanda tangan');
+    if (clientMSPID !== 'RektorMSP' && clientMSPID !== 'AkademikMSP') {
+      throw new Error('Hanya Rektor & Akademik yang dapat mengelola tanda tangan');
     }
 
     const signature = JSON.parse(signatureStr);
@@ -309,8 +309,8 @@ class IjazahContract extends Contract {
   async DeleteSignature(ctx, id) {
     // This function should be restricted to Rektor's MSP
     const clientMSPID = ctx.clientIdentity.getMSPID();
-    if (clientMSPID !== 'RektorMSP') {
-      throw new Error('Hanya Rektor yang dapat mengelola tanda tangan');
+    if (clientMSPID !== 'RektorMSP' && clientMSPID !== 'AkademikMSP') {
+      throw new Error('Hanya Rektor & Akademik yang dapat mengelola tanda tangan');
     }
 
     const key = `signature_${id}`;
@@ -326,8 +326,8 @@ class IjazahContract extends Contract {
   async SetActiveSignature(ctx, id) {
     // This function should be restricted to Rektor's MSP
     const clientMSPID = ctx.clientIdentity.getMSPID();
-    if (clientMSPID !== 'RektorMSP') {
-      throw new Error('Hanya Rektor yang dapat mengelola tanda tangan');
+    if (clientMSPID !== 'RektorMSP' && clientMSPID !== 'AkademikMSP') {
+      throw new Error('Hanya Rektor & Akademik yang dapat mengelola tanda tangan');
     }
 
     const key = `signature_${id}`;
