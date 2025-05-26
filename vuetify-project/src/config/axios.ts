@@ -142,6 +142,17 @@ export const apiService = {
 
     getCurrentUser: () => apiClient.get('/api/user/me'),
 
+    enrollFabricCA: (
+      organization: Organization,
+      username: string,
+      password: string
+    ) =>
+      apiClient.post('/api/user/enroll-fabric-ca', {
+        organization,
+        username,
+        password,
+      }),
+
     getAll: (params: Record<string, unknown> = {}) =>
       apiClient.get('/api/user', { params }),
 
