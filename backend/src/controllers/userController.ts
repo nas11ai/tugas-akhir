@@ -9,7 +9,7 @@ import {
   Role,
   UserWithCredentials,
 } from "../services/userService";
-import { fabloService } from "@/services/fabloService";
+import { fabloService } from "../services/fabloService";
 
 /**
  * Create a new user

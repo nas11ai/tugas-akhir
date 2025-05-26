@@ -1,4 +1,4 @@
-import { Organization } from "@/models/user";
+import { Organization } from "../models/user";
 import { Request, Response, NextFunction } from "express";
 import {
   ValidationChain,

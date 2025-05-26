@@ -11,7 +11,7 @@ import {
   validateBulkIds,
   validateRejectionReason,
 } from "../middlewares/validation";
-import { Organization } from "@/models/user";
+import { Organization } from "../models/user";
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
