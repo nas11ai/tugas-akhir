@@ -44,7 +44,12 @@ router.get("/me", authenticate, getCurrentUser);
  * @desc    Get user by ID
  * @access  Private (authenticated users)
  */
-router.get("/:uid", authenticate, validate(validateUidParam), getUserById);
+router.get(
+  "/:uid",
+  authenticate,
+  validate(validateUidParam),
+  getUserById
+);
 
 /**
  * @route   PUT /api/users/:uid
@@ -102,7 +107,12 @@ router.get(
  * @desc    Get all active users
  * @access  Admin only
  */
-router.get("/active", authenticate, requireAdmin, getActiveUsers);
+router.get(
+  "/active",
+  authenticate,
+  requireAdmin,
+  getActiveUsers
+);
 
 /**
  * @route   PUT /api/users/:uid/activate

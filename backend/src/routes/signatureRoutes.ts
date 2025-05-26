@@ -1,7 +1,11 @@
 import { Router } from "express";
 import multer from "multer";
 import { signatureController } from "../controllers/signatureController";
-import { authenticate, requireOrganization } from "../middlewares/auth";
+import {
+  authenticate,
+  requireFabricToken,
+  requireOrganization,
+} from "../middlewares/auth";
 import {
   validate,
   validateIdParam,
@@ -45,6 +49,7 @@ const router = Router();
 router.get(
   "/active",
   authenticate,
+  requireFabricToken,
   signatureController.getActiveSignature.bind(signatureController)
 );
 
@@ -56,6 +61,7 @@ router.get(
 router.get(
   "/:id",
   authenticate,
+  requireFabricToken,
   validate(validateIdParam),
   signatureController.getSignature.bind(signatureController)
 );
@@ -68,6 +74,7 @@ router.get(
 router.get(
   "/",
   authenticate,
+  requireFabricToken,
   signatureController.getAllSignatures.bind(signatureController)
 );
 
@@ -81,6 +88,7 @@ router.get(
 router.post(
   "/",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateCreateSignature),
   signatureController.createSignature.bind(signatureController)
@@ -94,6 +102,7 @@ router.post(
 router.post(
   "/upload",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   upload.single("signature"), // Required signature file upload
   signatureController.uploadSignature.bind(signatureController)
@@ -107,6 +116,7 @@ router.post(
 router.put(
   "/:id",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateIdParam),
   validate(validateUpdateSignature),
@@ -121,6 +131,7 @@ router.put(
 router.put(
   "/:id/activate",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateIdParam),
   signatureController.setActiveSignature.bind(signatureController)
@@ -134,6 +145,7 @@ router.put(
 router.put(
   "/:id/deactivate",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateIdParam),
   signatureController.deactivateSignature.bind(signatureController)
@@ -147,6 +159,7 @@ router.put(
 router.delete(
   "/:id",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateIdParam),
   signatureController.deleteSignature.bind(signatureController)
@@ -160,6 +173,7 @@ router.delete(
 router.get(
   "/stats",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   signatureController.getSignatureStats.bind(signatureController)
 );
@@ -172,6 +186,7 @@ router.get(
 router.post(
   "/validate-url",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateUrl),
   signatureController.validateSignatureUrl.bind(signatureController)

@@ -54,7 +54,7 @@ export class IjazahController {
       }
 
       // Get fabric token from user session or generate one
-      if (!req.token) {
+      if (!req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Fabric token required",
@@ -72,7 +72,7 @@ export class IjazahController {
       // Create ijazah using fabric service
       const newIjazah = await fabricService.createIjazah(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         ijazahData,
         photoFile
       );
@@ -147,7 +147,7 @@ export class IjazahController {
         return;
       }
 
-      if (!req.token) {
+      if (!req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Fabric token required",
@@ -166,7 +166,7 @@ export class IjazahController {
       // Update ijazah using fabric service
       const updatedIjazah = await fabricService.updateIjazah(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         id,
         ijazahData,
         photoFile
@@ -221,9 +221,9 @@ export class IjazahController {
       let userToken: string;
 
       // If user is authenticated, use their credentials
-      if (req.user && req.token) {
+      if (req.user && req.fabricToken) {
         userOrganization = req.user.organization as Organization;
-        userToken = req.token;
+        userToken = req.fabricToken;
       } else {
         // For public access, use admin credentials from AKADEMIK organization
         userOrganization = Organization.AKADEMIK;
@@ -335,7 +335,7 @@ export class IjazahController {
     next: NextFunction
   ): Promise<void> {
     try {
-      if (!req.user || !req.token) {
+      if (!req.user || !req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Authentication required",
@@ -347,7 +347,7 @@ export class IjazahController {
 
       const ijazahList = await fabricService.getAllIjazah(
         req.user.organization as Organization,
-        req.token
+        req.fabricToken
       );
 
       // Add download URLs to each ijazah
@@ -388,7 +388,7 @@ export class IjazahController {
     next: NextFunction
   ): Promise<void> {
     try {
-      if (!req.user || !req.token) {
+      if (!req.user || !req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Authentication required",
@@ -414,7 +414,7 @@ export class IjazahController {
 
       const ijazahList = await fabricService.getIjazahByStatus(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         status
       );
 
@@ -463,7 +463,7 @@ export class IjazahController {
     next: NextFunction
   ): Promise<void> {
     try {
-      if (!req.user || !req.token) {
+      if (!req.user || !req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Authentication required",
@@ -487,7 +487,7 @@ export class IjazahController {
 
       const approvedIjazah = await fabricService.approveIjazah(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         id,
         signatureId
       );
@@ -533,7 +533,7 @@ export class IjazahController {
     next: NextFunction
   ): Promise<void> {
     try {
-      if (!req.user || !req.token) {
+      if (!req.user || !req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Authentication required",
@@ -557,7 +557,7 @@ export class IjazahController {
 
       const rejectedIjazah = await fabricService.rejectIjazah(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         id,
         rejectionReason
       );
@@ -603,7 +603,7 @@ export class IjazahController {
     next: NextFunction
   ): Promise<void> {
     try {
-      if (!req.user || !req.token) {
+      if (!req.user || !req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Authentication required",
@@ -626,7 +626,7 @@ export class IjazahController {
 
       const activatedIjazah = await fabricService.activateIjazah(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         id
       );
 
@@ -671,7 +671,7 @@ export class IjazahController {
     next: NextFunction
   ): Promise<void> {
     try {
-      if (!req.user || !req.token) {
+      if (!req.user || !req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Authentication required",
@@ -696,7 +696,7 @@ export class IjazahController {
       const regeneratedIjazah =
         await fabricService.regenerateCertificateWithSignature(
           req.user.organization as Organization,
-          req.token,
+          req.fabricToken,
           id,
           signatureId
         );
@@ -742,7 +742,7 @@ export class IjazahController {
     next: NextFunction
   ): Promise<void> {
     try {
-      if (!req.user || !req.token) {
+      if (!req.user || !req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Authentication required",
@@ -791,7 +791,7 @@ export class IjazahController {
 
       const updatedIjazah = await fabricService.updateIjazahStatus(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         id,
         status
       );
@@ -837,7 +837,7 @@ export class IjazahController {
     next: NextFunction
   ): Promise<void> {
     try {
-      if (!req.user || !req.token) {
+      if (!req.user || !req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Authentication required",
@@ -860,7 +860,7 @@ export class IjazahController {
 
       const result = await fabricService.deleteIjazah(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         id
       );
 
@@ -897,7 +897,7 @@ export class IjazahController {
     next: NextFunction
   ): Promise<void> {
     try {
-      if (!req.user || !req.token) {
+      if (!req.user || !req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Authentication required",
@@ -910,7 +910,7 @@ export class IjazahController {
       // Get ijazah data first
       const ijazah = await fabricService.getIjazah(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         id
       );
 
@@ -962,7 +962,7 @@ export class IjazahController {
     next: NextFunction
   ): Promise<void> {
     try {
-      if (!req.user || !req.token) {
+      if (!req.user || !req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Authentication required",
@@ -975,7 +975,7 @@ export class IjazahController {
       // Get ijazah data first
       const ijazah = await fabricService.getIjazah(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         id
       );
 
@@ -1213,7 +1213,7 @@ export class IjazahController {
     next: NextFunction
   ): Promise<void> {
     try {
-      if (!req.user || !req.token) {
+      if (!req.user || !req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Authentication required",
@@ -1234,7 +1234,7 @@ export class IjazahController {
 
       const pendingIjazah = await fabricService.getIjazahByStatus(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         IJAZAH_STATUS.MENUNGGU_TTD
       );
 
@@ -1276,7 +1276,7 @@ export class IjazahController {
     next: NextFunction
   ): Promise<void> {
     try {
-      if (!req.user || !req.token) {
+      if (!req.user || !req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Authentication required",
@@ -1312,7 +1312,7 @@ export class IjazahController {
         try {
           const approvedIjazah = await fabricService.approveIjazah(
             req.user.organization as Organization,
-            req.token,
+            req.fabricToken,
             ijazahId,
             signatureId
           );

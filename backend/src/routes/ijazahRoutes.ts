@@ -1,7 +1,11 @@
 import { Router } from "express";
 import multer from "multer";
 import { ijazahController } from "../controllers/ijazahController";
-import { authenticate, requireOrganization } from "../middlewares/auth";
+import {
+  authenticate,
+  requireFabricToken,
+  requireOrganization,
+} from "../middlewares/auth";
 import {
   validate,
   validateIdParam,
@@ -82,6 +86,7 @@ router.get(
 router.get(
   "/",
   authenticate,
+  requireFabricToken,
   ijazahController.getAllIjazah.bind(ijazahController)
 );
 
@@ -93,6 +98,7 @@ router.get(
 router.get(
   "/statuses",
   authenticate,
+  requireFabricToken,
   ijazahController.getAvailableStatuses.bind(ijazahController)
 );
 
@@ -104,6 +110,7 @@ router.get(
 router.get(
   "/status/:status",
   authenticate,
+  requireFabricToken,
   ijazahController.getIjazahByStatus.bind(ijazahController)
 );
 
@@ -115,6 +122,7 @@ router.get(
 router.get(
   "/:id/certificate",
   authenticate,
+  requireFabricToken,
   validate(validateIdParam),
   ijazahController.getCertificateDownloadUrl.bind(ijazahController)
 );
@@ -127,6 +135,7 @@ router.get(
 router.get(
   "/:id/photo",
   authenticate,
+  requireFabricToken,
   validate(validateIdParam),
   ijazahController.getPhotoDownloadUrl.bind(ijazahController)
 );
@@ -141,6 +150,7 @@ router.get(
 router.post(
   "/",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK]),
   upload.single("photo"), // Optional photo upload
   validate(validateCreateIjazah),
@@ -155,6 +165,7 @@ router.post(
 router.put(
   "/:id",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK]),
   validate(validateIdParam),
   upload.single("photo"), // Optional photo upload for update
@@ -170,6 +181,7 @@ router.put(
 router.delete(
   "/:id",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK]),
   validate(validateIdParam),
   ijazahController.deleteIjazah.bind(ijazahController)
@@ -185,6 +197,7 @@ router.delete(
 router.get(
   "/pending",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   ijazahController.getPendingIjazah.bind(ijazahController)
 );
@@ -197,6 +210,7 @@ router.get(
 router.put(
   "/:id/approve",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateIdParam),
   ijazahController.approveIjazah.bind(ijazahController)
@@ -210,6 +224,7 @@ router.put(
 router.put(
   "/:id/reject",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateIdParam),
   validate(validateRejectionReason),
@@ -224,6 +239,7 @@ router.put(
 router.put(
   "/:id/activate",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateIdParam),
   ijazahController.activateIjazah.bind(ijazahController)
@@ -237,6 +253,7 @@ router.put(
 router.put(
   "/:id/regenerate",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateIdParam),
   ijazahController.regenerateCertificate.bind(ijazahController)
@@ -250,6 +267,7 @@ router.put(
 router.put(
   "/:id/status",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK, Organization.REKTOR]), // Only REKTOR can change status as per fabricService
   validate(validateIdParam),
   validate(validateStatusUpdate),
@@ -264,6 +282,7 @@ router.put(
 router.post(
   "/bulk-approve",
   authenticate,
+  requireFabricToken,
   requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateBulkIds),
   ijazahController.bulkApproveIjazah.bind(ijazahController)

@@ -49,7 +49,7 @@ export class SignatureController {
         return;
       }
 
-      if (!req.token) {
+      if (!req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Fabric token required",
@@ -64,7 +64,7 @@ export class SignatureController {
       // Create signature using fabric service
       const newSignature = await fabricService.createSignature(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         signatureData
       );
 
@@ -130,7 +130,7 @@ export class SignatureController {
         return;
       }
 
-      if (!req.token) {
+      if (!req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Fabric token required",
@@ -146,7 +146,7 @@ export class SignatureController {
       // Update signature using fabric service
       const updatedSignature = await fabricService.updateSignature(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         id,
         signatureData
       );
@@ -184,7 +184,7 @@ export class SignatureController {
     next: NextFunction
   ): Promise<void> {
     try {
-      if (!req.user || !req.token) {
+      if (!req.user || !req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Authentication required",
@@ -198,7 +198,7 @@ export class SignatureController {
 
       const signature = await fabricService.getSignature(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         id
       );
 
@@ -235,7 +235,7 @@ export class SignatureController {
     next: NextFunction
   ): Promise<void> {
     try {
-      if (!req.user || !req.token) {
+      if (!req.user || !req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Authentication required",
@@ -247,7 +247,7 @@ export class SignatureController {
 
       const signatures = await fabricService.getAllSignatures(
         req.user.organization as Organization,
-        req.token
+        req.fabricToken
       );
 
       res.status(200).json({
@@ -277,7 +277,7 @@ export class SignatureController {
     next: NextFunction
   ): Promise<void> {
     try {
-      if (!req.user || !req.token) {
+      if (!req.user || !req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Authentication required",
@@ -289,7 +289,7 @@ export class SignatureController {
 
       const activeSignature = await fabricService.getActiveSignature(
         req.user.organization as Organization,
-        req.token
+        req.fabricToken
       );
 
       res.status(200).json({
@@ -343,7 +343,7 @@ export class SignatureController {
         return;
       }
 
-      if (!req.token) {
+      if (!req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Fabric token required",
@@ -357,7 +357,7 @@ export class SignatureController {
 
       const activeSignature = await fabricService.setActiveSignature(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         id
       );
 
@@ -412,7 +412,7 @@ export class SignatureController {
         return;
       }
 
-      if (!req.token) {
+      if (!req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Fabric token required",
@@ -427,7 +427,7 @@ export class SignatureController {
       // Update signature to set IsActive to false
       const updatedSignature = await fabricService.updateSignature(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         id,
         { IsActive: false }
       );
@@ -483,7 +483,7 @@ export class SignatureController {
         return;
       }
 
-      if (!req.token) {
+      if (!req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Fabric token required",
@@ -497,7 +497,7 @@ export class SignatureController {
 
       const result = await fabricService.deleteSignature(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         id
       );
 
@@ -552,7 +552,7 @@ export class SignatureController {
         return;
       }
 
-      if (!req.token) {
+      if (!req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Fabric token required",
@@ -604,7 +604,7 @@ export class SignatureController {
 
       const newSignature = await fabricService.createSignature(
         req.user.organization as Organization,
-        req.token,
+        req.fabricToken,
         signatureData
       );
 
@@ -662,7 +662,7 @@ export class SignatureController {
         return;
       }
 
-      if (!req.token) {
+      if (!req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Fabric token required",
@@ -675,7 +675,7 @@ export class SignatureController {
       // Get all signatures
       const signatures = await fabricService.getAllSignatures(
         req.user.organization as Organization,
-        req.token
+        req.fabricToken
       );
 
       // Calculate statistics
