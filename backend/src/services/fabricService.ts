@@ -204,10 +204,6 @@ with positioned elements at exact coordinates matching the official template.
         Type: "certificate",
         ...cleanIjazahData,
         ipfsCID: certificateResult.cid,
-        photoCID,
-        Status: IJAZAH_STATUS.MENUNGGU_TTD,
-        CreatedAt: new Date().toISOString(),
-        UpdatedAt: new Date().toISOString(),
       };
 
       // Store in blockchain via chaincode
