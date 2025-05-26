@@ -7,6 +7,7 @@ import {
   validateCreateUser,
   validateUpdateUser,
   validateOrganizationParam,
+  enrollUserValidation,
 } from "../middlewares/validation";
 import {
   createUser,
@@ -19,6 +20,7 @@ import {
   getActiveUsers,
   activateUser,
   deactivateUser,
+  enrollFabricCA,
 } from "../controllers/userController";
 
 const router = Router();
@@ -126,6 +128,19 @@ router.put(
   requireAdmin,
   validate(validateUidParam),
   deactivateUser
+);
+
+/**
+ * @route   POST /api/users/enroll-fabric-ca
+ * @desc    Get Fabric CA access token
+ * @access  Akademik and Rektor only
+ */
+
+router.post(
+  "/enroll-fabric-ca",
+  authenticate,
+  validate(enrollUserValidation),
+  enrollFabricCA
 );
 
 export default router;

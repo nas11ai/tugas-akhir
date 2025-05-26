@@ -1,3 +1,4 @@
+import { Organization } from "@/models/user";
 import { Request, Response, NextFunction } from "express";
 import {
   ValidationChain,
@@ -458,4 +459,18 @@ export const validateOrganizationParam = [
   param("organization")
     .isIn(["AKADEMIK", "REKTOR"])
     .withMessage("Organization must be one of: AKADEMIK, REKTOR"),
+];
+
+export const enrollUserValidation = [
+  body("organization")
+    .notEmpty()
+    .withMessage("Organization wajib diisi")
+    .isIn([Organization.AKADEMIK, Organization.REKTOR])
+    .withMessage("Organization tidak valid"),
+  body("username").notEmpty().withMessage("Username wajib diisi"),
+  body("password")
+    .notEmpty()
+    .withMessage("Password wajib diisi")
+    .isLength({ min: 6 })
+    .withMessage("Password minimal 6 karakter"),
 ];

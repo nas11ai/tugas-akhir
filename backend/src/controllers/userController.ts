@@ -8,6 +8,7 @@ import {
   Organization,
   Role,
 } from "../services/userService";
+import { fabloService } from "@/services/fabloService";
 
 /**
  * Create a new user
@@ -135,6 +136,37 @@ export const getUserById = async (
     res.status(500).json({
       success: false,
       error: "Failed to get user",
+    });
+  }
+};
+
+/**
+ * Enroll user
+ */
+
+export const enrollFabricCA = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const token = await fabloService.enrollUser(
+      req.body.organization as Organization,
+      req.body.username as string,
+      req.body.password as string
+    );
+
+    res.json({
+      success: true,
+      data: {
+        message: "User enrolled successfully",
+        token: token,
+      },
+    });
+  } catch (error) {
+    logger.error("Error enrolling user:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to enroll user",
     });
   }
 };
