@@ -7,6 +7,7 @@ import {
   UserCredentials,
   Organization,
   Role,
+  UserWithCredentials,
 } from "../services/userService";
 import { fabloService } from "@/services/fabloService";
 
@@ -79,20 +80,18 @@ export const getCurrentUser = async (
   res: Response
 ): Promise<void> => {
   try {
-    const user = req.user!;
+    const { uid } = req.user!;
 
-    // Return user without credentials for security
-    const userProfile: User = {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName,
-      photoURL: user.photoURL,
-      role: user.role as Role,
-      organization: user.organization as Organization,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      isActive: user.isActive,
-    };
+    const userProfile: UserWithCredentials | null =
+      await userService.getUserWithCredentials(uid);
+
+    if (!userProfile) {
+      res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+      return;
+    }
 
     res.json({
       success: true,
