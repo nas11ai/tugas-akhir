@@ -196,11 +196,13 @@ with positioned elements at exact coordinates matching the official template.
         `Certificate PDF uploaded and pinned with CID: ${certificateResult.cid}`
       );
 
+      const { photo: _, ...cleanIjazahData } = ijazahData as any;
+
       // Prepare ijazah data for blockchain
       const ijazah: Ijazah = {
         ID: ijazahId,
         Type: "certificate",
-        ...ijazahData,
+        ...cleanIjazahData,
         ipfsCID: certificateResult.cid,
         photoCID,
         Status: IJAZAH_STATUS.MENUNGGU_TTD,
@@ -264,10 +266,12 @@ with positioned elements at exact coordinates matching the official template.
         );
       }
 
+      const { photo: _, ...cleanIjazahData } = ijazahData as any;
+
       // Merge existing data with updates
       const updatedData: IjazahInput = {
         ...existingIjazah,
-        ...ijazahData,
+        ...cleanIjazahData,
       };
 
       // Handle photo update if provided
