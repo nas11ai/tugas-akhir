@@ -1,7 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import { signatureController } from "../controllers/signatureController";
-import { authenticate, requireRektor } from "../middlewares/auth";
+import { authenticate, requireOrganization } from "../middlewares/auth";
 import {
   validate,
   validateIdParam,
@@ -9,6 +9,7 @@ import {
   validateUpdateSignature,
   validateUrl,
 } from "../middlewares/validation";
+import { Organization } from "../models/user";
 
 // Configure multer for signature file uploads
 const storage = multer.memoryStorage();
@@ -80,7 +81,7 @@ router.get(
 router.post(
   "/",
   authenticate,
-  requireRektor,
+  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateCreateSignature),
   signatureController.createSignature.bind(signatureController)
 );
@@ -93,7 +94,7 @@ router.post(
 router.post(
   "/upload",
   authenticate,
-  requireRektor,
+  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   upload.single("signature"), // Required signature file upload
   signatureController.uploadSignature.bind(signatureController)
 );
@@ -106,7 +107,7 @@ router.post(
 router.put(
   "/:id",
   authenticate,
-  requireRektor,
+  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateIdParam),
   validate(validateUpdateSignature),
   signatureController.updateSignature.bind(signatureController)
@@ -120,7 +121,7 @@ router.put(
 router.put(
   "/:id/activate",
   authenticate,
-  requireRektor,
+  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateIdParam),
   signatureController.setActiveSignature.bind(signatureController)
 );
@@ -133,7 +134,7 @@ router.put(
 router.put(
   "/:id/deactivate",
   authenticate,
-  requireRektor,
+  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateIdParam),
   signatureController.deactivateSignature.bind(signatureController)
 );
@@ -146,7 +147,7 @@ router.put(
 router.delete(
   "/:id",
   authenticate,
-  requireRektor,
+  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateIdParam),
   signatureController.deleteSignature.bind(signatureController)
 );
@@ -159,7 +160,7 @@ router.delete(
 router.get(
   "/stats",
   authenticate,
-  requireRektor,
+  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   signatureController.getSignatureStats.bind(signatureController)
 );
 
@@ -171,7 +172,7 @@ router.get(
 router.post(
   "/validate-url",
   authenticate,
-  requireRektor,
+  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateUrl),
   signatureController.validateSignatureUrl.bind(signatureController)
 );

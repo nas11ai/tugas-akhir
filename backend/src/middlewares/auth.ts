@@ -117,42 +117,6 @@ export const requireAdmin = (
 };
 
 /**
- * Authorization middleware - requires AKADEMIK organization
- */
-export const requireAkademik = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
-  if (!req.user || req.user.organization !== Organization.AKADEMIK) {
-    res.status(403).json({
-      success: false,
-      error: "AKADEMIK organization access required",
-    });
-    return;
-  }
-  next();
-};
-
-/**
- * Authorization middleware - requires REKTOR organization
- */
-export const requireRektor = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
-  if (!req.user || req.user.organization !== Organization.REKTOR) {
-    res.status(403).json({
-      success: false,
-      error: "REKTOR organization access required",
-    });
-    return;
-  }
-  next();
-};
-
-/**
  * Authorization middleware - requires specific role
  */
 export const requireRole = (role: string) => {
@@ -171,12 +135,12 @@ export const requireRole = (role: string) => {
 /**
  * Authorization middleware - requires specific organization
  */
-export const requireOrganization = (organization: string) => {
+export const requireOrganization = (organizations: string[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    if (!req.user || req.user.organization !== organization) {
+    if (!req.user || !organizations.includes(req.user.organization)) {
       res.status(403).json({
         success: false,
-        error: `${organization} organization access required`,
+        error: `${organizations.join(" or ")} organization access required`,
       });
       return;
     }

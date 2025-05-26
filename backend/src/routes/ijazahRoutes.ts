@@ -1,12 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import { ijazahController } from "../controllers/ijazahController";
-import {
-  authenticate,
-  requireAdmin,
-  requireAkademik,
-  requireRektor,
-} from "../middlewares/auth";
+import { authenticate, requireOrganization } from "../middlewares/auth";
 import {
   validate,
   validateIdParam,
@@ -16,6 +11,7 @@ import {
   validateBulkIds,
   validateRejectionReason,
 } from "../middlewares/validation";
+import { Organization } from "@/models/user";
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
@@ -145,7 +141,7 @@ router.get(
 router.post(
   "/",
   authenticate,
-  requireAkademik,
+  requireOrganization([Organization.AKADEMIK]),
   upload.single("photo"), // Optional photo upload
   validate(validateCreateIjazah),
   ijazahController.createIjazah.bind(ijazahController)
@@ -159,7 +155,7 @@ router.post(
 router.put(
   "/:id",
   authenticate,
-  requireAkademik,
+  requireOrganization([Organization.AKADEMIK]),
   validate(validateIdParam),
   upload.single("photo"), // Optional photo upload for update
   validate(validateUpdateIjazah),
@@ -174,34 +170,34 @@ router.put(
 router.delete(
   "/:id",
   authenticate,
-  requireAkademik,
+  requireOrganization([Organization.AKADEMIK]),
   validate(validateIdParam),
   ijazahController.deleteIjazah.bind(ijazahController)
 );
 
-// ===== REKTOR ONLY ROUTES =====
+// ===== REKTOR & AKADEMIK ROUTES =====
 
 /**
  * @route   GET /api/ijazah/pending
  * @desc    Get pending ijazah certificates awaiting rector approval
- * @access  REKTOR only
+ * @access  REKTOR & AKADEMIK
  */
 router.get(
   "/pending",
   authenticate,
-  requireRektor,
+  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   ijazahController.getPendingIjazah.bind(ijazahController)
 );
 
 /**
  * @route   PUT /api/ijazah/:id/approve
  * @desc    Approve ijazah certificate with rector signature
- * @access  REKTOR only
+ * @access  REKTOR & AKADEMIK
  */
 router.put(
   "/:id/approve",
   authenticate,
-  requireRektor,
+  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateIdParam),
   ijazahController.approveIjazah.bind(ijazahController)
 );
@@ -209,12 +205,12 @@ router.put(
 /**
  * @route   PUT /api/ijazah/:id/reject
  * @desc    Reject ijazah certificate
- * @access  REKTOR only
+ * @access  REKTOR & AKADEMIK
  */
 router.put(
   "/:id/reject",
   authenticate,
-  requireRektor,
+  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateIdParam),
   validate(validateRejectionReason),
   ijazahController.rejectIjazah.bind(ijazahController)
@@ -223,12 +219,12 @@ router.put(
 /**
  * @route   PUT /api/ijazah/:id/activate
  * @desc    Activate approved ijazah certificate
- * @access  REKTOR only
+ * @access  REKTOR & AKADEMIK
  */
 router.put(
   "/:id/activate",
   authenticate,
-  requireRektor,
+  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateIdParam),
   ijazahController.activateIjazah.bind(ijazahController)
 );
@@ -236,12 +232,12 @@ router.put(
 /**
  * @route   PUT /api/ijazah/:id/regenerate
  * @desc    Regenerate certificate PDF with current or specified signature
- * @access  REKTOR only
+ * @access  REKTOR & AKADEMIK
  */
 router.put(
   "/:id/regenerate",
   authenticate,
-  requireRektor,
+  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateIdParam),
   ijazahController.regenerateCertificate.bind(ijazahController)
 );
@@ -249,12 +245,12 @@ router.put(
 /**
  * @route   PUT /api/ijazah/:id/status
  * @desc    Update ijazah status
- * @access  REKTOR only (for approval/rejection), AKADEMIK for other status changes
+ * @access  REKTOR & AKADEMIK (for approval/rejection), AKADEMIK for other status changes
  */
 router.put(
   "/:id/status",
   authenticate,
-  requireRektor, // Only REKTOR can change status as per fabricService
+  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]), // Only REKTOR can change status as per fabricService
   validate(validateIdParam),
   validate(validateStatusUpdate),
   ijazahController.updateIjazahStatus.bind(ijazahController)
@@ -263,12 +259,12 @@ router.put(
 /**
  * @route   POST /api/ijazah/bulk-approve
  * @desc    Bulk approve multiple ijazah certificates
- * @access  REKTOR only
+ * @access  REKTOR & AKADEMIK
  */
 router.post(
   "/bulk-approve",
   authenticate,
-  requireRektor,
+  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   validate(validateBulkIds),
   ijazahController.bulkApproveIjazah.bind(ijazahController)
 );
