@@ -8,7 +8,6 @@ organizations:
     mspid: OrdererMSP
     peers:
       - peer0.akademik.itk.ac.id
-      - peer0.rektor.itk.ac.id
     certificateAuthorities:
       - ca.orderer.itk.ac.id
 peers:
@@ -19,13 +18,6 @@ peers:
         /home/nas11ai/projects/tugas-akhir/fablo/fablo-target/fabric-config/crypto-config/peerOrganizations/akademik.itk.ac.id/peers/peer0.akademik.itk.ac.id/tls/ca.crt
     grpcOptions:
       ssl-target-name-override: peer0.akademik.itk.ac.id
-  peer0.rektor.itk.ac.id:
-    url: grpcs://localhost:7061
-    tlsCACerts:
-      path: >-
-        /home/nas11ai/projects/tugas-akhir/fablo/fablo-target/fabric-config/crypto-config/peerOrganizations/rektor.itk.ac.id/peers/peer0.rektor.itk.ac.id/tls/ca.crt
-    grpcOptions:
-      ssl-target-name-override: peer0.rektor.itk.ac.id
 certificateAuthorities:
   ca.orderer.itk.ac.id:
     url: https://localhost:7020

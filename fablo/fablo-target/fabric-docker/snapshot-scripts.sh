@@ -6,7 +6,6 @@ __getOrdererAndPeerNodes() {
       orderer1.raft-group.orderer.itk.ac.id
       orderer2.raft-group.orderer.itk.ac.id
       peer0.akademik.itk.ac.id
-      peer0.rektor.itk.ac.id
   "
 }
 
@@ -19,7 +18,6 @@ __getCASQLiteNodes() {
 __getCAPostgresNodes() {
   echo "
       db.ca.akademik.itk.ac.id
-      db.ca.rektor.itk.ac.id
   "
 }
 

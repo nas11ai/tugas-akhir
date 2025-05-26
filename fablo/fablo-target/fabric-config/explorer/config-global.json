@@ -3,10 +3,6 @@
     "network-akademik": {
       "name": "Network of Akademik",
       "profile": "/opt/explorer/app/platform/fabric/connection-profile/connection-profile-akademik.json"
-    },
-    "network-rektor": {
-      "name": "Network of Rektor",
-      "profile": "/opt/explorer/app/platform/fabric/connection-profile/connection-profile-rektor.json"
     }
   },
   "license": "Apache-2.0"

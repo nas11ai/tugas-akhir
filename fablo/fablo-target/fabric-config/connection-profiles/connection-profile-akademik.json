@@ -9,8 +9,7 @@
     "Akademik": {
       "mspid": "AkademikMSP",
       "peers": [
-        "peer0.akademik.itk.ac.id",
-        "peer0.rektor.itk.ac.id"
+        "peer0.akademik.itk.ac.id"
       ],
       "certificateAuthorities": [
         "ca.akademik.itk.ac.id"
@@ -25,15 +24,6 @@
       },
       "grpcOptions": {
         "ssl-target-name-override": "peer0.akademik.itk.ac.id"
-      }
-    },
-    "peer0.rektor.itk.ac.id": {
-      "url": "grpcs://localhost:7061",
-      "tlsCACerts": {
-        "path": "/home/nas11ai/projects/tugas-akhir/fablo/fablo-target/fabric-config/crypto-config/peerOrganizations/rektor.itk.ac.id/peers/peer0.rektor.itk.ac.id/tls/ca.crt"
-      },
-      "grpcOptions": {
-        "ssl-target-name-override": "peer0.rektor.itk.ac.id"
       }
     }
   },

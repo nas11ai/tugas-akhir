@@ -36,22 +36,6 @@
       "tools": {
         "fabloRest": true
       }
-    },
-    {
-      "organization": {
-        "name": "Rektor",
-        "domain": "rektor.itk.ac.id"
-      },
-      "ca": {
-        "db": "postgres"
-      },
-      "peer": {
-        "instances": 1,
-        "db": "CouchDb"
-      },
-      "tools": {
-        "fabloRest": true
-      }
     }
   ],
   "channels": [
@@ -60,11 +44,7 @@
       "orgs": [
         {
           "name": "Akademik",
-          "peers": ["peer0", "peer1"]
-        },
-        {
-          "name": "Rektor",
-          "peers": ["peer0", "peer1"]
+          "peers": ["peer0"]
         }
       ]
     }
@@ -75,11 +55,7 @@
       "version": "1.0.0",
       "lang": "node",
       "channel": "ijazah-channel",
-      "directory": "./chaincode",
-      "endorsement": "OR('AkademikMSP.peer','RektorMSP.peer')"
+      "directory": "./chaincode"
     }
-  ],
-  "hooks": {
-    "postGenerate": "perl -i -pe 's/MaxMessageCount: 10/MaxMessageCount: 1/g' \"./fablo-target/fabric-config/configtx.yaml\""
-  }
+  ]
 }

@@ -74,29 +74,6 @@ Organizations:
           - Host: peer0.akademik.itk.ac.id
             Port: 7041
 
-    - &Rektor
-      Name: RektorMSP
-      ID: RektorMSP
-      MSPDir: crypto-config/peerOrganizations/rektor.itk.ac.id/msp
-
-      Policies:
-          Readers:
-              Type: Signature
-              Rule: "OR('RektorMSP.member')"
-          Writers:
-              Type: Signature
-              Rule: "OR('RektorMSP.member')"
-          Admins:
-              Type: Signature
-              Rule: "OR('RektorMSP.admin')"
-          Endorsement:
-              Type: Signature
-              Rule: "OR('RektorMSP.member')"
-
-      AnchorPeers:
-          - Host: peer0.rektor.itk.ac.id
-            Port: 7061
-
 ################################################################################
 #   SECTION: Application
 ################################################################################
@@ -149,7 +126,7 @@ Orderer: &Raft-groupDefaults
 
     BatchTimeout: 2s
     BatchSize:
-        MaxMessageCount: 1
+        MaxMessageCount: 10
         AbsoluteMaxBytes: 99 MB
         PreferredMaxBytes: 512 KB
     Organizations:
@@ -194,7 +171,6 @@ Profiles:
                 Organizations:
                     - *Orderer
                     - *Akademik
-                    - *Rektor
 
     # Profile used to create channeltx for ijazah-channel #
     IjazahChannel:
@@ -210,9 +186,7 @@ Profiles:
             SampleConsortium:
                 Organizations:
                     - *Akademik
-                    - *Rektor
         Application:
             <<: *ApplicationDefaults
             Organizations:
                 - *Akademik
-                - *Rektor

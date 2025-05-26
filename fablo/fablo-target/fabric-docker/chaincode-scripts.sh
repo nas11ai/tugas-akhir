@@ -9,12 +9,6 @@ chaincodeList() {
 
     peerChaincodeListTls "cli.akademik.itk.ac.id" "peer0.akademik.itk.ac.id:7041" "$2" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" # Third argument is channel name
 
-  elif
-    [ "$1" = "peer0.rektor.itk.ac.id" ]
-  then
-
-    peerChaincodeListTls "cli.rektor.itk.ac.id" "peer0.rektor.itk.ac.id:7061" "$2" "crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem" # Third argument is channel name
-
   else
 
     echo "Fail to call listChaincodes. No peer or channel found. Provided peer: $1, channel: $2"
@@ -40,17 +34,12 @@ chaincodeInvoke() {
   if [[ "$1" == "peer0.akademik.itk.ac.id"* ]]; then
     cli="cli.akademik.itk.ac.id"
   fi
-  if [[ "$1" == "peer0.rektor.itk.ac.id"* ]]; then
-    cli="cli.rektor.itk.ac.id"
-  fi
 
   peer_addresses="$1"
   peer_addresses="${peer_addresses//peer0.akademik.itk.ac.id/peer0.akademik.itk.ac.id:7041}"
-  peer_addresses="${peer_addresses//peer0.rektor.itk.ac.id/peer0.rektor.itk.ac.id:7061}"
 
   peer_certs="$1"
   peer_certs="${peer_certs//peer0.akademik.itk.ac.id/crypto/peers/peer0.akademik.itk.ac.id/tls/ca.crt}"
-  peer_certs="${peer_certs//peer0.rektor.itk.ac.id/crypto/peers/peer0.rektor.itk.ac.id/tls/ca.crt}"
 
   if [ "$2" = "ijazah-channel" ]; then
     ca_cert="crypto-orderer/tlsca.orderer.itk.ac.id-cert.pem"
