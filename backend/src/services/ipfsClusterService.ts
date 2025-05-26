@@ -43,11 +43,17 @@ export class IpfsClusterService {
         ...formData.getHeaders(),
       });
 
-      if (!response.data || !response.data.cid) {
+      console.log("cluster ipfs response", response);
+
+      if (
+        !response.data ||
+        !Array.isArray(response.data) ||
+        !response.data[0].cid
+      ) {
         throw new Error("Invalid response from IPFS Cluster API");
       }
 
-      const cid = response.data.cid;
+      const cid = response.data[0].cid;
       const gatewayUrl = getIpfsGatewayUrl(cid);
 
       logger.info(`Content added to IPFS with CID: ${cid}`);
