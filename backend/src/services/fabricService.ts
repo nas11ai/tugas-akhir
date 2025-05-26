@@ -46,10 +46,13 @@ export class FabricService {
   /**
    * Validate user organization access for signature operations
    */
-  private validateRektorAccess(organization: Organization): void {
-    if (organization !== Organization.REKTOR) {
+  private validateRektorAkademikAccess(organization: Organization): void {
+    if (
+      organization !== Organization.REKTOR &&
+      organization !== Organization.AKADEMIK
+    ) {
       throw new Error(
-        "Access denied: Only REKTOR organization can manage signatures"
+        "Access denied: Only REKTOR and AKADEMIK organization can manage signatures"
       );
     }
   }
@@ -413,7 +416,7 @@ with positioned elements at exact coordinates matching the official template.
   ): Promise<Ijazah> {
     try {
       // Validate access
-      this.validateRektorAccess(organization);
+      this.validateRektorAkademikAccess(organization);
 
       logger.info(`Approving ijazah certificate with ID: ${ijazahId}`);
 
@@ -583,7 +586,7 @@ with positioned elements at exact coordinates matching the official template.
   ): Promise<Ijazah> {
     try {
       // Validate access
-      this.validateRektorAccess(organization);
+      this.validateRektorAkademikAccess(organization);
 
       logger.info(`Rejecting ijazah certificate with ID: ${ijazahId}`);
 
@@ -647,7 +650,7 @@ with positioned elements at exact coordinates matching the official template.
   ): Promise<Ijazah> {
     try {
       // Validate access
-      this.validateRektorAccess(organization);
+      this.validateRektorAkademikAccess(organization);
 
       logger.info(`Activating ijazah certificate with ID: ${ijazahId}`);
 
@@ -710,7 +713,7 @@ with positioned elements at exact coordinates matching the official template.
   ): Promise<Ijazah> {
     try {
       // Validate access
-      this.validateRektorAccess(organization);
+      this.validateRektorAkademikAccess(organization);
 
       logger.info(
         `Regenerating certificate with signature for ID: ${ijazahId}`
@@ -965,7 +968,7 @@ with positioned elements at exact coordinates matching the official template.
         newStatus === IJAZAH_STATUS.DISETUJUI ||
         newStatus === IJAZAH_STATUS.DITOLAK
       ) {
-        this.validateRektorAccess(organization);
+        this.validateRektorAkademikAccess(organization);
       }
 
       logger.info(
@@ -1065,7 +1068,7 @@ with positioned elements at exact coordinates matching the official template.
     signatureData: SignatureInput
   ): Promise<Signature> {
     try {
-      this.validateRektorAccess(organization);
+      this.validateRektorAkademikAccess(organization);
 
       logger.info(`Creating signature with ID: ${signatureData.ID}`);
 
@@ -1095,7 +1098,7 @@ with positioned elements at exact coordinates matching the official template.
     signatureData: Partial<SignatureInput>
   ): Promise<Signature> {
     try {
-      this.validateRektorAccess(organization);
+      this.validateRektorAkademikAccess(organization);
 
       logger.info(`Updating signature with ID: ${signatureId}`);
 
@@ -1208,7 +1211,7 @@ with positioned elements at exact coordinates matching the official template.
     signatureId: string
   ): Promise<Signature> {
     try {
-      this.validateRektorAccess(organization);
+      this.validateRektorAkademikAccess(organization);
 
       logger.info(`Setting active signature ID: ${signatureId}`);
 
@@ -1237,7 +1240,7 @@ with positioned elements at exact coordinates matching the official template.
     signatureId: string
   ): Promise<{ success: boolean; message: string }> {
     try {
-      this.validateRektorAccess(organization);
+      this.validateRektorAkademikAccess(organization);
 
       logger.info(`Deleting signature with ID: ${signatureId}`);
 
