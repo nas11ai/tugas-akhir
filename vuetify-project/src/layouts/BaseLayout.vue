@@ -70,6 +70,9 @@ const handleLogout = async () => {
     // Clear auth token
     localStorage.removeItem('authToken')
 
+    // Clear fabric token
+    localStorage.removeItem('fabricToken')
+
     console.log('Logout successful')
 
     await router.push('/')
