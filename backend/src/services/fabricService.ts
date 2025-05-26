@@ -212,7 +212,7 @@ with positioned elements at exact coordinates matching the official template.
         organization,
         userToken,
         {
-          method: "CreateIjazah",
+          method: "IjazahContract:CreateIjazah",
           args: [JSON.stringify(ijazah)],
         }
       );
