@@ -23,23 +23,28 @@ export interface ApiError {
   request?: unknown
 }
 
-// Create axios instance dengan konfigurasi base
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
   timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 15000,
   headers: {
-    'Content-Type': 'application/json',
     'ngrok-skip-browser-warning': '69420',
   },
 })
 
-// Request interceptor - untuk menambahkan auth token
+// Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    // Ambil token dari localStorage atau store (Pinia/Vuex)
+    // TODO: atur token untuk access fablo rest
     const token = localStorage.getItem('authToken')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+
+    if (
+      config.data instanceof FormData &&
+      config.headers['Content-Type'] === 'application/json'
+    ) {
+      delete config.headers['Content-Type']
     }
 
     // Log request untuk debugging (bisa dihapus di production)
