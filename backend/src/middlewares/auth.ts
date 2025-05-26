@@ -19,6 +19,7 @@ declare global {
         isActive: boolean;
       };
       token?: string;
+      fabricToken?: string;
     }
   }
 }
@@ -33,46 +34,28 @@ export const authenticate = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const authHeader = req.headers.authorization;
-
+    const authHeader = req.headers["authorization"];
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      res.status(401).json({
-        success: false,
-        message: "Unauthorized: No token provided",
-      });
+      res.status(401).json({ success: false, message: "No auth token" });
       return;
     }
 
-    // Extract token
     const token = authHeader.split(" ")[1];
-
-    // Verify token
     const decodedToken = await auth.verifyIdToken(token);
     const uid = decodedToken.uid;
 
-    // Get user data from Firestore
     const userDoc = await db.collection("users").doc(uid).get();
-
     if (!userDoc.exists) {
-      res.status(403).json({
-        success: false,
-        message: "Forbidden: User not registered in the system",
-      });
+      res.status(403).json({ success: false, message: "User not registered" });
       return;
     }
 
-    const userData = userDoc.data() as any;
-
-    // Check if user is active
+    const userData = userDoc.data()!;
     if (!userData.isActive) {
-      res.status(403).json({
-        success: false,
-        message: "Forbidden: User account is inactive",
-      });
+      res.status(403).json({ success: false, message: "Account inactive" });
       return;
     }
 
-    // Add user data to request
     req.user = {
       uid,
       email: userData.email,
@@ -90,12 +73,29 @@ export const authenticate = async (
     next();
   } catch (error) {
     logger.error("Authentication error:", error);
+    res.status(401).json({ success: false, message: "Invalid auth token" });
+    return;
+  }
+};
+
+export const requireFabricToken = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  const token = req.headers["x-fabric-token"] as string;
+
+  if (!token || token.length < 10) {
     res.status(401).json({
       success: false,
-      message: "Unauthorized: Invalid token",
+      message: "Fabric token is missing or invalid",
     });
     return;
   }
+
+  req.fabricToken = token;
+
+  next();
 };
 
 /**
