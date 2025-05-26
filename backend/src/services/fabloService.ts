@@ -244,7 +244,7 @@ export class FabloService {
       const data: FabloResponse = response.data;
 
       logger.info(`Chaincode invoked successfully: ${request.method}`);
-      return data.response;
+      return JSON.stringify(data.response);
     } catch (error) {
       logger.error(`Error invoking chaincode ${request.method}:`, error);
       throw error;
@@ -277,7 +277,7 @@ export class FabloService {
       const data: FabloResponse = response.data;
 
       logger.info(`Chaincode queried successfully: ${request.method}`);
-      return data.response;
+      return JSON.stringify(data.response);
     } catch (error) {
       logger.error(`Error querying chaincode ${request.method}:`, error);
       throw error;
