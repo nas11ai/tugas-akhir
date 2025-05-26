@@ -32,6 +32,7 @@ app.use(
       "Authorization",
       "X-Requested-With",
       "ngrok-skip-browser-warning",
+      "X-Fabric-Token",
     ],
   })
 );
