@@ -102,7 +102,7 @@ class IjazahContract extends Contract {
       if (res.value && res.value.value.toString()) {
         try {
           const record = JSON.parse(res.value.value.toString());
-          if (record.Type === 'certificate' && record.Status === STATUS.AKTIF) {
+          if (record.Type === 'certificate') {
             allResults.push(record);
           }
         } catch (err) {
