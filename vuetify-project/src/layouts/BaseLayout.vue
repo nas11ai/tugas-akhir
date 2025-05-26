@@ -83,14 +83,27 @@ const fetchUserData = async (firebaseUser) => {
     console.log('Fetching user data for:', firebaseUser.email)
 
     const idToken = await firebaseUser.getIdToken()
+    // TODO: handle firebase token for auth
     localStorage.setItem('authToken', idToken)
 
     const response = await apiService.users.getCurrentUser()
 
     const userResponse = apiHelper.getData(response)
 
-    console.log('User data fetched successfully:', userResponse)
-    user.value = userResponse.data
+    const userData = userResponse.data
+
+    if (!userData) {
+      throw new Error('User data not found')
+    }
+
+    if (!localStorage.getItem('fabricToken')) {
+      const enrollFabricCAResponse = await apiService.users.enrollFabricCA()
+
+      localStorage.setItem('fabricToken', enrollFabricCAResponse.data.token)
+    }
+
+    console.log('User data fetched successfully:', userData)
+    user.value = userData
   } catch (error) {
     console.error('Error fetching user data:', error)
 

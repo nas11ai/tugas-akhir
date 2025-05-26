@@ -34,8 +34,7 @@ const apiClient = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    // TODO: atur token untuk access fablo rest
-    const token = localStorage.getItem('authToken')
+    const token = localStorage.getItem('fabricToken')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
