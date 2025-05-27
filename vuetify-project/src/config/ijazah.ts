@@ -51,14 +51,14 @@ export interface IjazahInput {
 export interface Signature {
   ID: string
   Type: 'signature'
-  URL: string
+  CID: string
   IsActive: boolean
   Owner: string
 }
 
 export interface SignatureInput {
   ID: string
-  URL: string
+  CID: string
   IsActive?: boolean
 }
 

@@ -53,7 +53,7 @@ export interface IjazahInput {
 export interface Signature {
   ID: string;
   Type: "signature";
-  URL: string;
+  CID: string;
   IsActive: boolean;
   Owner: string;
   CreatedAt: string; // ISO date string
@@ -62,6 +62,6 @@ export interface Signature {
 
 export interface SignatureInput {
   ID: string;
-  URL: string;
+  CID: string;
   IsActive?: boolean;
 }

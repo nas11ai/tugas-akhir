@@ -178,7 +178,7 @@
           >
             <template v-slot:[`item.preview`]="{ item }">
               <v-img
-                :src="item.URL"
+                :src="item.CID"
                 max-width="60"
                 max-height="40"
                 contain
@@ -274,14 +274,14 @@
 
             <!-- Preview existing signature for edit -->
             <div
-              v-if="isEditingSignature && currentSignature?.URL"
+              v-if="isEditingSignature && currentSignature?.CID"
               class="mb-4"
             >
               <v-card outlined>
                 <v-card-subtitle>Tanda Tangan Saat Ini</v-card-subtitle>
                 <v-card-text class="text-center">
                   <v-img
-                    :src="currentSignature.URL"
+                    :src="currentSignature.CID"
                     max-width="200"
                     max-height="100"
                     contain
@@ -453,7 +453,7 @@ const itemToDelete = ref<{
 const signatures = ref<
   Array<{
     ID: string
-    URL: string
+    CID: string
     IsActive: boolean
     CreatedAt?: string
     UpdatedAt?: string
@@ -462,13 +462,13 @@ const signatures = ref<
 
 const currentSignature = ref<{
   ID: string
-  URL: string
+  CID: string
   IsActive: boolean
 } | null>(null)
 
 const signatureToDelete = ref<{
   ID: string
-  URL: string
+  CID: string
   IsActive: boolean
 } | null>(null)
 
@@ -795,7 +795,7 @@ const submitSignature = async () => {
           {
             IsActive: signatureFormData.value.IsActive,
             ID: '',
-            URL: '',
+            CID: '',
           }
         )
 

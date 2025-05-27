@@ -1,4 +1,5 @@
 import express from "express";
+import { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
@@ -52,7 +53,7 @@ if (process.env.NODE_ENV === "development") {
 }
 
 // Root endpoint
-app.get("/", (req, res) => {
+app.get("/", (req: Request, res: Response) => {
   res.json({
     message: "Ijazah Certificate Management API",
     version: "1.0.0",
@@ -65,6 +66,51 @@ app.get("/", (req, res) => {
     },
   });
 });
+
+// IPFS proxy endpoint
+app.get(
+  "/ipfs/:hash",
+  async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+    try {
+      const imageResponse = await fetch(
+        `${process.env.IPFS_GATEWAY_URL}/ipfs/${req.params.hash}`,
+        {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+            "User-Agent": "Mozilla/5.0 (compatible; ImageProxy/1.0)",
+          },
+        }
+      );
+
+      if (!imageResponse.ok) {
+        return res.status(imageResponse.status).json({
+          success: false,
+          message: `Failed to fetch image: ${imageResponse.statusText}`,
+        });
+      }
+
+      const arrayBuffer = await imageResponse.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const contentType =
+        imageResponse.headers.get("content-type") || "application/octet-stream";
+
+      res.set({
+        "Content-Type": contentType,
+        "Cache-Control": "public, max-age=86400",
+        "Access-Control-Allow-Origin": "*",
+        "ngrok-skip-browser-warning": "69420",
+      });
+
+      logger.info(`Proxying image with hash ${req.params.hash}`);
+
+      res.send(buffer);
+    } catch (error) {
+      logger.error("Error proxying image:", error);
+      return next(error);
+    }
+  }
+);
 
 // API routes
 app.use("/api", apiRoutes);

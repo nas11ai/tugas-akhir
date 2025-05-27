@@ -544,7 +544,7 @@ export class SignatureController {
       // Create signature record in blockchain
       const signatureData: SignatureInput = {
         ID,
-        URL: signatureResult.url,
+        CID: signatureResult.cid,
         IsActive: IsActive === "true" || IsActive === true,
       };
 
