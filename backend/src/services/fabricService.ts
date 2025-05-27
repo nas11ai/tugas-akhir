@@ -64,7 +64,7 @@ export class FabricService {
     ijazahData: IjazahInput,
     photoBuffer?: Buffer,
     signatureBuffer?: Buffer,
-    signatureUrl?: string,
+    signatureCID?: string,
     options: CertificateGenerationOptions = {}
   ): Promise<Buffer> {
     try {
@@ -83,7 +83,7 @@ export class FabricService {
       // 3. Adding photo at designated position
       // 4. Adding signature at rector signature position
 
-      const hasSignature = signatureBuffer || signatureUrl;
+      const hasSignature = signatureBuffer || signatureCID;
       const signatureStatus = hasSignature
         ? "[TANDA TANGAN REKTOR TERPASANG]"
         : "[MENUNGGU TANDA TANGAN]";
@@ -302,10 +302,8 @@ with positioned elements at exact coordinates matching the official template.
 
       // Get signature data if exists and is approved
       let signatureBuffer: Buffer | undefined;
-      let signatureUrl: string | undefined;
-      if (
-        existingIjazah.signatureID
-      ) {
+      let signatureCID: string | undefined;
+      if (existingIjazah.signatureID) {
         try {
           const signatureStr = await fabloService.queryChaincode(
             organization,
@@ -316,13 +314,13 @@ with positioned elements at exact coordinates matching the official template.
             }
           );
           const signature: Signature = JSON.parse(signatureStr);
-          signatureUrl = signature.URL;
+          signatureCID = signature.CID;
 
           // Download signature file for PDF generation
-          if (signatureUrl) {
+          if (signatureCID) {
             try {
               const fetch = require("node-fetch");
-              const signatureResponse = await fetch(signatureUrl);
+              const signatureResponse = await fetch(signatureCID);
               if (signatureResponse.ok) {
                 signatureBuffer = Buffer.from(
                   await signatureResponse.arrayBuffer()
@@ -330,7 +328,7 @@ with positioned elements at exact coordinates matching the official template.
               }
             } catch (downloadError) {
               logger.warn(
-                `Failed to download signature from ${signatureUrl}:`,
+                `Failed to download signature from ${signatureCID}:`,
                 downloadError
               );
             }
@@ -347,7 +345,7 @@ with positioned elements at exact coordinates matching the official template.
         updatedData,
         photoFile,
         signatureBuffer,
-        signatureUrl
+        signatureCID
       );
 
       // Unpin old certificate
@@ -473,7 +471,7 @@ with positioned elements at exact coordinates matching the official template.
       let signatureBuffer: Buffer | undefined;
       try {
         const fetch = require("node-fetch");
-        const signatureResponse = await fetch(activeSignature.URL);
+        const signatureResponse = await fetch(activeSignature.CID);
         if (signatureResponse.ok) {
           signatureBuffer = Buffer.from(await signatureResponse.arrayBuffer());
           logger.info("Signature file downloaded successfully");
@@ -484,7 +482,7 @@ with positioned elements at exact coordinates matching the official template.
         }
       } catch (downloadError) {
         logger.warn(
-          `Failed to download signature from ${activeSignature.URL}:`,
+          `Failed to download signature from ${activeSignature.CID}:`,
           downloadError
         );
       }
@@ -514,7 +512,7 @@ with positioned elements at exact coordinates matching the official template.
         existingIjazah,
         photoBuffer,
         signatureBuffer,
-        activeSignature.URL
+        activeSignature.CID
       );
 
       // Unpin old certificate
@@ -783,7 +781,7 @@ with positioned elements at exact coordinates matching the official template.
       // Download signature
       try {
         const fetch = require("node-fetch");
-        const signatureResponse = await fetch(targetSignature.URL);
+        const signatureResponse = await fetch(targetSignature.CID);
         if (signatureResponse.ok) {
           signatureBuffer = Buffer.from(await signatureResponse.arrayBuffer());
         }
@@ -815,7 +813,7 @@ with positioned elements at exact coordinates matching the official template.
         existingIjazah,
         photoBuffer,
         signatureBuffer,
-        targetSignature.URL
+        targetSignature.CID
       );
 
       // Unpin old certificate
