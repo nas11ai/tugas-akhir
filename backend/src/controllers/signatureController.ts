@@ -566,6 +566,31 @@ export class SignatureController {
         IsActive: IsActive === "true" || IsActive === true,
       };
 
+      const existingSignature = await fabricService.getSignature(
+        req.user.organization as Organization,
+        req.fabricToken,
+        ID
+      );
+
+      if (existingSignature) {
+        const updatedSignature = await fabricService.updateSignature(
+          req.user.organization as Organization,
+          req.fabricToken,
+          ID,
+          signatureData
+        );
+
+        res.status(200).json({
+          success: true,
+          message: "Signature uploaded and updated successfully",
+          data: {
+            ...updatedSignature,
+            ipfsCID: signatureResult.cid,
+          },
+        });
+        return;
+      }
+
       const newSignature = await fabricService.createSignature(
         req.user.organization as Organization,
         req.fabricToken,
