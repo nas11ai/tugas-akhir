@@ -1105,6 +1105,16 @@ with positioned elements at exact coordinates matching the official template.
         ...signatureData,
       };
 
+      if (!updateData.CID) {
+        const existingSignature = await this.getSignature(
+          organization,
+          userToken,
+          signatureId
+        );
+
+        updateData.CID = existingSignature.CID;
+      }
+
       const result = await fabloService.invokeChaincode(
         organization,
         userToken,
