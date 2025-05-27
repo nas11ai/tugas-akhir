@@ -192,8 +192,8 @@ class IjazahContract extends Contract {
       throw new Error('ID tanda tangan harus diisi');
     }
 
-    if (!signature.URL) {
-      throw new Error('URL tanda tangan harus diisi');
+    if (!signature.CID) {
+      throw new Error('CID tanda tangan harus diisi');
     }
 
     // Add prefix to make signature keys identifiable
