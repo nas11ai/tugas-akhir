@@ -8,6 +8,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AddIjazahModal: typeof import('./src/components/AddIjazahModal.vue')['default']
+    EditIjazahModal: typeof import('./src/components/EditIjazahModal.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     LoginDialog: typeof import('./src/components/LoginDialog.vue')['default']
     RegisterDialog: typeof import('./src/components/RegisterDialog.vue')['default']
