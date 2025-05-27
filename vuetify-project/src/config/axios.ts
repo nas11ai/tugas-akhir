@@ -207,7 +207,7 @@ export const apiService = {
 
     getById: (id: string) => apiClient.get(`/api/ijazah/${id}`),
 
-    update: (id: string, ijazahData: IjazahInput) =>
+    update: (id: string, ijazahData: unknown) =>
       apiClient.put(`/api/ijazah/${id}`, ijazahData),
 
     delete: (id: string) => apiClient.delete(`/api/ijazah/${id}`),

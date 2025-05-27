@@ -256,9 +256,9 @@ with positioned elements at exact coordinates matching the official template.
       const existingIjazah: Ijazah = JSON.parse(existingIjazahStr);
 
       // Validate status - cannot update if waiting for signature
-      if (existingIjazah.Status === IJAZAH_STATUS.MENUNGGU_TTD) {
+      if (existingIjazah.Status !== IJAZAH_STATUS.MENUNGGU_TTD) {
         throw new Error(
-          "Cannot update ijazah while waiting for rector signature"
+          "Cannot update ijazah while NOT WAITING for rector signature"
         );
       }
 
@@ -289,6 +289,7 @@ with positioned elements at exact coordinates matching the official template.
           filename: `${ijazahId}_photo_updated.jpg`,
           local: false,
         });
+
         photoCID = photoResult.cid;
 
         // Pin the new photo
@@ -303,8 +304,7 @@ with positioned elements at exact coordinates matching the official template.
       let signatureBuffer: Buffer | undefined;
       let signatureUrl: string | undefined;
       if (
-        existingIjazah.signatureID &&
-        existingIjazah.Status === IJAZAH_STATUS.DISETUJUI
+        existingIjazah.signatureID
       ) {
         try {
           const signatureStr = await fabloService.queryChaincode(
