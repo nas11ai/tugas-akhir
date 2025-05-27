@@ -177,23 +177,47 @@
             class="elevation-1"
           >
             <template v-slot:[`item.preview`]="{ item }">
-              <v-img
-                :src="item.CID"
-                max-width="60"
-                max-height="40"
-                contain
-                @error="($event) => console.log('Image load error:', $event)"
-              >
-                <template v-slot:placeholder>
-                  <v-row
-                    class="fill-height ma-0"
-                    align="center"
-                    justify="center"
-                  >
-                    <v-icon>mdi-image-off</v-icon>
-                  </v-row>
-                </template>
-              </v-img>
+              <div class="signature-preview">
+                <v-img
+                  :src="getProxiedImageUrl(item.URL)"
+                  max-width="60"
+                  max-height="40"
+                  contain
+                  @error="
+                    (error: string | undefined) => {
+                      console.log('Image load error:', error)
+                    }
+                  "
+                  @load="
+                    (load: string | undefined) => {
+                      console.log('Image on load:', load)
+                    }
+                  "
+                >
+                  <template v-slot:placeholder>
+                    <v-row
+                      class="fill-height ma-0"
+                      align="center"
+                      justify="center"
+                    >
+                      <v-progress-circular
+                        indeterminate
+                        size="20"
+                      ></v-progress-circular>
+                    </v-row>
+                  </template>
+                </v-img>
+                <v-btn
+                  v-if="item.URL"
+                  icon
+                  x-small
+                  color="blue"
+                  @click="openImageInNewTab(item.URL)"
+                  class="mt-1"
+                >
+                  <v-icon x-small>mdi-open-in-new</v-icon>
+                </v-btn>
+              </div>
             </template>
 
             <template v-slot:[`item.IsActive`]="{ item }">
@@ -272,21 +296,52 @@
               :disabled="isEditingSignature"
             />
 
-            <!-- Preview existing signature for edit -->
             <div
-              v-if="isEditingSignature && currentSignature?.CID"
+              v-if="isEditingSignature && currentSignature?.URL"
               class="mb-4"
             >
               <v-card outlined>
                 <v-card-subtitle>Tanda Tangan Saat Ini</v-card-subtitle>
                 <v-card-text class="text-center">
                   <v-img
-                    :src="currentSignature.CID"
+                    :src="getProxiedImageUrl(currentSignature.URL)"
                     max-width="200"
                     max-height="100"
                     contain
                     class="mx-auto"
-                  />
+                    @error="
+                      (error: string | undefined) => {
+                        console.log('Image load error:', error)
+                      }
+                    "
+                    @load="
+                      (load: string | undefined) => {
+                        console.log('Image on load:', load)
+                      }
+                    "
+                  >
+                    <template v-slot:placeholder>
+                      <v-row
+                        class="fill-height ma-0"
+                        align="center"
+                        justify="center"
+                      >
+                        <v-progress-circular
+                          indeterminate
+                        ></v-progress-circular>
+                      </v-row>
+                    </template>
+                  </v-img>
+                  <v-btn
+                    small
+                    outlined
+                    color="blue"
+                    @click="openImageInNewTab(currentSignature.URL)"
+                    class="mt-2"
+                  >
+                    <v-icon left small>mdi-open-in-new</v-icon>
+                    Buka di Tab Baru
+                  </v-btn>
                 </v-card-text>
               </v-card>
             </div>
@@ -453,7 +508,7 @@ const itemToDelete = ref<{
 const signatures = ref<
   Array<{
     ID: string
-    CID: string
+    URL: string
     IsActive: boolean
     CreatedAt?: string
     UpdatedAt?: string
@@ -462,13 +517,13 @@ const signatures = ref<
 
 const currentSignature = ref<{
   ID: string
-  CID: string
+  URL: string
   IsActive: boolean
 } | null>(null)
 
 const signatureToDelete = ref<{
   ID: string
-  CID: string
+  URL: string
   IsActive: boolean
 } | null>(null)
 
@@ -779,8 +834,6 @@ const submitSignature = async () => {
         formData.append('IsActive', signatureFormData.value.IsActive.toString())
         formData.append('signature', signatureFile.value)
 
-        console.log('formData', formData)
-
         const response = await apiService.signature.upload(formData)
 
         if (apiHelper.isSuccess(response)) {
@@ -817,19 +870,6 @@ const submitSignature = async () => {
       formData.append('IsActive', signatureFormData.value.IsActive.toString())
       formData.append('signature', signatureFile.value)
 
-      for (const [key, value] of formData.entries()) {
-        if (value instanceof File) {
-          console.log(`${key}:`, {
-            name: value.name,
-            size: value.size,
-            type: value.type,
-            lastModified: value.lastModified,
-          })
-        } else {
-          console.log(`${key}:`, value)
-        }
-      }
-
       const response = await apiService.signature.upload(formData)
 
       if (apiHelper.isSuccess(response)) {
@@ -843,11 +883,7 @@ const submitSignature = async () => {
     await loadSignatures()
   } catch (error) {
     console.error('Error saving signature:', error)
-    if (error instanceof Error) {
-      showSnackbar(apiHelper.getErrorMessage(error), 'error')
-    } else {
-      showSnackbar('An unknown error occurred', 'error')
-    }
+    showSnackbar(apiHelper.getErrorMessage(error as Error), 'error')
   } finally {
     signatureLoading.value = false
   }
@@ -926,7 +962,37 @@ const deleteSignature = async () => {
   }
 }
 
-// Load data on component mount
+const openImageInNewTab = (url: string) => {
+  // Open with ngrok headers
+  const newWindow = window.open('', '_blank')
+  if (newWindow) {
+    newWindow.document.write(`
+      <html>
+        <head><title>Signature Preview</title></head>
+        <body style="margin:0; display:flex; align-items:center; justify-content:center; min-height:100vh; background:#f5f5f5;">
+          <img src="${url}" style="max-width:100%; max-height:100%; object-fit:contain;" />
+        </body>
+      </html>
+    `)
+  }
+}
+
+// Helper function untuk convert CID ke proxy URL
+const getProxiedImageUrl = (cid: string) => {
+  if (!cid) return ''
+
+  // Extract IPFS hash jika format lengkap IPFS URL
+  let hash = cid
+  if (cid.includes('/ipfs/')) {
+    hash = cid.split('/ipfs/')[1]
+  }
+
+  // Use backend proxy endpoint
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+  console.log('image url:', `${baseUrl}/ipfs/${hash}`)
+  return `${baseUrl}/ipfs/${hash}`
+}
+
 onMounted(() => {
   loadIjazahData()
 })
@@ -943,5 +1009,16 @@ onMounted(() => {
 
 .gap-1 {
   gap: 4px;
+}
+
+.signature-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.signature-preview .v-btn {
+  min-width: auto !important;
 }
 </style>
