@@ -40,15 +40,6 @@ export class SignatureController {
         return;
       }
 
-      if (req.user.organization !== Organization.REKTOR) {
-        res.status(403).json({
-          success: false,
-          message:
-            "Access denied: Only REKTOR organization can manage signatures",
-        });
-        return;
-      }
-
       if (!req.fabricToken) {
         res.status(401).json({
           success: false,
@@ -117,15 +108,6 @@ export class SignatureController {
         res.status(401).json({
           success: false,
           message: "Authentication required",
-        });
-        return;
-      }
-
-      if (req.user.organization !== Organization.REKTOR) {
-        res.status(403).json({
-          success: false,
-          message:
-            "Access denied: Only REKTOR organization can manage signatures",
         });
         return;
       }
@@ -334,15 +316,6 @@ export class SignatureController {
         return;
       }
 
-      if (req.user.organization !== Organization.REKTOR) {
-        res.status(403).json({
-          success: false,
-          message:
-            "Access denied: Only REKTOR organization can manage signatures",
-        });
-        return;
-      }
-
       if (!req.fabricToken) {
         res.status(401).json({
           success: false,
@@ -399,15 +372,6 @@ export class SignatureController {
         res.status(401).json({
           success: false,
           message: "Authentication required",
-        });
-        return;
-      }
-
-      if (req.user.organization !== Organization.REKTOR) {
-        res.status(403).json({
-          success: false,
-          message:
-            "Access denied: Only REKTOR organization can manage signatures",
         });
         return;
       }
@@ -474,15 +438,6 @@ export class SignatureController {
         return;
       }
 
-      if (req.user.organization !== Organization.REKTOR) {
-        res.status(403).json({
-          success: false,
-          message:
-            "Access denied: Only REKTOR organization can manage signatures",
-        });
-        return;
-      }
-
       if (!req.fabricToken) {
         res.status(401).json({
           success: false,
@@ -539,15 +494,6 @@ export class SignatureController {
         res.status(401).json({
           success: false,
           message: "Authentication required",
-        });
-        return;
-      }
-
-      if (req.user.organization !== Organization.REKTOR) {
-        res.status(403).json({
-          success: false,
-          message:
-            "Access denied: Only REKTOR organization can upload signatures",
         });
         return;
       }
@@ -653,15 +599,6 @@ export class SignatureController {
         return;
       }
 
-      if (req.user.organization !== Organization.REKTOR) {
-        res.status(403).json({
-          success: false,
-          message:
-            "Access denied: Only REKTOR organization can view signature statistics",
-        });
-        return;
-      }
-
       if (!req.fabricToken) {
         res.status(401).json({
           success: false,
@@ -726,15 +663,6 @@ export class SignatureController {
         res.status(401).json({
           success: false,
           message: "Authentication required",
-        });
-        return;
-      }
-
-      if (req.user.organization !== Organization.REKTOR) {
-        res.status(403).json({
-          success: false,
-          message:
-            "Access denied: Only REKTOR organization can validate signature URLs",
         });
         return;
       }
