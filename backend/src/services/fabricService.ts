@@ -1112,6 +1112,10 @@ with positioned elements at exact coordinates matching the official template.
           signatureId
         );
 
+        if (!existingSignature) {
+          throw new Error("Signature not found");
+        }
+
         updateData.CID = existingSignature.CID;
       }
 
@@ -1138,7 +1142,7 @@ with positioned elements at exact coordinates matching the official template.
     organization: Organization,
     userToken: string,
     signatureId: string
-  ): Promise<Signature> {
+  ): Promise<Signature | null> {
     try {
       logger.info(`Getting signature with ID: ${signatureId}`);
 

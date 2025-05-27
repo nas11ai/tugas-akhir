@@ -184,6 +184,14 @@ export class SignatureController {
         id
       );
 
+      if (!signature) {
+        res.status(404).json({
+          success: false,
+          message: "Signature not found",
+        });
+        return;
+      }
+
       res.status(200).json({
         success: true,
         message: "Signature retrieved successfully",
@@ -394,6 +402,7 @@ export class SignatureController {
         req.fabricToken,
         id
       );
+
       if (!signature) {
         res.status(404).json({
           success: false,

@@ -227,13 +227,14 @@
             />
 
             <v-switch
+              v-if="!isEditingSignature"
               v-model="signatureFormData.IsActive"
               :label="signatureFormData.IsActive ? 'Aktif' : 'Tidak Aktif'"
               color="orange"
             />
 
             <v-alert
-              v-if="signatureFormData.IsActive"
+              v-if="signatureFormData.IsActive && !isEditingSignature"
               type="warning"
               dense
               outlined
@@ -476,36 +477,22 @@ const submitSignature = async () => {
   try {
     if (isEditingSignature.value) {
       // Update existing signature
-      if (signatureFile.value) {
-        // If new file uploaded, need to upload it first
-        const formData = new FormData()
-        formData.append('ID', signatureFormData.value.ID)
-        formData.append('IsActive', signatureFormData.value.IsActive.toString())
-        formData.append('signature', signatureFile.value)
+      if (!signatureFile.value) {
+        showSnackbar('File tanda tangan wajib diisi', 'error')
+        return
+      }
 
-        const response = await apiService.signature.upload(formData)
+      const formData = new FormData()
+      formData.append('ID', signatureFormData.value.ID)
+      formData.append('IsActive', signatureFormData.value.IsActive.toString())
+      formData.append('signature', signatureFile.value)
 
-        if (apiHelper.isSuccess(response)) {
-          showSnackbar('Tanda tangan berhasil diupdate', 'success')
-        } else {
-          throw new Error(apiHelper.getErrorMessage(response))
-        }
+      const response = await apiService.signature.upload(formData)
+
+      if (apiHelper.isSuccess(response)) {
+        showSnackbar('Tanda tangan berhasil diupdate', 'success')
       } else {
-        // Only update metadata
-        const response = await apiService.signature.update(
-          signatureFormData.value.ID,
-          {
-            IsActive: signatureFormData.value.IsActive,
-            ID: '',
-            CID: '',
-          }
-        )
-
-        if (apiHelper.isSuccess(response)) {
-          showSnackbar('Tanda tangan berhasil diupdate', 'success')
-        } else {
-          throw new Error(apiHelper.getErrorMessage(response))
-        }
+        throw new Error(apiHelper.getErrorMessage(response))
       }
     } else {
       // Create new signature
