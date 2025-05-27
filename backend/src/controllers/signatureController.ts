@@ -388,12 +388,30 @@ export class SignatureController {
 
       logger.info(`Deactivating signature with ID: ${id}`);
 
+      // Check if signature exists
+      const signature = await fabricService.getSignature(
+        req.user.organization as Organization,
+        req.fabricToken,
+        id
+      );
+      if (!signature) {
+        res.status(404).json({
+          success: false,
+          message: "Signature not found",
+        });
+        return;
+      }
+
       // Update signature to set IsActive to false
       const updatedSignature = await fabricService.updateSignature(
         req.user.organization as Organization,
         req.fabricToken,
         id,
-        { IsActive: false }
+        {
+          ID: signature.ID,
+          CID: signature.CID,
+          IsActive: false,
+        }
       );
 
       res.status(200).json({
