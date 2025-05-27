@@ -179,7 +179,7 @@
             <template v-slot:[`item.preview`]="{ item }">
               <div class="signature-preview">
                 <v-img
-                  :src="getProxiedImageUrl(item.URL)"
+                  :src="getProxiedImageUrl(item.CID)"
                   max-width="60"
                   max-height="40"
                   contain
@@ -208,11 +208,11 @@
                   </template>
                 </v-img>
                 <v-btn
-                  v-if="item.URL"
+                  v-if="item.CID"
                   icon
                   x-small
                   color="blue"
-                  @click="openImageInNewTab(item.URL)"
+                  @click="openImageInNewTab(item.CID)"
                   class="mt-1"
                 >
                   <v-icon x-small>mdi-open-in-new</v-icon>
@@ -297,14 +297,14 @@
             />
 
             <div
-              v-if="isEditingSignature && currentSignature?.URL"
+              v-if="isEditingSignature && currentSignature?.CID"
               class="mb-4"
             >
               <v-card outlined>
                 <v-card-subtitle>Tanda Tangan Saat Ini</v-card-subtitle>
                 <v-card-text class="text-center">
                   <v-img
-                    :src="getProxiedImageUrl(currentSignature.URL)"
+                    :src="getProxiedImageUrl(currentSignature.CID)"
                     max-width="200"
                     max-height="100"
                     contain
@@ -336,7 +336,7 @@
                     small
                     outlined
                     color="blue"
-                    @click="openImageInNewTab(currentSignature.URL)"
+                    @click="openImageInNewTab(currentSignature.CID)"
                     class="mt-2"
                   >
                     <v-icon left small>mdi-open-in-new</v-icon>
@@ -508,7 +508,7 @@ const itemToDelete = ref<{
 const signatures = ref<
   Array<{
     ID: string
-    URL: string
+    CID: string
     IsActive: boolean
     CreatedAt?: string
     UpdatedAt?: string
@@ -517,13 +517,13 @@ const signatures = ref<
 
 const currentSignature = ref<{
   ID: string
-  URL: string
+  CID: string
   IsActive: boolean
 } | null>(null)
 
 const signatureToDelete = ref<{
   ID: string
-  URL: string
+  CID: string
   IsActive: boolean
 } | null>(null)
 
@@ -632,7 +632,6 @@ const openEditDialog = async (item: (typeof items.value)[number]) => {
 
     if (apiHelper.isSuccess(response)) {
       editData.value = response.data.data
-      console.log('edit data value:', editData.value)
       editModal.value = true
     } else {
       throw new Error(apiHelper.getErrorMessage(response))
@@ -962,7 +961,8 @@ const deleteSignature = async () => {
   }
 }
 
-const openImageInNewTab = (url: string) => {
+const openImageInNewTab = (cid: string) => {
+  const url = getProxiedImageUrl(cid)
   // Open with ngrok headers
   const newWindow = window.open('', '_blank')
   if (newWindow) {
@@ -989,7 +989,6 @@ const getProxiedImageUrl = (cid: string) => {
 
   // Use backend proxy endpoint
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
-  console.log('image url:', `${baseUrl}/ipfs/${hash}`)
   return `${baseUrl}/ipfs/${hash}`
 }
 
