@@ -221,50 +221,77 @@ class IjazahContract extends Contract {
   }
 
   async UpdateSignature(ctx, signatureStr) {
-    // This function should be restricted to Rektor's MSP
-    const clientMSPID = ctx.clientIdentity.getMSPID();
-    if (clientMSPID !== 'RektorMSP' && clientMSPID !== 'AkademikMSP') {
-      throw new Error('Hanya Rektor & Akademik yang dapat mengelola tanda tangan');
-    }
-
-    const signature = JSON.parse(signatureStr);
-
-    // Validate input
-    if (!signature.ID) {
-      throw new Error('ID tanda tangan harus diisi');
-    }
-
-    // Add prefix to make signature keys identifiable
-    const key = `signature_${signature.ID}`;
-
-    // Check if signature exists
-    const exists = await this.SignatureExists(ctx, key);
-    if (!exists) {
-      throw new Error(`Tanda tangan dengan ID ${signature.ID} tidak ditemukan`);
-    }
-
-    // Get existing signature
-    const existingSignatureBuffer = await ctx.stub.getState(key);
-    const existingSignature = JSON.parse(existingSignatureBuffer.toString());
-
-    // Update fields but preserve metadata
-    signature.Type = 'signature';
-    signature.Owner = existingSignature.Owner;
-    signature.CreatedAt = existingSignature.CreatedAt;
-    signature.UpdatedAt = new Date().toISOString();
-
-    // Allow toggling active status
-    if (signature.IsActive === undefined) {
-      signature.IsActive = existingSignature.IsActive;
-    }
-
-    await ctx.stub.putState(
-      key,
-      Buffer.from(stringify(sortKeysRecursive(signature)))
-    );
-
-    return JSON.stringify(signature);
+  const clientMSPID = ctx.clientIdentity.getMSPID();
+  if (clientMSPID !== 'RektorMSP' && clientMSPID !== 'AkademikMSP') {
+    throw new Error('Hanya Rektor & Akademik yang dapat mengelola tanda tangan');
   }
+
+  const signature = JSON.parse(signatureStr);
+
+  if (!signature.ID) {
+    throw new Error('ID tanda tangan harus diisi');
+  }
+
+  if (!signature.CID) {
+    throw new Error('CID tanda tangan harus diisi');
+  }
+
+  // Add prefix to make signature keys identifiable
+  const key = `signature_${signature.ID}`;
+
+  // Check if signature exists
+  const exists = await this.SignatureExists(ctx, key);
+  if (!exists) {
+    throw new Error(`Tanda tangan dengan ID ${signature.ID} tidak ditemukan`);
+  }
+
+  // Get existing signature
+  const existingSignatureBuffer = await ctx.stub.getState(key);
+  const existingSignature = JSON.parse(existingSignatureBuffer.toString());
+
+  // Prepare updated signature object
+  const updatedSignature = {
+    ID: signature.ID,
+    CID: signature.CID, // Update CID as provided in interface
+    Type: 'signature',
+    Owner: existingSignature.Owner,
+    CreatedAt: existingSignature.CreatedAt,
+    UpdatedAt: new Date().toISOString(),
+    IsActive: signature.IsActive !== undefined ? signature.IsActive : existingSignature.IsActive
+  };
+
+  // If IsActive is being set to true, we need to deactivate other signatures
+  if (updatedSignature.IsActive === true) {
+    // Get all signatures and deactivate them
+    const allSignatures = await this.GetAllSignatures(ctx);
+    const signatures = JSON.parse(allSignatures);
+    
+    for (const sig of signatures) {
+      if (sig.ID !== signature.ID && sig.IsActive) {
+        // Deactivate other signatures
+        const otherKey = `signature_${sig.ID}`;
+        const deactivatedSig = {
+          ...sig,
+          IsActive: false,
+          UpdatedAt: new Date().toISOString()
+        };
+        
+        await ctx.stub.putState(
+          otherKey,
+          Buffer.from(stringify(sortKeysRecursive(deactivatedSig)))
+        );
+      }
+    }
+  }
+
+  // Save updated signature
+  await ctx.stub.putState(
+    key,
+    Buffer.from(stringify(sortKeysRecursive(updatedSignature)))
+  );
+
+  return JSON.stringify(updatedSignature);
+}
 
   async ReadSignature(ctx, id) {
     const key = `signature_${id}`;
