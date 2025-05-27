@@ -5,66 +5,33 @@
     <v-card class="mt-4 pa-4">
       <!-- Tombol Aksi -->
       <div class="d-flex align-center gap-4 mb-4">
+        <v-btn color="warning" dark @click="openSignatureModal">CEK TANDA TANGAN REKTOR</v-btn>
         <v-btn color="blue" dark>FILTER</v-btn>
-        <v-text-field
-          class="w-100"
-          v-model="search"
-          label="Cari nama, nim, dan nomor ijazah"
-          dense
-          outlined
-          hide-details
-        ></v-text-field>
+        <v-text-field class="w-100" v-model="search" label="Cari nama, nim, dan nomor ijazah" dense outlined
+          hide-details></v-text-field>
         <v-spacer></v-spacer>
         <v-btn color="blue" dark @click="openAddDialog" :loading="loading">
-          <v-icon left>mdi-plus</v-icon>
           Tambah
         </v-btn>
       </div>
 
       <!-- Data Table -->
-      <v-data-table
-        :headers="headers"
-        :items="items"
-        :search="search"
-        :loading="tableLoading"
-        class="elevation-1"
-      >
+      <v-data-table :headers="headers" :items="items" :search="search" :loading="tableLoading" class="elevation-1">
         <template v-slot:[`item.select`]="{ item }">
-          <v-checkbox
-            v-model="selectedItems"
-            :value="item"
-            hide-details
-          ></v-checkbox>
+          <v-checkbox v-model="selectedItems" :value="item" hide-details></v-checkbox>
         </template>
 
         <template v-slot:[`item.aksi`]="{ item }">
           <div class="d-flex gap-2">
-            <v-btn
-              color="white"
-              icon
-              @click="showDetail(item)"
-              :disabled="loading"
-            >
+            <v-btn color="white" icon @click="showDetail(item)" :disabled="loading">
               <v-icon>mdi-eye</v-icon>
             </v-btn>
-            <v-btn
-              color="white"
-              icon
-              @click="openEditDialog(item)"
-              :disabled="
-                loading || item.status !== 'menunggu tanda tangan rektor'
-              "
-            >
+            <v-btn color="white" icon @click="openEditDialog(item)" :disabled="loading || item.status !== 'menunggu tanda tangan rektor'
+              ">
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
-            <v-btn
-              icon
-              color="white"
-              @click="confirmDelete(item)"
-              :disabled="
-                loading || item.status !== 'menunggu tanda tangan rektor'
-              "
-            >
+            <v-btn icon color="white" @click="confirmDelete(item)" :disabled="loading || item.status !== 'menunggu tanda tangan rektor'
+              ">
               <v-icon>mdi-delete</v-icon>
             </v-btn>
           </div>
@@ -73,7 +40,7 @@
         <template v-slot:[`item.status`]="{ item }">
           <v-chip :color="getStatusColor(item.status || '')" dark>{{
             item.status
-          }}</v-chip>
+            }}</v-chip>
         </template>
       </v-data-table>
     </v-card>
@@ -105,19 +72,10 @@
     </v-dialog>
 
     <!-- Modal Form Tambah Ijazah -->
-    <AddIjazahModal
-      v-model="addModal"
-      @success="onAddSuccess"
-      @error="onAddError"
-    />
+    <AddIjazahModal v-model="addModal" @success="onAddSuccess" @error="onAddError" />
 
     <!-- Modal Form Edit Ijazah -->
-    <EditIjazahModal
-      v-model="editModal"
-      :edit-data="editData"
-      @success="onEditSuccess"
-      @error="onEditError"
-    />
+    <EditIjazahModal v-model="editModal" :edit-data="editData" @success="onEditSuccess" @error="onEditError" />
 
     <!-- Dialog Konfirmasi Delete -->
     <v-dialog v-model="deleteDialog" max-width="400px">
@@ -138,12 +96,7 @@
         <v-divider></v-divider>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn
-            color="grey"
-            outlined
-            @click="deleteDialog = false"
-            :disabled="loading"
-          >
+          <v-btn color="grey" outlined @click="deleteDialog = false" :disabled="loading">
             Batal
           </v-btn>
           <v-btn color="red" @click="deleteIjazah" :loading="loading">
@@ -154,13 +107,26 @@
       </v-card>
     </v-dialog>
 
+    <!-- Modal Cek Tanda Tangan -->
+    <v-dialog v-model="signatureModal" max-width="600px">
+      <v-card>
+        <v-card-title>Detail Tanda Tangan Rektor</v-card-title>
+        <v-divider></v-divider>
+        <v-card-text>
+          <v-img :src="signatureImage" contain max-height="200"></v-img>
+          <v-file-input label="Upload tanda tangan baru" accept="image/*" @change="uploadSignature"></v-file-input>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="blue" @click="signatureModal = false">Tutup</v-btn>
+          <v-btn color="primary" @click="submitSignature">Ubah</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Snackbar untuk notifikasi -->
-    <v-snackbar
-      v-model="snackbar.show"
-      :color="snackbar.color"
-      :timeout="4000"
-      top
-    >
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="4000" top>
       {{ snackbar.message }}
 
       <template #actions>
@@ -186,6 +152,9 @@ const editModal = ref(false)
 const deleteDialog = ref(false)
 const loading = ref(false)
 const tableLoading = ref(false)
+const signatureModal = ref(false);
+
+const signatureImage = ref('/mnt/data/image.png');
 
 const selectedItem = ref<{
   id: string
@@ -402,6 +371,23 @@ const loadIjazahData = async () => {
 onMounted(() => {
   loadIjazahData()
 })
+
+const openSignatureModal = () => {
+  signatureModal.value = true;
+};
+
+const uploadSignature = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (input?.files && input.files.length > 0) {
+    const file = input.files[0];
+    console.log('File uploaded:', file);
+  }
+};
+
+const submitSignature = () => {
+  alert("Tanda tangan telah diperbarui!");
+  signatureModal.value = false;
+};
 </script>
 
 <style scoped>
