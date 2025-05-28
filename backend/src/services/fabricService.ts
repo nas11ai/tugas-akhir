@@ -9,9 +9,11 @@ import {
   SignatureInput,
 } from "../models/ijazah";
 import { v4 as uuidv4 } from "uuid";
-import * as fs from "fs";
 import * as path from "path";
 import { IJAZAH_STATUS } from "../configs/fabric";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 interface CertificateGenerationOptions {
   templatePath?: string;
@@ -477,9 +479,10 @@ with positioned elements at exact coordinates matching the official template.
 
       // Download signature file for PDF generation
       let signatureBuffer: Buffer | undefined;
+      const signatureURL = `${process.env.IPFS_GATEWAY_URL}/ipfs/${activeSignature.CID}`;
       try {
         const fetch = require("node-fetch");
-        const signatureResponse = await fetch(activeSignature.CID);
+        const signatureResponse = await fetch(signatureURL);
         if (signatureResponse.ok) {
           signatureBuffer = Buffer.from(await signatureResponse.arrayBuffer());
           logger.info("Signature file downloaded successfully");
@@ -490,7 +493,7 @@ with positioned elements at exact coordinates matching the official template.
         }
       } catch (downloadError) {
         logger.warn(
-          `Failed to download signature from ${activeSignature.CID}:`,
+          `Failed to download signature from ${signatureURL}:`,
           downloadError
         );
       }
