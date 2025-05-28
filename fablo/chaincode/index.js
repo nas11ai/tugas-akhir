@@ -55,7 +55,7 @@ class IjazahContract extends Contract {
   async ReadIjazah(ctx, id) {
     const buffer = await ctx.stub.getState(id);
     if (!buffer || buffer.length === 0) {
-      throw new Error(`Ijazah dengan ID ${id} tidak ditemukan`);
+      return null;
     }
     return buffer.toString();
   }

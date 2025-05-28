@@ -253,6 +253,10 @@ with positioned elements at exact coordinates matching the official template.
         }
       );
 
+      if (!existingIjazahStr) {
+        throw new Error(`Ijazah with ID ${ijazahId} not found`);
+      }
+
       const existingIjazah: Ijazah = JSON.parse(existingIjazahStr);
 
       // Validate status - cannot update if waiting for signature
@@ -428,6 +432,10 @@ with positioned elements at exact coordinates matching the official template.
         }
       );
 
+      if (!existingIjazahStr) {
+        throw new Error(`Ijazah with ID: ${ijazahId} not found`);
+      }
+
       const existingIjazah: Ijazah = JSON.parse(existingIjazahStr);
 
       // Check if ijazah is in correct status for approval
@@ -598,6 +606,10 @@ with positioned elements at exact coordinates matching the official template.
         }
       );
 
+      if (!existingIjazahStr) {
+        throw new Error(`Ijazah with ID: ${ijazahId} not found`);
+      }
+
       const existingIjazah: Ijazah = JSON.parse(existingIjazahStr);
 
       // Check if ijazah is in correct status for rejection
@@ -661,6 +673,10 @@ with positioned elements at exact coordinates matching the official template.
           args: [ijazahId],
         }
       );
+
+      if (!existingIjazahStr) {
+        throw new Error(`Ijazah with ID: ${ijazahId} not found`);
+      }
 
       const existingIjazah: Ijazah = JSON.parse(existingIjazahStr);
 
@@ -726,6 +742,10 @@ with positioned elements at exact coordinates matching the official template.
           args: [ijazahId],
         }
       );
+
+      if (!existingIjazahStr) {
+        throw new Error(`Ijazah with ID: ${ijazahId} not found`);
+      }
 
       const existingIjazah: Ijazah = JSON.parse(existingIjazahStr);
 
@@ -890,6 +910,10 @@ with positioned elements at exact coordinates matching the official template.
           args: [ijazahId],
         }
       );
+
+      if (!ijazahStr) {
+        throw new Error("Ijazah not found");
+      }
 
       return JSON.parse(ijazahStr);
     } catch (error) {
