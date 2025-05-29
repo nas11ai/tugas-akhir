@@ -8,6 +8,8 @@ import {
   Signature,
   SignatureInput,
 } from "../models/ijazah";
+import fs from "fs/promises";
+import { PDFDocument, StandardFonts } from "pdf-lib";
 import { v4 as uuidv4 } from "uuid";
 import * as path from "path";
 import { IJAZAH_STATUS } from "../configs/fabric";
@@ -28,8 +30,9 @@ interface CertificateGenerationOptions {
 export class FabricService {
   private readonly defaultTemplatePath = path.join(
     process.cwd(),
-    "templates",
-    "ijazah-template.pdf"
+    "src",
+    "configs",
+    "template.pdf"
   );
 
   constructor() {}
@@ -60,84 +63,117 @@ export class FabricService {
   }
 
   /**
+   * Check if buffer is PNG
+   */
+  private isPNG(buffer: ArrayBuffer): boolean {
+    const header = new Uint8Array(buffer.slice(0, 8));
+    const pngSignature = [137, 80, 78, 71, 13, 10, 26, 10];
+
+    return pngSignature.every((byte, i) => header[i] === byte);
+  }
+
+  /**
+   * Fetch and validate PNG file
+   */
+  private async fetchAndValidatePNG(
+    url: string,
+    label: string
+  ): Promise<ArrayBuffer> {
+    try {
+      const imageRequestOptions = {
+        method: "get",
+        headers: new Headers({
+          "ngrok-skip-browser-warning": "69420",
+        }),
+      };
+
+      const res = await fetch(url, imageRequestOptions);
+
+      if (!res.ok) {
+        throw new Error(`${label} fetch failed with status ${res.status}`);
+      }
+
+      const buffer = await res.arrayBuffer();
+
+      if (!this.isPNG(buffer)) {
+        throw new Error(`${label} is not in PNG format`);
+      }
+
+      return buffer;
+    } catch (err) {
+      throw new Error(`Error fetching ${label}: ${(err as Error).message}`);
+    }
+  }
+
+  /**
    * Generate certificate PDF from template with provided data
    */
   private async generateCertificatePDF(
     ijazahData: IjazahInput,
-    photoBuffer?: Buffer,
-    signatureBuffer?: Buffer,
-    signatureCID?: string,
-    options: CertificateGenerationOptions = {}
+    photoCID: string,
+    signatureCID: string
   ): Promise<Buffer> {
     try {
-      // This is a placeholder for PDF generation logic
-      // In a real implementation, you would use libraries like:
-      // - pdf-lib for PDF manipulation
-      // - puppeteer for HTML to PDF conversion
-      // - PDFtk or similar tools
+      logger.info(
+        `Generating certificate PDF for ${ijazahData.nama} - NIM ${ijazahData.nomorIndukMahasiswa}`
+      );
 
-      logger.info(`Generating certificate PDF for ${ijazahData.nama}`);
+      const baseUrl = process.env.BACKEND_URL || "http://localhost:3000";
+      const photoUrl = `${baseUrl}/ipfs/${photoCID}`;
+      const signatureUrl = `${baseUrl}/ipfs/${signatureCID}`;
 
-      // For now, we'll create a simple text-based representation
-      // In production, this would involve:
-      // 1. Loading the PDF template
-      // 2. Positioning data at specific coordinates
-      // 3. Adding photo at designated position
-      // 4. Adding signature at rector signature position
+      const photoImageBytes = await this.fetchAndValidatePNG(photoUrl, "Photo");
+      const signatureImageBytes = await this.fetchAndValidatePNG(
+        signatureUrl,
+        "Signature"
+      );
 
-      const hasSignature = signatureBuffer || signatureCID;
-      const signatureStatus = hasSignature
-        ? "[TANDA TANGAN REKTOR TERPASANG]"
-        : "[MENUNGGU TANDA TANGAN]";
+      const templateBytes = await fs.readFile(this.defaultTemplatePath);
 
-      const certificateContent = `
-UNIVERSITAS CONTOH
-SERTIFIKAT IJAZAH
-================
+      const pdfDoc = await PDFDocument.load(templateBytes);
+      const photo = await pdfDoc.embedPng(photoImageBytes);
+      const signature = await pdfDoc.embedPng(signatureImageBytes);
 
-Nomor Dokumen: ${ijazahData.nomorDokumen}
-Nomor Ijazah Nasional: ${ijazahData.nomorIjazahNasional}
+      const photoDims = photo.scale(0.2);
+      const signatureDims = signature.scale(0.3);
 
-DENGAN INI MENYATAKAN BAHWA:
+      const page = pdfDoc.getPages()[0];
 
-Nama: ${ijazahData.nama}
-Tempat/Tanggal Lahir: ${ijazahData.tempatLahir || "N/A"}, ${
-        ijazahData.tanggalLahir
+      page.drawImage(signature, {
+        x: 550,
+        y: 52,
+        width: signatureDims.width,
+        height: signatureDims.height,
+      });
+
+      page.drawImage(photo, {
+        x: 240,
+        y: 25,
+        width: photoDims.width,
+        height: photoDims.height,
+      });
+
+      const form = pdfDoc.getForm();
+
+      for (const [key, value] of Object.entries(ijazahData)) {
+        if (!value) continue; // Skip if null/undefined
+
+        try {
+          const field = form.getTextField(key);
+          field.setText(value.toString());
+        } catch (err) {
+          logger.warn(`Field '${key}' not found in PDF form. Skipping.`);
+        }
       }
-NIK: ${ijazahData.nomorIndukKependudukan}
-NIM: ${ijazahData.nomorIndukMahasiswa}
 
-TELAH MENYELESAIKAN STUDI DAN BERHAK MENYANDANG GELAR:
+      // Simpan jadi Uint8Array
+      const pdfBytes = await pdfDoc.save();
 
-Program Studi: ${ijazahData.programStudi}
-Fakultas: ${ijazahData.fakultas}
-Jenis Pendidikan: ${ijazahData.jenisPendidikan}
-Gelar: ${ijazahData.gelarPendidikan}
-
-Tahun Diterima: ${ijazahData.tahunDiterima}
-Tanggal Lulus: ${ijazahData.tanggalLulus}
-
-Akreditasi Program Studi: ${ijazahData.akreditasiProgramStudi}
-Keputusan Akreditasi: ${ijazahData.keputusanAkreditasiProgramStudi}
-
-Diberikan di: ${ijazahData.tempatIjazahDiberikan}
-Tanggal: ${ijazahData.tanggalIjazahDiberikan}
-
-[POSISI FOTO MAHASISWA]
-${photoBuffer ? "[FOTO MAHASISWA - TERPASANG]" : "[FOTO MAHASISWA - TIDAK ADA]"}
-
-[POSISI TANDA TANGAN REKTOR]
-${signatureStatus}
-
----
-Generated at: ${new Date().toISOString()}
-
-NOTE: This is a template placeholder. In production, this would be a proper PDF 
-with positioned elements at exact coordinates matching the official template.
-      `;
+      // Konversi ke Buffer
+      const pdfBuffer = Buffer.from(pdfBytes);
 
       // Convert text to buffer (in real implementation, this would be actual PDF)
-      return Buffer.from(certificateContent, "utf-8");
+      return pdfBuffer;
     } catch (error) {
       logger.error("Error generating certificate PDF:", error);
       throw new Error("Failed to generate certificate PDF");
@@ -177,12 +213,35 @@ with positioned elements at exact coordinates matching the official template.
         logger.info(`Photo uploaded and pinned with CID: ${photoCID}`);
       }
 
+      if (!photoCID) {
+        throw new Error("Photo is required");
+      }
+
+      const signatureStr: string = await fabloService.queryChaincode(
+        organization,
+        userToken,
+        {
+          method: "GetActiveSignature",
+          args: [],
+        }
+      );
+
+      const signatureData: Signature = JSON.parse(signatureStr);
+
+      const {
+        photo: _photo,
+        ipfsCID: _ipfsCID,
+        signatureID: _signatureID,
+        Status: _status,
+        ...certificateData
+      } = ijazahData as any;
+
       // Generate certificate PDF (without signature - will be added later)
       logger.info("Generating certificate PDF...");
       const certificatePDF = await this.generateCertificatePDF(
-        ijazahData,
-        photoFile,
-        undefined // No signature yet
+        certificateData,
+        photoCID,
+        signatureData.CID
       );
 
       // Upload certificate PDF to IPFS
@@ -206,6 +265,7 @@ with positioned elements at exact coordinates matching the official template.
         Type: "certificate",
         ...cleanIjazahData,
         ipfsCID: certificateResult.cid,
+        photoCID,
       };
 
       // Store in blockchain via chaincode
@@ -261,13 +321,6 @@ with positioned elements at exact coordinates matching the official template.
 
       const existingIjazah: Ijazah = JSON.parse(existingIjazahStr);
 
-      // Validate status - cannot update if waiting for signature
-      if (existingIjazah.Status !== IJAZAH_STATUS.MENUNGGU_TTD) {
-        throw new Error(
-          "Cannot update ijazah while NOT WAITING for rector signature"
-        );
-      }
-
       const { photo: _, ...cleanIjazahData } = ijazahData as any;
 
       // Merge existing data with updates
@@ -303,55 +356,36 @@ with positioned elements at exact coordinates matching the official template.
         logger.info(`New photo uploaded and pinned with CID: ${photoCID}`);
       }
 
+      if (!photoCID) {
+        throw new Error("Photo file is required");
+      }
+
       // Generate updated certificate PDF
       logger.info("Generating updated certificate PDF...");
 
-      // Get signature data if exists and is approved
-      let signatureBuffer: Buffer | undefined;
-      let signatureCID: string | undefined;
-      if (existingIjazah.signatureID) {
-        try {
-          const signatureStr = await fabloService.queryChaincode(
-            organization,
-            userToken,
-            {
-              method: "ReadSignature",
-              args: [existingIjazah.signatureID],
-            }
-          );
-          const signature: Signature = JSON.parse(signatureStr);
-          signatureCID = signature.CID;
-
-          // Download signature file for PDF generation
-          if (signatureCID) {
-            try {
-              const fetch = require("node-fetch");
-              const signatureResponse = await fetch(signatureCID);
-              if (signatureResponse.ok) {
-                signatureBuffer = Buffer.from(
-                  await signatureResponse.arrayBuffer()
-                );
-              }
-            } catch (downloadError) {
-              logger.warn(
-                `Failed to download signature from ${signatureCID}:`,
-                downloadError
-              );
-            }
-          }
-        } catch (error) {
-          logger.warn(
-            `Failed to get signature for ID: ${existingIjazah.signatureID}`,
-            error
-          );
+      const signatureStr: string = await fabloService.queryChaincode(
+        organization,
+        userToken,
+        {
+          method: "GetActiveSignature",
+          args: [],
         }
-      }
+      );
+
+      const signatureData: Signature = JSON.parse(signatureStr);
+
+      const {
+        photo: _photo,
+        ipfsCID: _ipfsCID,
+        signatureID: _signatureID,
+        Status: _status,
+        ...certificateData
+      } = updatedData as any;
 
       const certificatePDF = await this.generateCertificatePDF(
-        updatedData,
-        photoFile,
-        signatureBuffer,
-        signatureCID
+        certificateData,
+        photoCID,
+        signatureData.CID
       );
 
       // Unpin old certificate
@@ -447,6 +481,10 @@ with positioned elements at exact coordinates matching the official template.
         );
       }
 
+      if (!existingIjazah.photoCID) {
+        throw new Error("Photo file is required");
+      }
+
       // Get active signature if no specific signature provided
       let activeSignature: Signature;
       if (signatureId) {
@@ -477,52 +515,19 @@ with positioned elements at exact coordinates matching the official template.
 
       logger.info(`Using signature: ${activeSignature.ID} for approval`);
 
-      // Download signature file for PDF generation
-      let signatureBuffer: Buffer | undefined;
-      const signatureURL = `${process.env.IPFS_GATEWAY_URL}/ipfs/${activeSignature.CID}`;
-      try {
-        const fetch = require("node-fetch");
-        const signatureResponse = await fetch(signatureURL);
-        if (signatureResponse.ok) {
-          signatureBuffer = Buffer.from(await signatureResponse.arrayBuffer());
-          logger.info("Signature file downloaded successfully");
-        } else {
-          logger.warn(
-            `Failed to download signature file: HTTP ${signatureResponse.status}`
-          );
-        }
-      } catch (downloadError) {
-        logger.warn(
-          `Failed to download signature from ${signatureURL}:`,
-          downloadError
-        );
-      }
-
-      // Get photo if exists
-      let photoBuffer: Buffer | undefined;
-      if (existingIjazah.photoCID) {
-        try {
-          const fetch = require("node-fetch");
-          const photoUrl = fabricService.getPhotoDownloadUrl(
-            existingIjazah.photoCID
-          );
-          if (photoUrl) {
-            const photoResponse = await fetch(photoUrl);
-            if (photoResponse.ok) {
-              photoBuffer = Buffer.from(await photoResponse.arrayBuffer());
-            }
-          }
-        } catch (downloadError) {
-          logger.warn(`Failed to download photo for approval:`, downloadError);
-        }
-      }
+      const {
+        photo: _photo,
+        ipfsCID: _ipfsCID,
+        signatureID: _signatureID,
+        Status: _status,
+        ...certificateData
+      } = existingIjazah as any;
 
       // Generate new certificate PDF with signature
       logger.info("Generating approved certificate PDF with signature...");
       const approvedCertificatePDF = await this.generateCertificatePDF(
-        existingIjazah,
-        photoBuffer,
-        signatureBuffer,
+        certificateData,
+        existingIjazah.photoCID,
         activeSignature.CID
       );
 
@@ -763,6 +768,10 @@ with positioned elements at exact coordinates matching the official template.
         );
       }
 
+      if (!existingIjazah.photoCID) {
+        throw new Error("Photo file is required");
+      }
+
       // Get signature to use
       let targetSignature: Signature;
       if (signatureId) {
@@ -797,45 +806,19 @@ with positioned elements at exact coordinates matching the official template.
         targetSignature = JSON.parse(activeSignatureStr);
       }
 
-      // Download signature and photo files
-      let signatureBuffer: Buffer | undefined;
-      let photoBuffer: Buffer | undefined;
-
-      // Download signature
-      try {
-        const fetch = require("node-fetch");
-        const signatureResponse = await fetch(targetSignature.CID);
-        if (signatureResponse.ok) {
-          signatureBuffer = Buffer.from(await signatureResponse.arrayBuffer());
-        }
-      } catch (error) {
-        logger.warn(`Failed to download signature:`, error);
-      }
-
-      // Download photo if exists
-      if (existingIjazah.photoCID) {
-        try {
-          const fetch = require("node-fetch");
-          const photoUrl = fabricService.getPhotoDownloadUrl(
-            existingIjazah.photoCID
-          );
-          if (photoUrl) {
-            const photoResponse = await fetch(photoUrl);
-            if (photoResponse.ok) {
-              photoBuffer = Buffer.from(await photoResponse.arrayBuffer());
-            }
-          }
-        } catch (error) {
-          logger.warn(`Failed to download photo:`, error);
-        }
-      }
+      const {
+        photo: _photo,
+        ipfsCID: _ipfsCID,
+        signatureID: _signatureID,
+        Status: _status,
+        ...certificateData
+      } = existingIjazah as any;
 
       // Generate new certificate PDF
       logger.info("Regenerating certificate PDF with updated signature...");
       const regeneratedCertificatePDF = await this.generateCertificatePDF(
-        existingIjazah,
-        photoBuffer,
-        signatureBuffer,
+        certificateData,
+        existingIjazah.photoCID,
         targetSignature.CID
       );
 

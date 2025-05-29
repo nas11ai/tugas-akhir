@@ -37,7 +37,7 @@ class IjazahContract extends Contract {
 
     // Set default status if not provided
     if (!ijazah.Status) {
-      ijazah.Status = STATUS.MENUNGGU_TTD;
+      ijazah.Status = STATUS.AKTIF;
     }
 
     // Add timestamps
