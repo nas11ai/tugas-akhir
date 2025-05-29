@@ -22,6 +22,8 @@ export interface Ijazah {
   signatureID?: string // Reference to the active signature
   photoCID?: string // IPFS Content Identifier for student photo
   Status: typeof IJAZAH_STATUS
+  CreatedAt: string
+  UpdatedAt: string
 }
 
 export interface IjazahInput {

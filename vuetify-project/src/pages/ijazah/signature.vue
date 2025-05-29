@@ -94,11 +94,11 @@
         </template>
 
         <template v-slot:[`item.CreatedAt`]="{ item }">
-          {{ formatDate(item.CreatedAt) }}
+          {{ formatTableDate(item.CreatedAt) }}
         </template>
 
         <template v-slot:[`item.UpdatedAt`]="{ item }">
-          {{ formatDate(item.UpdatedAt) }}
+          {{ formatTableDate(item.UpdatedAt) }}
         </template>
 
         <template v-slot:[`item.actions`]="{ item }">
@@ -327,6 +327,7 @@
 import BaseLayout from '@/layouts/BaseLayout.vue'
 import { ref, onMounted } from 'vue'
 import { apiService, apiHelper } from '@/config/axios'
+import { formatTableDate } from '@/helpers/formatTableDate'
 
 // Reactive data
 const search = ref('')
@@ -376,10 +377,10 @@ const snackbar = ref({
 
 const signatureHeaders = [
   { title: 'Preview', value: 'preview', sortable: false, width: '100px' },
-  { title: 'ID', value: 'ID' },
-  { title: 'Status', value: 'IsActive', sortable: false },
-  { title: 'Dibuat', value: 'CreatedAt' },
-  { title: 'Diperbarui', value: 'UpdatedAt' },
+  { title: 'ID', value: 'ID', sortable: true },
+  { title: 'Status', value: 'IsActive', sortable: true },
+  { title: 'Dibuat', value: 'CreatedAt', sortable: true },
+  { title: 'Diperbarui', value: 'UpdatedAt', sortable: true },
   { title: 'Aksi', value: 'actions', sortable: false, width: '180px' },
 ]
 
@@ -627,23 +628,6 @@ const getProxiedImageUrl = (cid: string) => {
   // Use backend proxy endpoint
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
   return `${baseUrl}/ipfs/${hash}`
-}
-
-const formatDate = (dateString?: string) => {
-  if (!dateString) return '-'
-
-  try {
-    const date = new Date(dateString)
-    return date.toLocaleString('id-ID', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  } catch {
-    return '-'
-  }
 }
 
 const showSnackbar = (message: string, color: string = 'success') => {

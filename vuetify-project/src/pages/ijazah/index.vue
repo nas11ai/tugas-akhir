@@ -30,14 +30,6 @@
         :loading="tableLoading"
         class="elevation-1"
       >
-        <template v-slot:[`item.select`]="{ item }">
-          <v-checkbox
-            v-model="selectedItems"
-            :value="item"
-            hide-details
-          ></v-checkbox>
-        </template>
-
         <template v-slot:[`item.aksi`]="{ item }">
           <div class="d-flex gap-2">
             <v-btn
@@ -143,6 +135,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiService, apiHelper } from '@/config/axios'
 import type { Ijazah } from '@/config/ijazah'
+import { formatTableDate } from '@/helpers/formatTableDate'
 
 // Router instance
 const router = useRouter()
@@ -154,8 +147,6 @@ const editModal = ref(false)
 const deleteDialog = ref(false)
 const loading = ref(false)
 const tableLoading = ref(false)
-
-const selectedItems = ref([])
 
 // Data untuk edit dan delete
 const editData = ref<Ijazah | null>(null)
@@ -181,6 +172,8 @@ const headers = [
   { title: 'NIM', value: 'nim', sortable: true },
   { title: 'Program Studi', value: 'prodi', sortable: true },
   { title: 'Nomor Ijazah', value: 'noIjazah', sortable: true },
+  { title: 'Dibuat', value: 'CreatedAt', sortable: true },
+  { title: 'Diperbarui', value: 'UpdatedAt', sortable: true },
 ]
 
 const items = ref<
@@ -298,38 +291,17 @@ const loadIjazahData = async () => {
         nim: ijazah.nomorIndukMahasiswa,
         prodi: ijazah.programStudi,
         noIjazah: ijazah.nomorDokumen,
+        CreatedAt: formatTableDate(ijazah.CreatedAt),
+        UpdatedAt: formatTableDate(ijazah.UpdatedAt),
       }))
+
+      console.log('items:', items.value)
     } else {
       throw new Error(apiHelper.getErrorMessage(response))
     }
   } catch (error) {
     console.error('Error loading ijazah data:', error)
     showSnackbar('Gagal memuat data ijazah', 'error')
-
-    // Keep existing mock data as fallback
-    items.value = [
-      {
-        id: 'uuid-001',
-        nama: 'Ahmad Setiawan',
-        nim: '2201001',
-        prodi: 'Teknik Informatika',
-        noIjazah: 'IJZ-001',
-      },
-      {
-        id: 'uuid-002',
-        nama: 'Budi Santoso',
-        nim: '2201002',
-        prodi: 'Sistem Informasi',
-        noIjazah: 'IJZ-002',
-      },
-      {
-        id: 'uuid-003',
-        nama: 'Citra Dewi',
-        nim: '2201003',
-        prodi: 'Teknik Elektro',
-        noIjazah: 'IJZ-003',
-      },
-    ]
   } finally {
     tableLoading.value = false
   }
