@@ -75,32 +75,6 @@
       </v-data-table>
     </v-card>
 
-    <!-- Modal Detail -->
-    <v-dialog v-model="detailModal" max-width="500px">
-      <v-card>
-        <v-card-title>Detail Sertifikat</v-card-title>
-        <v-divider></v-divider>
-        <v-card-text>
-          <p><strong>ID:</strong> {{ selectedItem?.id }}</p>
-          <p><strong>Nama:</strong> {{ selectedItem?.nama }}</p>
-          <p><strong>NIM:</strong> {{ selectedItem?.nim }}</p>
-          <p><strong>Program Studi:</strong> {{ selectedItem?.prodi }}</p>
-          <p><strong>Nomor Ijazah:</strong> {{ selectedItem?.noIjazah }}</p>
-          <p>
-            <strong>Status:</strong>
-            <v-chip :color="getStatusColor(selectedItem?.status)" dark>
-              {{ selectedItem?.status }}
-            </v-chip>
-          </p>
-        </v-card-text>
-        <v-divider></v-divider>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="blue" @click="detailModal = false">Tutup</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
     <!-- Modal Form Tambah Ijazah -->
     <AddIjazahModal
       v-model="addModal"
@@ -181,21 +155,11 @@ const router = useRouter()
 
 // Reactive data
 const search = ref('')
-const detailModal = ref(false)
 const addModal = ref(false)
 const editModal = ref(false)
 const deleteDialog = ref(false)
 const loading = ref(false)
 const tableLoading = ref(false)
-
-const selectedItem = ref<{
-  id: string
-  nama: string
-  nim: string
-  prodi: string
-  noIjazah: string
-  status: string
-} | null>(null)
 
 const selectedItems = ref([])
 
@@ -258,8 +222,7 @@ const getStatusColor = (status?: string) => {
 }
 
 const showDetail = (item: (typeof items.value)[number]) => {
-  selectedItem.value = item
-  detailModal.value = true
+  router.push(`/ijazah/${item.id}`)
 }
 
 const openAddDialog = () => {
