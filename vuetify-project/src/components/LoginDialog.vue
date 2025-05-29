@@ -73,11 +73,26 @@ const signInWithGoogle = async () => {
       emit('success', userResponse)
       emit('close')
 
-      if (userResponse.data.organization) {
-        await router.push('/ijazah')
-      } else {
-        await router.push('/')
+      const userData = userResponse.data
+
+      if (!userData) {
+        throw new Error('User data not found')
       }
+
+      if (!localStorage.getItem('fabricToken')) {
+        const enrollFabricCAResponse = await apiService.users.enrollFabricCA(
+          userData.organization,
+          userData.credentials.username,
+          userData.credentials.password
+        )
+
+        localStorage.setItem(
+          'fabricToken',
+          apiHelper.getData(enrollFabricCAResponse).data.token
+        )
+      }
+
+      await router.push('/ijazah')
     } catch (apiError) {
       const errorMessage = apiHelper.getErrorMessage(apiError)
 
