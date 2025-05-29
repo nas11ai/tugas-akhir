@@ -8,6 +8,7 @@ import {
   Signature,
   SignatureInput,
 } from "../models/ijazah";
+import sharp from "sharp";
 import fs from "fs/promises";
 import { PDFDocument, StandardFonts } from "pdf-lib";
 import { v4 as uuidv4 } from "uuid";
@@ -72,12 +73,33 @@ export class FabricService {
     return pngSignature.every((byte, i) => header[i] === byte);
   }
 
+  private async resizeImageByLabel(
+    buffer: Buffer,
+    label: "Photo" | "Signature"
+  ): Promise<Buffer> {
+    const dimensions: Record<typeof label, { width: number; height: number }> =
+      {
+        Photo: { width: 496, height: 659 },
+        Signature: { width: 667, height: 276 },
+      };
+
+    const size = dimensions[label];
+    if (!size) {
+      throw new Error(`Unknown label: ${label}`);
+    }
+
+    return sharp(buffer)
+      .resize(size.width, size.height, { fit: "fill" })
+      .png()
+      .toBuffer();
+  }
+
   /**
    * Fetch and validate PNG file
    */
   private async fetchAndValidatePNG(
     url: string,
-    label: string
+    label: "Photo" | "Signature"
   ): Promise<ArrayBuffer> {
     try {
       const imageRequestOptions = {
@@ -99,7 +121,7 @@ export class FabricService {
         throw new Error(`${label} is not in PNG format`);
       }
 
-      return buffer;
+      return this.resizeImageByLabel(Buffer.from(buffer), label);
     } catch (err) {
       throw new Error(`Error fetching ${label}: ${(err as Error).message}`);
     }
