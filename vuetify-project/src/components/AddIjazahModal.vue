@@ -415,12 +415,14 @@ watch(dialog, (newVal) => {
 })
 
 // Methods
-const onPhotoChange = (file: File | File[] | null) => {
-  if (Array.isArray(file)) {
-    photoFile.value = file[0] || null
-  } else {
-    photoFile.value = file
+const onPhotoChange = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (!target || !target.files || target.files.length === 0) {
+    console.error('No file selected')
+    return
   }
+
+  photoFile.value = target.files[0]
 }
 
 const resetForm = () => {

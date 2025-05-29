@@ -475,8 +475,13 @@ const populateForm = () => {
 }
 
 const onPhotoChange = (event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  photoFile.value = file !== undefined ? file : null
+  const target = event.target as HTMLInputElement
+  if (!target || !target.files || target.files.length === 0) {
+    console.error('No file selected')
+    return
+  }
+
+  photoFile.value = target.files[0]
 }
 
 const resetForm = () => {
