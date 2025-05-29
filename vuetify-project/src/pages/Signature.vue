@@ -217,7 +217,7 @@
             <v-file-input
               v-model="signatureFile"
               label="File Tanda Tangan"
-              accept="image/*"
+              accept="image/png"
               :rules="signatureFileRules"
               outlined
               dense

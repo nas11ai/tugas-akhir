@@ -22,12 +22,24 @@
                 <v-card-text>
                   <v-row>
                     <v-col cols="12" md="6">
-                      <v-text-field v-model="formData.nomorDokumen" label="Nomor Dokumen" :rules="requiredRules"
-                        outlined dense required></v-text-field>
+                      <v-text-field
+                        v-model="formData.nomorDokumen"
+                        label="Nomor Dokumen"
+                        :rules="requiredRules"
+                        outlined
+                        dense
+                        required
+                      ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <v-text-field v-model="formData.nomorIjazahNasional" label="Nomor Ijazah Nasional"
-                        :rules="requiredRules" outlined dense required></v-text-field>
+                      <v-text-field
+                        v-model="formData.nomorIjazahNasional"
+                        label="Nomor Ijazah Nasional"
+                        :rules="requiredRules"
+                        outlined
+                        dense
+                        required
+                      ></v-text-field>
                     </v-col>
                   </v-row>
                 </v-card-text>
@@ -44,37 +56,84 @@
                 <v-card-text>
                   <v-row>
                     <v-col cols="12" md="6">
-                      <v-text-field v-model="formData.nama" label="Nama Lengkap" :rules="requiredRules" outlined dense
-                        required></v-text-field>
+                      <v-text-field
+                        v-model="formData.nama"
+                        label="Nama Lengkap"
+                        :rules="requiredRules"
+                        outlined
+                        dense
+                        required
+                      ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <v-text-field v-model="formData.tempatLahir" label="Tempat Lahir" outlined dense></v-text-field>
+                      <v-text-field
+                        v-model="formData.tempatLahir"
+                        label="Tempat Lahir"
+                        outlined
+                        dense
+                      ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <v-text-field v-model="formData.tanggalLahir" label="Tanggal Lahir" type="date"
-                        :rules="requiredRules" outlined dense required></v-text-field>
+                      <v-text-field
+                        v-model="formData.tanggalLahir"
+                        label="Tanggal Lahir"
+                        type="date"
+                        :rules="requiredRules"
+                        outlined
+                        dense
+                        required
+                      ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <v-text-field v-model="formData.nomorIndukKependudukan" label="NIK"
-                        :rules="[...requiredRules, ...nikRules]" outlined dense required></v-text-field>
+                      <v-text-field
+                        v-model="formData.nomorIndukKependudukan"
+                        label="NIK"
+                        :rules="[...requiredRules, ...nikRules]"
+                        outlined
+                        dense
+                        required
+                      ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <v-text-field v-model="formData.nomorIndukMahasiswa" label="NIM" :rules="requiredRules" outlined
-                        dense required></v-text-field>
+                      <v-text-field
+                        v-model="formData.nomorIndukMahasiswa"
+                        label="NIM"
+                        :rules="requiredRules"
+                        outlined
+                        dense
+                        required
+                      ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <v-file-input v-model="photoFile"
+                      <v-file-input
+                        v-model="photoFile"
                         label="Foto Mahasiswa (Opsional - kosongkan jika tidak ingin mengubah)"
-                        prepend-icon="mdi-camera" accept="image/jpeg,image/png,image/jpg" :rules="photoRules" outlined
-                        dense show-size clearable @change="onPhotoChange">
+                        prepend-icon="mdi-camera"
+                        accept="image/png"
+                        :rules="photoRules"
+                        outlined
+                        dense
+                        show-size
+                        clearable
+                        @change="onPhotoChange"
+                      >
                         <template v-slot:selection="{ fileNames }">
                           <v-chip small label color="orange">
                             {{ fileNames.join(', ') }}
                           </v-chip>
                         </template>
                       </v-file-input>
-                      <v-alert v-if="hasExistingPhoto" type="info" dense outlined class="mt-2">
-                        <small>Foto saat ini tersedia. Upload foto baru jika ingin mengubah.</small>
+                      <v-alert
+                        v-if="hasExistingPhoto"
+                        type="info"
+                        dense
+                        outlined
+                        class="mt-2"
+                      >
+                        <small
+                          >Foto saat ini tersedia. Upload foto baru jika ingin
+                          mengubah.</small
+                        >
                       </v-alert>
                     </v-col>
                   </v-row>
@@ -92,28 +151,67 @@
                 <v-card-text>
                   <v-row>
                     <v-col cols="12" md="6">
-                      <v-text-field v-model="formData.programStudi" label="Program Studi" :rules="requiredRules"
-                        outlined dense required></v-text-field>
+                      <v-text-field
+                        v-model="formData.programStudi"
+                        label="Program Studi"
+                        :rules="requiredRules"
+                        outlined
+                        dense
+                        required
+                      ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <v-text-field v-model="formData.fakultas" label="Fakultas" :rules="requiredRules" outlined dense
-                        required></v-text-field>
+                      <v-text-field
+                        v-model="formData.fakultas"
+                        label="Fakultas"
+                        :rules="requiredRules"
+                        outlined
+                        dense
+                        required
+                      ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <v-text-field v-model="formData.tahunDiterima" label="Tahun Diterima" type="number"
-                        :rules="[...requiredRules, ...yearRules]" outlined dense required></v-text-field>
+                      <v-text-field
+                        v-model="formData.tahunDiterima"
+                        label="Tahun Diterima"
+                        type="number"
+                        :rules="[...requiredRules, ...yearRules]"
+                        outlined
+                        dense
+                        required
+                      ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <v-text-field v-model="formData.tanggalLulus" label="Tanggal Lulus" type="date"
-                        :rules="requiredRules" outlined dense required></v-text-field>
+                      <v-text-field
+                        v-model="formData.tanggalLulus"
+                        label="Tanggal Lulus"
+                        type="date"
+                        :rules="requiredRules"
+                        outlined
+                        dense
+                        required
+                      ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <v-select v-model="formData.jenisPendidikan" :items="jenisPendidikanOptions"
-                        label="Jenis Pendidikan" :rules="requiredRules" outlined dense required></v-select>
+                      <v-select
+                        v-model="formData.jenisPendidikan"
+                        :items="jenisPendidikanOptions"
+                        label="Jenis Pendidikan"
+                        :rules="requiredRules"
+                        outlined
+                        dense
+                        required
+                      ></v-select>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <v-text-field v-model="formData.gelarPendidikan" label="Gelar Pendidikan" :rules="requiredRules"
-                        outlined dense required></v-text-field>
+                      <v-text-field
+                        v-model="formData.gelarPendidikan"
+                        label="Gelar Pendidikan"
+                        :rules="requiredRules"
+                        outlined
+                        dense
+                        required
+                      ></v-text-field>
                     </v-col>
                   </v-row>
                 </v-card-text>
@@ -130,13 +228,25 @@
                 <v-card-text>
                   <v-row>
                     <v-col cols="12" md="6">
-                      <v-select v-model="formData.akreditasiProgramStudi" :items="akreditasiOptions"
-                        label="Akreditasi Program Studi" :rules="requiredRules" outlined dense required></v-select>
+                      <v-select
+                        v-model="formData.akreditasiProgramStudi"
+                        :items="akreditasiOptions"
+                        label="Akreditasi Program Studi"
+                        :rules="requiredRules"
+                        outlined
+                        dense
+                        required
+                      ></v-select>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <v-text-field v-model="formData.keputusanAkreditasiProgramStudi"
-                        label="Keputusan Akreditasi Program Studi" :rules="requiredRules" outlined dense
-                        required></v-text-field>
+                      <v-text-field
+                        v-model="formData.keputusanAkreditasiProgramStudi"
+                        label="Keputusan Akreditasi Program Studi"
+                        :rules="requiredRules"
+                        outlined
+                        dense
+                        required
+                      ></v-text-field>
                     </v-col>
                   </v-row>
                 </v-card-text>
@@ -153,12 +263,25 @@
                 <v-card-text>
                   <v-row>
                     <v-col cols="12" md="6">
-                      <v-text-field v-model="formData.tempatIjazahDiberikan" label="Tempat Ijazah Diberikan"
-                        :rules="requiredRules" outlined dense required></v-text-field>
+                      <v-text-field
+                        v-model="formData.tempatIjazahDiberikan"
+                        label="Tempat Ijazah Diberikan"
+                        :rules="requiredRules"
+                        outlined
+                        dense
+                        required
+                      ></v-text-field>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <v-text-field v-model="formData.tanggalIjazahDiberikan" label="Tanggal Ijazah Diberikan"
-                        type="date" :rules="requiredRules" outlined dense required></v-text-field>
+                      <v-text-field
+                        v-model="formData.tanggalIjazahDiberikan"
+                        label="Tanggal Ijazah Diberikan"
+                        type="date"
+                        :rules="requiredRules"
+                        outlined
+                        dense
+                        required
+                      ></v-text-field>
                     </v-col>
                   </v-row>
                 </v-card-text>
@@ -176,7 +299,12 @@
           <v-icon left>mdi-close</v-icon>
           Batal
         </v-btn>
-        <v-btn color="orange" @click="submitForm" :loading="loading" :disabled="!valid">
+        <v-btn
+          color="orange"
+          @click="submitForm"
+          :loading="loading"
+          :disabled="!valid"
+        >
           <v-icon left>mdi-content-save</v-icon>
           Update
         </v-btn>
@@ -340,13 +468,15 @@ const populateForm = () => {
     akreditasiProgramStudi: data.akreditasiProgramStudi || '',
     keputusanAkreditasiProgramStudi: data.keputusanAkreditasiProgramStudi || '',
     tempatIjazahDiberikan: data.tempatIjazahDiberikan || '',
-    tanggalIjazahDiberikan: formatDateForInput(data.tanggalIjazahDiberikan || ''),
+    tanggalIjazahDiberikan: formatDateForInput(
+      data.tanggalIjazahDiberikan || ''
+    ),
   }
 }
 
 const onPhotoChange = (event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0];
-  photoFile.value = file !== undefined ? file : null;
+  const file = (event.target as HTMLInputElement).files?.[0]
+  photoFile.value = file !== undefined ? file : null
 }
 
 const resetForm = () => {
@@ -404,7 +534,10 @@ const submitForm = async () => {
     }
 
     // Call API to update ijazah
-    const response = await apiService.ijazah.update(props.editData.ID || props.editData.ID || '', submitData)
+    const response = await apiService.ijazah.update(
+      props.editData.ID || props.editData.ID || '',
+      submitData
+    )
 
     if (apiHelper.isSuccess(response)) {
       emit('success', 'Ijazah berhasil diupdate')
@@ -438,7 +571,9 @@ const submitForm = async () => {
 }
 
 /* Ensure proper spacing */
-.v-text-field.v-text-field--outlined.v-input--dense>.v-input__control>.v-input__slot {
+.v-text-field.v-text-field--outlined.v-input--dense
+  > .v-input__control
+  > .v-input__slot {
   min-height: 40px;
 }
 

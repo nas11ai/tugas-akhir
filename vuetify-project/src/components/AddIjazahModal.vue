@@ -109,7 +109,7 @@
                         v-model="photoFile"
                         label="Foto Mahasiswa"
                         prepend-icon="mdi-camera"
-                        accept="image/jpeg,image/png,image/jpg"
+                        accept="image/png"
                         :rules="photoRules"
                         outlined
                         dense
