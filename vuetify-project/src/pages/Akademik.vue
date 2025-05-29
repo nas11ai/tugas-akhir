@@ -52,9 +52,7 @@
               color="white"
               icon
               @click="openEditDialog(item)"
-              :disabled="
-                loading || item.status !== 'menunggu tanda tangan rektor'
-              "
+              :disabled="loading"
             >
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
@@ -62,9 +60,7 @@
               icon
               color="white"
               @click="confirmDelete(item)"
-              :disabled="
-                loading || item.status !== 'menunggu tanda tangan rektor'
-              "
+              :disabled="loading"
             >
               <v-icon>mdi-delete</v-icon>
             </v-btn>
