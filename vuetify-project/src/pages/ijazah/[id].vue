@@ -282,7 +282,7 @@ const onPhotoError = () => {
 }
 
 const goBack = () => {
-  router.push('/akademik')
+  router.push('/ijazah')
 }
 
 // Watch for route changes (useful if navigating between different IDs)

@@ -306,7 +306,7 @@ const showSnackbar = (message: string, color: string = 'success') => {
 }
 
 const navigateToSignature = () => {
-  router.push('/signature')
+  router.push('/ijazah/signature')
 }
 
 // Load ijazah data from API

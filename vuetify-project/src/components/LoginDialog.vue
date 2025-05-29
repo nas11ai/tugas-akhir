@@ -74,7 +74,7 @@ const signInWithGoogle = async () => {
       emit('close')
 
       if (userResponse.data.organization) {
-        await router.push('/' + userResponse.data.organization.toLowerCase())
+        await router.push('/ijazah')
       } else {
         await router.push('/')
       }
