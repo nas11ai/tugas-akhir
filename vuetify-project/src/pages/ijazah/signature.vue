@@ -5,7 +5,7 @@
     <v-card class="mt-4 pa-4">
       <div class="d-flex align-center justify-space-between mb-4">
         <div class="d-flex align-center gap-4">
-          <v-btn color="grey" outlined @click="$router.push('/ijazah')">
+          <v-btn color="secondary" outlined @click="$router.push('/ijazah')">
             <v-icon left>mdi-arrow-left</v-icon>
             Kembali
           </v-btn>

@@ -25,7 +25,7 @@
 
       <!-- Main Content -->
       <div v-if="!loading && !error && ijazah">
-        <v-btn color="blue" outlined @click="goBack" class="mb-4">
+        <v-btn color="secondary" outlined @click="goBack" class="mb-4">
           <v-icon left>mdi-arrow-left</v-icon>
           Kembali
         </v-btn>

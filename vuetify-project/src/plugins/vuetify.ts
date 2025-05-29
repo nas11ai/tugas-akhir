@@ -17,7 +17,7 @@ const myTheme = {
   dark: false, // Set ke true jika ingin dark mode
   colors: {
     primary: '#1E88E5',
-    secondary: '#6D4C41',
+    secondary: '#8A8787',
     accent: '#F57C00',
     error: '#FF5252',
     info: '#2196F3',
