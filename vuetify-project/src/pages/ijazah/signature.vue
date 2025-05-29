@@ -47,45 +47,110 @@
         :loading="signatureLoading"
         class="elevation-1"
       >
-        <template v-slot:[`item.preview`]="{ item }">
-          <div class="signature-preview">
-            <v-img
-              :src="getProxiedImageUrl(item.CID)"
-              max-width="80"
-              max-height="60"
-              contain
-              @error="
-                (error: string | undefined) => {
-                  console.log('Image load error:', error)
-                }
-              "
-              @load="
-                (load: string | undefined) => {
-                  console.log('Image on load:', load)
-                }
-              "
-            >
-              <template v-slot:placeholder>
-                <v-row class="fill-height ma-0" align="center" justify="center">
-                  <v-progress-circular
-                    indeterminate
-                    size="20"
-                  ></v-progress-circular>
-                </v-row>
+        <template v-slot:[`item.actions`]="{ item }">
+          <div class="d-flex gap-1">
+            <!-- Aktifkan Tanda Tangan -->
+            <v-tooltip text="Aktifkan Tanda Tangan" location="top">
+              <template #activator="{ props }">
+                <v-btn
+                  v-if="!item.IsActive"
+                  icon
+                  small
+                  color="green"
+                  @click="setActiveSignature(item.ID)"
+                  :loading="signatureActionLoading"
+                  v-bind="props"
+                >
+                  <v-icon small>mdi-check</v-icon>
+                </v-btn>
               </template>
-            </v-img>
-            <v-btn
-              v-if="item.CID"
-              icon
-              x-small
-              color="white"
-              @click="openImageInNewTab(item.CID)"
-              class="mt-1"
-            >
-              <v-icon x-small>mdi-open-in-new</v-icon>
-            </v-btn>
+            </v-tooltip>
+
+            <!-- Nonaktifkan Tanda Tangan -->
+            <v-tooltip text="Nonaktifkan Tanda Tangan" location="top">
+              <template #activator="{ props }">
+                <v-btn
+                  v-if="item.IsActive"
+                  icon
+                  small
+                  color="orange"
+                  @click="deactivateSignature(item.ID)"
+                  :loading="signatureActionLoading"
+                  v-bind="props"
+                >
+                  <v-icon small>mdi-pause</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+
+            <!-- Lihat Gambar -->
+            <v-tooltip text="Lihat gambar" location="top">
+              <template #activator="{ props }">
+                <v-btn
+                  v-if="item.CID"
+                  icon
+                  x-small
+                  color="white"
+                  @click="openImageInNewTab(item.CID)"
+                  class="mt-1"
+                  v-bind="props"
+                >
+                  <v-icon x-small>mdi-magnify-plus-outline</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+
+            <!-- Edit -->
+            <v-tooltip text="Edit Tanda Tangan" location="top">
+              <template #activator="{ props }">
+                <v-btn
+                  icon
+                  small
+                  color="white"
+                  @click="editSignature(item)"
+                  v-bind="props"
+                >
+                  <v-icon small>mdi-pencil</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+
+            <!-- Hapus -->
+            <v-tooltip text="Hapus Tanda Tangan" location="top">
+              <template #activator="{ props }">
+                <v-btn
+                  icon
+                  small
+                  color="white"
+                  @click="confirmDeleteSignature(item)"
+                  :disabled="item.IsActive"
+                  v-bind="props"
+                >
+                  <v-icon small>mdi-delete</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
           </div>
         </template>
+        <!-- <template v-slot:[`item.preview`]="{ item }">
+          <div class="signature-preview">
+            <v-tooltip text="Lihat gambar" location="top">
+              <template #activator="{ props }">
+                <v-btn
+                  v-if="item.CID"
+                  icon
+                  x-small
+                  color="white"
+                  @click="openImageInNewTab(item.CID)"
+                  class="mt-1"
+                  v-bind="props"
+                >
+                  <v-icon x-small>mdi-open-in-new</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+          </div>
+        </template> -->
 
         <template v-slot:[`item.IsActive`]="{ item }">
           <v-chip :color="item.IsActive ? 'green' : 'grey'" dark small>
@@ -99,43 +164,6 @@
 
         <template v-slot:[`item.UpdatedAt`]="{ item }">
           {{ formatTableDate(item.UpdatedAt) }}
-        </template>
-
-        <template v-slot:[`item.actions`]="{ item }">
-          <div class="d-flex gap-1">
-            <v-btn
-              v-if="!item.IsActive"
-              icon
-              small
-              color="green"
-              @click="setActiveSignature(item.ID)"
-              :loading="signatureActionLoading"
-            >
-              <v-icon small>mdi-check</v-icon>
-            </v-btn>
-            <v-btn
-              v-if="item.IsActive"
-              icon
-              small
-              color="orange"
-              @click="deactivateSignature(item.ID)"
-              :loading="signatureActionLoading"
-            >
-              <v-icon small>mdi-pause</v-icon>
-            </v-btn>
-            <v-btn icon small color="white" @click="editSignature(item)">
-              <v-icon small>mdi-pencil</v-icon>
-            </v-btn>
-            <v-btn
-              icon
-              small
-              color="white"
-              @click="confirmDeleteSignature(item)"
-              :disabled="item.IsActive"
-            >
-              <v-icon small>mdi-delete</v-icon>
-            </v-btn>
-          </div>
         </template>
       </v-data-table>
     </v-card>
@@ -376,12 +404,11 @@ const snackbar = ref({
 })
 
 const signatureHeaders = [
-  { title: 'Preview', value: 'preview', sortable: false, width: '100px' },
+  { title: 'Aksi', value: 'actions', sortable: false, width: '180px' },
   { title: 'ID', value: 'ID', sortable: true },
   { title: 'Status', value: 'IsActive', sortable: true },
   { title: 'Dibuat', value: 'CreatedAt', sortable: true },
   { title: 'Diperbarui', value: 'UpdatedAt', sortable: true },
-  { title: 'Aksi', value: 'actions', sortable: false, width: '180px' },
 ]
 
 // Validation rules

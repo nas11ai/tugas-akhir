@@ -32,30 +32,50 @@
       >
         <template v-slot:[`item.aksi`]="{ item }">
           <div class="d-flex gap-2">
-            <v-btn
-              color="white"
-              icon
-              @click="showDetail(item)"
-              :disabled="loading"
-            >
-              <v-icon>mdi-eye</v-icon>
-            </v-btn>
-            <v-btn
-              color="white"
-              icon
-              @click="openEditDialog(item)"
-              :disabled="loading"
-            >
-              <v-icon>mdi-pencil</v-icon>
-            </v-btn>
-            <v-btn
-              icon
-              color="white"
-              @click="confirmDelete(item)"
-              :disabled="loading"
-            >
-              <v-icon>mdi-delete</v-icon>
-            </v-btn>
+            <!-- Tooltip: Lihat Detail -->
+            <v-tooltip text="Lihat Detail" location="top">
+              <template #activator="{ props }">
+                <v-btn
+                  color="white"
+                  icon
+                  @click="showDetail(item)"
+                  :disabled="loading"
+                  v-bind="props"
+                >
+                  <v-icon>mdi-magnify-plus-outline</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+
+            <!-- Tooltip: Edit -->
+            <v-tooltip text="Edit Data" location="top">
+              <template #activator="{ props }">
+                <v-btn
+                  color="white"
+                  icon
+                  @click="openEditDialog(item)"
+                  :disabled="loading"
+                  v-bind="props"
+                >
+                  <v-icon>mdi-pencil</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+
+            <!-- Tooltip: Hapus -->
+            <v-tooltip text="Hapus Data" location="top">
+              <template #activator="{ props }">
+                <v-btn
+                  icon
+                  color="white"
+                  @click="confirmDelete(item)"
+                  :disabled="loading"
+                  v-bind="props"
+                >
+                  <v-icon>mdi-delete</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
           </div>
         </template>
       </v-data-table>
