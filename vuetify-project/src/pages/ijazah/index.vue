@@ -66,12 +66,6 @@
             </v-btn>
           </div>
         </template>
-
-        <template v-slot:[`item.status`]="{ item }">
-          <v-chip :color="getStatusColor(item.status || '')" dark>{{
-            item.status
-          }}</v-chip>
-        </template>
       </v-data-table>
     </v-card>
 
@@ -171,7 +165,6 @@ const itemToDelete = ref<{
   nim: string
   prodi: string
   noIjazah: string
-  status: string
 } | null>(null)
 
 // Snackbar for notifications
@@ -182,14 +175,12 @@ const snackbar = ref({
 })
 
 const headers = [
-  { title: 'Pilih', value: 'select', sortable: false },
   { title: 'Aksi', value: 'aksi', sortable: false, width: '150px' },
-  { title: 'ID', value: 'id' },
-  { title: 'Nama Mahasiswa', value: 'nama' },
-  { title: 'NIM', value: 'nim' },
-  { title: 'Program Studi', value: 'prodi' },
-  { title: 'Nomor Ijazah', value: 'noIjazah' },
-  { title: 'Status', value: 'status' },
+  { title: 'ID', value: 'id', sortable: true },
+  { title: 'Nama Mahasiswa', value: 'nama', sortable: true },
+  { title: 'NIM', value: 'nim', sortable: true },
+  { title: 'Program Studi', value: 'prodi', sortable: true },
+  { title: 'Nomor Ijazah', value: 'noIjazah', sortable: true },
 ]
 
 const items = ref<
@@ -199,27 +190,10 @@ const items = ref<
     nim: string
     prodi: string
     noIjazah: string
-    status: string
   }>
 >([])
 
 // Methods
-const getStatusColor = (status?: string) => {
-  switch (status?.toLowerCase()) {
-    case 'disetujui':
-    case 'aktif':
-      return 'green'
-    case 'pending':
-    case 'menunggu tanda tangan rektor':
-      return 'orange'
-    case 'ditolak':
-      return 'red'
-    case 'draft':
-      return 'grey'
-    default:
-      return 'gray'
-  }
-}
 
 const showDetail = (item: (typeof items.value)[number]) => {
   router.push(`/ijazah/${item.id}`)
@@ -324,7 +298,6 @@ const loadIjazahData = async () => {
         nim: ijazah.nomorIndukMahasiswa,
         prodi: ijazah.programStudi,
         noIjazah: ijazah.nomorDokumen,
-        status: ijazah.Status,
       }))
     } else {
       throw new Error(apiHelper.getErrorMessage(response))
@@ -341,7 +314,6 @@ const loadIjazahData = async () => {
         nim: '2201001',
         prodi: 'Teknik Informatika',
         noIjazah: 'IJZ-001',
-        status: 'Pending',
       },
       {
         id: 'uuid-002',
@@ -349,7 +321,6 @@ const loadIjazahData = async () => {
         nim: '2201002',
         prodi: 'Sistem Informasi',
         noIjazah: 'IJZ-002',
-        status: 'Disetujui',
       },
       {
         id: 'uuid-003',
@@ -357,7 +328,6 @@ const loadIjazahData = async () => {
         nim: '2201003',
         prodi: 'Teknik Elektro',
         noIjazah: 'IJZ-003',
-        status: 'Ditolak',
       },
     ]
   } finally {
