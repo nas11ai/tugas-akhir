@@ -78,7 +78,7 @@
               v-if="item.CID"
               icon
               x-small
-              color="blue"
+              color="white"
               @click="openImageInNewTab(item.CID)"
               class="mt-1"
             >
@@ -123,13 +123,13 @@
             >
               <v-icon small>mdi-pause</v-icon>
             </v-btn>
-            <v-btn icon small color="blue" @click="editSignature(item)">
+            <v-btn icon small color="white" @click="editSignature(item)">
               <v-icon small>mdi-pencil</v-icon>
             </v-btn>
             <v-btn
               icon
               small
-              color="red"
+              color="white"
               @click="confirmDeleteSignature(item)"
               :disabled="item.IsActive"
             >
