@@ -177,12 +177,36 @@ export class FabricService {
 
       const form = pdfDoc.getForm();
 
+      const tanggalFields = [
+        "tanggalLahir",
+        "tanggalLulus",
+        "tanggalIjazahDiberikan",
+      ];
+
+      const formatTanggalIndonesia = (isoDateStr: string): string => {
+        const date = new Date(isoDateStr);
+        return new Intl.DateTimeFormat("id-ID", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      };
+
       for (const [key, value] of Object.entries(ijazahData)) {
-        if (!value) continue; // Skip if null/undefined
+        if (!value) continue;
+
+        let finalValue = value.toString();
+        if (tanggalFields.includes(key)) {
+          try {
+            finalValue = formatTanggalIndonesia(value);
+          } catch (err) {
+            logger.warn(`Failed to format '${key}': ${value}`);
+          }
+        }
 
         try {
           const field = form.getTextField(key);
-          field.setText(value.toString());
+          field.setText(finalValue);
         } catch (err) {
           logger.warn(`Field '${key}' not found in PDF form. Skipping.`);
         }
