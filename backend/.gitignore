@@ -3,5 +3,6 @@ logger/
 logs/
 src/configs/serviceAccountKey.json
 src/configs/template.pdf
+src/configs/mahasiswa.json
 package-lock.json
 .env
