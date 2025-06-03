@@ -45,6 +45,7 @@ router.get("/info", (req, res) => {
         "GET /api/info": "API information",
       },
       ijazah: {
+        "GET /api/ijazah/nim/:nim": "Get mahasiswa by NIM (AKADEMIK only)",
         "POST /api/ijazah": "Create new ijazah certificate (AKADEMIK only)",
         "PUT /api/ijazah/:id": "Update ijazah certificate (AKADEMIK only)",
         "GET /api/ijazah": "Get all ijazah certificates (Authenticated)",

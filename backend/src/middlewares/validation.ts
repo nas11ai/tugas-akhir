@@ -47,6 +47,14 @@ export const validateIdParam = [
     .withMessage("ID must be between 1 and 128 characters"),
 ];
 
+export const validateNimParam = [
+  param("nim")
+    .notEmpty()
+    .withMessage("NIM parameter is required")
+    .isLength({ min: 1, max: 50 })
+    .withMessage("NIM must be between 1 and 50 characters"),
+];
+
 /**
  * Validate UID parameter
  */

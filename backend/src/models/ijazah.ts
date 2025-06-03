@@ -26,7 +26,7 @@ export interface Ijazah {
   UpdatedAt: string; // ISO date string
 }
 
-export interface IjazahInput {
+export interface Mahasiswa {
   nomorDokumen: string;
   nomorIjazahNasional: string;
   nama: string;
@@ -44,6 +44,9 @@ export interface IjazahInput {
   keputusanAkreditasiProgramStudi: string;
   tempatIjazahDiberikan: string;
   tanggalIjazahDiberikan: string; // ISO date string
+}
+
+export interface IjazahInput extends Mahasiswa {
   ipfsCID?: string; // IPFS Content Identifier for certificate PDF
   signatureID?: string; // Reference to the active signature
   photoCID?: string; // IPFS Content Identifier for student photo

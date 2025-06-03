@@ -14,6 +14,7 @@ import {
   validateStatusUpdate,
   validateBulkIds,
   validateRejectionReason,
+  validateNimParam,
 } from "../middlewares/validation";
 import { Organization } from "../models/user";
 
@@ -141,6 +142,20 @@ router.get(
 );
 
 // ===== AKADEMIK ONLY ROUTES =====
+
+/**
+ * @route GET /api/ijazah/nim/:nim
+ * @desc Get mahasiswa by NIM
+ * @access AKADEMIK only
+ */
+router.get(
+  "/nim/:nim",
+  authenticate,
+  requireFabricToken,
+  requireOrganization([Organization.AKADEMIK]),
+  validate(validateNimParam),
+  ijazahController.findMahasiswaByNim.bind(ijazahController)
+);
 
 /**
  * @route   POST /api/ijazah

@@ -5,6 +5,7 @@ import { Organization } from "../models/user";
 import {
   Ijazah,
   IjazahInput,
+  Mahasiswa,
   Signature,
   SignatureInput,
 } from "../models/ijazah";
@@ -15,6 +16,7 @@ import { v4 as uuidv4 } from "uuid";
 import * as path from "path";
 import { IJAZAH_STATUS } from "../configs/fabric";
 import dotenv from "dotenv";
+import mahasiswa from "../configs/mahasiswa.json";
 
 dotenv.config();
 
@@ -224,6 +226,17 @@ export class FabricService {
       logger.error("Error generating certificate PDF:", error);
       throw new Error("Failed to generate certificate PDF");
     }
+  }
+
+  /**
+   * Find mahasiswa by NIM
+   * @param nim NIM of the mahasiswa
+   * @returns Mahasiswa object
+   */
+
+  findMahasiswaByNim(nim: string): Mahasiswa | undefined {
+    const result = mahasiswa.find((mhs) => mhs.nomorIndukMahasiswa === nim);
+    return result;
   }
 
   /**

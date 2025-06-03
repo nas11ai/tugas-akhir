@@ -4,7 +4,7 @@ import { fabricService } from "../services/fabricService";
 import { IJAZAH_STATUS } from "../configs/fabric";
 import { logger } from "../utils/logger";
 import { Organization } from "../models/user";
-import { IjazahInput } from "../models/ijazah";
+import { IjazahInput, Mahasiswa } from "../models/ijazah";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -13,6 +13,30 @@ dotenv.config();
  * Controller for managing Ijazah certificates
  */
 export class IjazahController {
+  /**
+   * Find mahasiswa by NIM
+   * GET /api/ijazah/nim/:nim
+   * Access: Akademik
+   */
+
+  findMahasiswaByNim(req: Request, res: Response): void {
+    const { nim } = req.params;
+    const result = fabricService.findMahasiswaByNim(nim);
+    if (!result) {
+      res.status(404).json({
+        success: false,
+        message: `Mahasiswa dengan NIM ${nim} tidak ditemukan`,
+      });
+      return;
+    }
+    res.status(200).json({
+      success: true,
+      message: `Mahasiswa dengan NIM ${nim} ditemukan`,
+      data: result,
+    });
+    return;
+  }
+
   /**
    * Create new ijazah certificate
    * POST /api/ijazah
