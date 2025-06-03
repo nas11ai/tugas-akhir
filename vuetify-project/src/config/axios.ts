@@ -199,6 +199,8 @@ export const apiService = {
     verify: (id: string) => apiClient.get(`/api/ijazah/${id}/verify`),
 
     // CRUD operations
+    findMahasiswaByNim: (nim: string) =>
+      apiClient.get(`/api/ijazah/nim/${nim}`),
     create: (ijazahData: IjazahInput) =>
       apiClient.post('/api/ijazah', ijazahData),
 
