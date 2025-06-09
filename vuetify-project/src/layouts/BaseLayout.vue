@@ -43,7 +43,7 @@
   </v-app>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { ref, onMounted } from 'vue'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { auth } from '@/config/firebase'
