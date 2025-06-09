@@ -211,14 +211,11 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import BaseLayout from '@/layouts/BaseLayout.vue'
 import logo from '@/assets/logo.png'
 import { apiService, apiHelper } from '@/config/axios'
 import type { Ijazah } from '@/config/ijazah'
 import { IJAZAH_STATUS } from '@/config/ijazah'
-
-const router = useRouter()
 
 // Reactive data
 const searchQuery = ref('')
@@ -309,13 +306,6 @@ const clearSearch = () => {
 
 const closeModal = () => {
   showModal.value = false
-}
-
-const viewFullDetails = () => {
-  if (modalData.value.ijazah?.ID) {
-    closeModal()
-    router.push(`/ijazah/${modalData.value.ijazah.ID}`)
-  }
 }
 
 const formatDate = (dateString: string): string => {
