@@ -327,21 +327,64 @@
                         <v-col cols="12" md="6">
                           <v-file-input
                             v-model="photoFile"
-                            label="Foto Mahasiswa"
+                            label="Foto Mahasiswa *"
                             prepend-icon="mdi-camera"
-                            accept="image/png,image/jpeg"
+                            accept="image/png,image/jpeg,image/jpg"
                             :rules="photoRules"
                             outlined
                             dense
                             show-size
+                            clearable
+                            required
                             @change="onPhotoChange"
+                            @click:clear="onPhotoClear"
                           >
                             <template v-slot:selection="{ fileNames }">
                               <v-chip small label color="primary">
+                                <v-icon left small>mdi-file-image</v-icon>
                                 {{ fileNames.join(', ') }}
                               </v-chip>
                             </template>
                           </v-file-input>
+
+                          <!-- Preview foto yang diupload -->
+                          <div v-if="photoPreview" class="mt-2">
+                            <v-img
+                              :src="photoPreview"
+                              max-height="150"
+                              max-width="150"
+                              class="rounded"
+                            >
+                              <template v-slot:placeholder>
+                                <v-row
+                                  class="fill-height ma-0"
+                                  align="center"
+                                  justify="center"
+                                >
+                                  <v-progress-circular
+                                    indeterminate
+                                    color="grey lighten-5"
+                                  ></v-progress-circular>
+                                </v-row>
+                              </template>
+                            </v-img>
+                            <div class="caption mt-1 grey--text">
+                              Preview foto mahasiswa
+                            </div>
+                          </div>
+
+                          <!-- Alert jika foto belum diupload -->
+                          <v-alert
+                            v-if="!photoFile"
+                            type="warning"
+                            outlined
+                            dense
+                            class="mt-2"
+                          >
+                            <v-icon left small>mdi-alert</v-icon>
+                            Foto mahasiswa wajib diupload untuk melengkapi
+                            pengajuan ijazah
+                          </v-alert>
                         </v-col>
                       </v-row>
                     </v-card-text>
@@ -516,7 +559,7 @@
                   color="primary"
                   @click="submitForm"
                   :loading="loading"
-                  :disabled="!valid"
+                  :disabled="!valid || !photoFile"
                 >
                   <v-icon left>mdi-content-save</v-icon>
                   Simpan Ijazah
@@ -531,9 +574,9 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, defineEmits, defineProps } from 'vue'
+import { ref, watch, defineEmits, defineProps, onUnmounted } from 'vue'
 import { apiService, apiHelper, type ApiError } from '@/config/axios'
-import { type IjazahInput } from '@/config/ijazah'
+import type { IjazahInput } from '@/config/ijazah'
 
 // Import enum/const untuk status
 // const IJAZAH_STATUS = { /* your status values */ }
@@ -549,6 +592,31 @@ const emit = defineEmits<{
   error: [message: string]
 }>()
 
+// Interface sesuai dengan IjazahInput
+interface IjazahFormData {
+  nomorDokumen: string
+  nomorIjazahNasional: string
+  nama: string
+  tempatLahir?: string
+  tanggalLahir: string // ISO date string
+  nomorIndukKependudukan: string
+  programStudi: string
+  fakultas: string
+  tahunDiterima: string
+  nomorIndukMahasiswa: string
+  tanggalLulus: string // ISO date string
+  jenisPendidikan: string
+  gelarPendidikan: string
+  akreditasiProgramStudi: string
+  keputusanAkreditasiProgramStudi: string
+  tempatIjazahDiberikan: string
+  tanggalIjazahDiberikan: string // ISO date string
+  ipfsCID?: string
+  signatureID?: string
+  photoCID?: string
+  // Status akan ditambahkan di submitForm
+}
+
 // Reactive data
 const dialog = ref(false)
 const valid = ref(false)
@@ -556,15 +624,16 @@ const loading = ref(false)
 const searchLoading = ref(false)
 const form = ref()
 const photoFile = ref<File | null>(null)
+const photoPreview = ref<string>('')
 const currentStep = ref(1)
 
 // Search data
 const nimSearch = ref('')
 const searchError = ref('')
-const mahasiswaData = ref<IjazahInput | null>()
+const mahasiswaData = ref<IjazahFormData | null>(null)
 
 // Form data
-const formData = ref<IjazahInput>({
+const formData = ref<IjazahFormData>({
   nomorDokumen: '',
   nomorIjazahNasional: '',
   nama: '',
@@ -582,6 +651,9 @@ const formData = ref<IjazahInput>({
   keputusanAkreditasiProgramStudi: '',
   tempatIjazahDiberikan: '',
   tanggalIjazahDiberikan: '',
+  ipfsCID: '',
+  signatureID: '',
+  photoCID: '',
 })
 
 // Options for select fields
@@ -615,6 +687,12 @@ const photoRules = [
     // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       return 'Ukuran file maksimal 5MB'
+    }
+
+    // Check file type
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg']
+    if (!allowedTypes.includes(file.type)) {
+      return 'Format file harus PNG atau JPEG'
     }
 
     return true
@@ -712,7 +790,8 @@ const searchMahasiswa = async () => {
       mahasiswaData.value = response.data.data
 
       if (!mahasiswaData.value) {
-        searchError.value = `Mahasiswa dengan NIM "${nimSearch.value}" tidak ditemukan di database. Pastikan NIM yang dimasukkan benar.`
+        searchError.value =
+          'Mahasiswa dengan NIM tersebut tidak ditemukan di database'
         return
       }
 
@@ -739,18 +818,17 @@ const searchMahasiswa = async () => {
   }
 }
 
-const fillFormWithMahasiswaData = (data: IjazahInput) => {
-  formData.value.nama = data.nama || ''
-  formData.value.nomorIndukMahasiswa = data?.nomorIndukMahasiswa || ''
-  formData.value.programStudi = data.programStudi || ''
-  formData.value.fakultas = data.fakultas || ''
+const fillFormWithMahasiswaData = (data: IjazahFormData) => {
+  formData.value.nama = data.nama
+  formData.value.nomorIndukMahasiswa = data.nomorIndukMahasiswa
+  formData.value.programStudi = data.programStudi
+  formData.value.fakultas = data.fakultas
 
   // Convert tahunDiterima to string
-  formData.value.tahunDiterima = data.tahunDiterima || ''
+  formData.value.tahunDiterima = data.tahunDiterima
 
   // Convert tanggalLulus to ISO format
-  formData.value.tanggalLulus =
-    convertIndonesianDateToISO(data.tanggalLulus) || ''
+  formData.value.tanggalLulus = convertIndonesianDateToISO(data.tanggalLulus)
 
   // Fill other fields from data if available
   if (data.tempatLahir && data.tempatLahir !== 'NULL') {
@@ -793,14 +871,34 @@ const fillFormWithMahasiswaData = (data: IjazahInput) => {
   }
 }
 
-const onPhotoChange = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  if (!target || !target.files || target.files.length === 0) {
-    console.error('No file selected')
+const onPhotoChange = (file: File | File[] | null) => {
+  // Clear previous preview
+  if (photoPreview.value) {
+    URL.revokeObjectURL(photoPreview.value)
+    photoPreview.value = ''
+  }
+
+  if (!file) {
+    photoFile.value = null
     return
   }
 
-  photoFile.value = target.files[0]
+  // Handle both single file and array of files
+  const selectedFile = Array.isArray(file) ? file[0] : file
+  photoFile.value = selectedFile
+
+  // Generate preview
+  if (selectedFile) {
+    photoPreview.value = URL.createObjectURL(selectedFile)
+  }
+}
+
+const onPhotoClear = () => {
+  if (photoPreview.value) {
+    URL.revokeObjectURL(photoPreview.value)
+    photoPreview.value = ''
+  }
+  photoFile.value = null
 }
 
 const resetForm = () => {
@@ -813,6 +911,13 @@ const resetForm = () => {
   searchError.value = ''
   mahasiswaData.value = null
   currentStep.value = 1
+
+  // Reset photo
+  if (photoPreview.value) {
+    URL.revokeObjectURL(photoPreview.value)
+    photoPreview.value = ''
+  }
+  photoFile.value = null
 
   // Reset form data
   formData.value = {
@@ -838,7 +943,6 @@ const resetForm = () => {
     photoCID: '',
   }
 
-  photoFile.value = null
   valid.value = false
 }
 
@@ -846,15 +950,27 @@ const closeDialog = () => {
   dialog.value = false
 }
 
+// Cleanup URL objects when component unmounts
+onUnmounted(() => {
+  if (photoPreview.value) {
+    URL.revokeObjectURL(photoPreview.value)
+  }
+})
+
 const submitForm = async () => {
   if (!form.value.validate()) {
+    return
+  }
+
+  if (!photoFile.value) {
+    emit('error', 'File foto wajib diunggah')
+    console.error('No photo file selected')
     return
   }
 
   loading.value = true
 
   try {
-    // Prepare data sesuai interface IjazahInput
     const ijazahData: IjazahInput = {
       nomorDokumen: formData.value.nomorDokumen,
       nomorIjazahNasional: formData.value.nomorIjazahNasional,
@@ -875,56 +991,34 @@ const submitForm = async () => {
       tanggalIjazahDiberikan: formData.value.tanggalIjazahDiberikan,
     }
 
-    // Add optional fields only if they have values
+    // Optional fields
     if (formData.value.tempatLahir) {
       ijazahData.tempatLahir = formData.value.tempatLahir
     }
-
     if (formData.value.ipfsCID) {
       ijazahData.ipfsCID = formData.value.ipfsCID
     }
-
     if (formData.value.signatureID) {
       ijazahData.signatureID = formData.value.signatureID
     }
-
     if (formData.value.photoCID) {
       ijazahData.photoCID = formData.value.photoCID
     }
 
-    // Prepare form data for multipart upload if there's a photo
-    let submitData: FormData
+    // Buat FormData untuk multipart/form-data
+    const submitData = new FormData()
+    Object.entries(ijazahData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        submitData.append(key, value)
+      }
+    })
+    submitData.append('photo', photoFile.value)
 
-    if (photoFile.value) {
-      submitData = new FormData()
-
-      // Add all ijazah data as JSON string or individual fields
-      Object.entries(ijazahData).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          submitData.append(key, value)
-        }
-      })
-
-      // Add photo file
-      submitData.append('photo', photoFile.value)
-    } else {
-      // Send as JSON if no photo
-      submitData = new FormData()
-      submitData.append('ijazahData', JSON.stringify(ijazahData))
-    }
-
-    // Call API to create ijazah
-    const response = photoFile.value
-      ? await apiService.post('/api/ijazah', submitData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        })
-      : await apiService.post('/api/ijazah', submitData, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
+    const response = await apiService.post('/api/ijazah', submitData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
 
     if (apiHelper.isSuccess(response)) {
       emit('success', 'Pengajuan ijazah berhasil dibuat')
