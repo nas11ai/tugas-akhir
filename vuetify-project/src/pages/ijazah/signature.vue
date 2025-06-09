@@ -255,7 +255,7 @@
             />
 
             <v-switch
-              v-if="!isEditingSignature"
+              v-if="isEditingSignature"
               v-model="signatureFormData.IsActive"
               :label="signatureFormData.IsActive ? 'Aktif' : 'Tidak Aktif'"
               color="orange"
