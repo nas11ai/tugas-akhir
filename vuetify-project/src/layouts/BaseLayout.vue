@@ -45,36 +45,33 @@
 
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue'
-import { onAuthStateChanged, signOut } from 'firebase/auth'
+import {
+  onAuthStateChanged,
+  signOut,
+  type User as FirebaseUser,
+} from 'firebase/auth'
 import { auth } from '@/config/firebase'
-import { apiService, apiHelper } from '@/config/axios'
+import { apiService, apiHelper, type ApiError } from '@/config/axios'
 import LoginDialog from '@/components/LoginDialog.vue'
 import router from '@/router'
+import type { UserWithCredentials } from '@/config/user'
 
-const user = ref(null)
+// Buat ref dengan tipe UserWithCredentials atau null
+const user = ref<UserWithCredentials | null>(null)
 const showLogin = ref(false)
 
-const handleLoginSuccess = (userData) => {
+const handleLoginSuccess = (userData: UserWithCredentials) => {
   console.log('Login successful, setting user data:', userData)
   user.value = userData
 }
 
 const handleLogout = async () => {
   try {
-    // Sign out from Firebase
     await signOut(auth)
-
-    // Clear user data
     user.value = null
-
-    // Clear auth token
     localStorage.removeItem('authToken')
-
-    // Clear fabric token
     localStorage.removeItem('fabricToken')
-
     console.log('Logout successful')
-
     await router.push('/')
   } catch (error) {
     console.error('Logout error:', error)
@@ -95,7 +92,6 @@ const refreshFabricToken = async () => {
     )
 
     const newToken = apiHelper.getData(response).data.token
-
     localStorage.setItem('fabricToken', newToken)
     console.log('Fabric token refreshed successfully.')
   } catch (error) {
@@ -103,23 +99,19 @@ const refreshFabricToken = async () => {
   }
 }
 
-const fetchUserData = async (firebaseUser) => {
+const fetchUserData = async (firebaseUser: FirebaseUser) => {
   try {
     console.log('Fetching user data for:', firebaseUser.email)
 
     const idToken = await firebaseUser.getIdToken()
-    // TODO: handle firebase token for auth
     localStorage.setItem('authToken', idToken)
 
     const response = await apiService.users.getCurrentUser()
-
     const userResponse = apiHelper.getData(response)
 
-    const userData = userResponse.data
+    const userData: UserWithCredentials = userResponse.data
 
-    if (!userData) {
-      throw new Error('User data not found')
-    }
+    if (!userData) throw new Error('User data not found')
 
     if (!localStorage.getItem('fabricToken')) {
       const enrollFabricCAResponse = await apiService.users.enrollFabricCA(
@@ -127,7 +119,6 @@ const fetchUserData = async (firebaseUser) => {
         userData.credentials.username,
         userData.credentials.password
       )
-
       localStorage.setItem(
         'fabricToken',
         apiHelper.getData(enrollFabricCAResponse).data.token
@@ -136,26 +127,27 @@ const fetchUserData = async (firebaseUser) => {
 
     console.log('User data fetched successfully:', userData)
     user.value = userData
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error fetching user data:', error)
 
-    const errorMessage = apiHelper.getErrorMessage(error)
-
-    if (error.response?.status === 404) {
-      console.log('User not found in backend - new user needs registration')
-    } else {
-      console.error('API Error:', errorMessage)
-
-      user.value = null
-      localStorage.removeItem('authToken')
+    if (error instanceof Error) {
+      const apiErr = error as ApiError
+      const errorMessage = apiHelper.getErrorMessage(apiErr)
+      if (apiErr.response?.status === 404) {
+        console.error('User not found in backend - new user needs registration')
+      } else {
+        console.error('API Error:', errorMessage)
+        user.value = null
+        localStorage.removeItem('authToken')
+      }
     }
+
+    throw error
   }
 }
 
-// Listen to Firebase auth state changes
 onMounted(() => {
   console.log('Setting up auth state listener...')
-
   onAuthStateChanged(auth, async (firebaseUser) => {
     console.log(
       'Auth state changed:',
@@ -166,7 +158,6 @@ onMounted(() => {
       try {
         await fetchUserData(firebaseUser)
 
-        // Set interval untuk refresh token setiap 10 menit
         setInterval(
           () => {
             refreshFabricToken()
@@ -177,7 +168,6 @@ onMounted(() => {
         console.error('Failed to fetch user data:', error)
       }
     } else {
-      // User signed out
       console.log('User signed out, clearing data')
       user.value = null
       localStorage.removeItem('authToken')
@@ -186,15 +176,25 @@ onMounted(() => {
 })
 
 // Debug function (remove in production)
+declare global {
+  interface Window {
+    debugAuth?: {
+      getCurrentUser: () => UserWithCredentials | null
+      getToken: () => string | null
+      clearUser: () => void
+      testFetchUser: () => Promise<void>
+    }
+  }
+}
+
 if (import.meta.env.VITE_APP_ENV === 'development') {
-  // Make debug functions available in console
   window.debugAuth = {
     getCurrentUser: () => user.value,
     getToken: () => localStorage.getItem('authToken'),
     clearUser: () => {
       user.value = null
     },
-    testFetchUser: () => fetchUserData(auth.currentUser),
+    testFetchUser: () => fetchUserData(auth.currentUser!),
   }
 }
 </script>
