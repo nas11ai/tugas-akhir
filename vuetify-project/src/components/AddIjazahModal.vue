@@ -13,26 +13,26 @@
       <v-stepper v-model="currentStep" class="elevation-0">
         <v-stepper-header>
           <v-stepper-item
-            :complete="currentStep > 1"
-            :value="1"
+            title="Cari Mahasiswa"
+            :complete="+currentStep > 1"
+            value="1"
             color="primary"
-          >
-            Cari Mahasiswa
-          </v-stepper-item>
+          ></v-stepper-item>
+
           <v-divider></v-divider>
+
           <v-stepper-item
-            :complete="currentStep > 2"
-            :value="2"
+            title="Lengkapi Data Ijazah"
+            :complete="+currentStep > 2"
+            value="2"
             color="primary"
             :disabled="!mahasiswaData"
-          >
-            Lengkapi Data Ijazah
-          </v-stepper-item>
+          ></v-stepper-item>
         </v-stepper-header>
 
-        <v-stepper-items>
+        <v-stepper-window v-model="currentStep">
           <!-- Step 1: Pencarian Mahasiswa -->
-          <v-stepper-content :value="1">
+          <v-stepper-window-item value="1">
             <v-card class="mb-4" outlined>
               <v-card-text class="pa-6">
                 <v-row align="center">
@@ -157,134 +157,26 @@
               </v-card-text>
             </v-card>
 
-            <div class="d-flex justify-space-between">
+            <div class="d-flex justify-space-between pa-4">
               <v-btn color="grey" outlined @click="closeDialog">
                 <v-icon left>mdi-close</v-icon>
                 Batal
               </v-btn>
               <v-btn
                 color="primary"
-                @click="currentStep = 2"
+                @click="goToStep(2)"
                 :disabled="!mahasiswaData"
               >
                 Lanjutkan
                 <v-icon right>mdi-arrow-right</v-icon>
               </v-btn>
             </div>
-          </v-stepper-content>
+          </v-stepper-window-item>
 
           <!-- Step 2: Form Data Ijazah -->
-          <v-stepper-content :value="2">
+          <v-stepper-window-item value="2">
             <v-form ref="form" v-model="valid" lazy-validation>
               <v-row>
-                <!-- Data Dokumen -->
-                <v-col cols="12">
-                  <v-card outlined class="mb-4">
-                    <v-card-subtitle class="primary--text font-weight-bold">
-                      <v-icon left color="primary">mdi-file-document</v-icon>
-                      Data Dokumen
-                    </v-card-subtitle>
-                    <v-card-text>
-                      <v-row>
-                        <v-col cols="12" md="6">
-                          <v-text-field
-                            v-model="formData.nomorDokumen"
-                            label="Nomor Dokumen"
-                            :rules="requiredRules"
-                            outlined
-                            dense
-                            required
-                          ></v-text-field>
-                        </v-col>
-                        <v-col cols="12" md="6">
-                          <v-text-field
-                            v-model="formData.nomorIjazahNasional"
-                            label="Nomor Ijazah Nasional"
-                            :rules="requiredRules"
-                            outlined
-                            dense
-                            required
-                          ></v-text-field>
-                        </v-col>
-                      </v-row>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
-
-                <!-- Data Mahasiswa (Read-only, sudah terisi dari pencarian) -->
-                <v-col cols="12">
-                  <v-card outlined class="mb-4" color="grey lighten-5">
-                    <v-card-subtitle class="primary--text font-weight-bold">
-                      <v-icon left color="primary">mdi-account</v-icon>
-                      Data Mahasiswa (Otomatis dari Pencarian)
-                    </v-card-subtitle>
-                    <v-card-text>
-                      <v-row>
-                        <v-col cols="12" md="6">
-                          <v-text-field
-                            v-model="formData.nama"
-                            label="Nama Lengkap"
-                            outlined
-                            dense
-                            readonly
-                            background-color="grey lighten-4"
-                          ></v-text-field>
-                        </v-col>
-                        <v-col cols="12" md="6">
-                          <v-text-field
-                            v-model="formData.nomorIndukMahasiswa"
-                            label="NIM"
-                            outlined
-                            dense
-                            readonly
-                            background-color="grey lighten-4"
-                          ></v-text-field>
-                        </v-col>
-                        <v-col cols="12" md="6">
-                          <v-text-field
-                            v-model="formData.programStudi"
-                            label="Program Studi"
-                            outlined
-                            dense
-                            readonly
-                            background-color="grey lighten-4"
-                          ></v-text-field>
-                        </v-col>
-                        <v-col cols="12" md="6">
-                          <v-text-field
-                            v-model="formData.fakultas"
-                            label="Fakultas"
-                            outlined
-                            dense
-                            readonly
-                            background-color="grey lighten-4"
-                          ></v-text-field>
-                        </v-col>
-                        <v-col cols="12" md="6">
-                          <v-text-field
-                            v-model="formData.tahunDiterima"
-                            label="Tahun Diterima"
-                            outlined
-                            dense
-                            readonly
-                            background-color="grey lighten-4"
-                          ></v-text-field>
-                        </v-col>
-                        <v-col cols="12" md="6">
-                          <v-text-field
-                            v-model="formData.tanggalLulus"
-                            label="Tanggal Lulus"
-                            outlined
-                            dense
-                            readonly
-                            background-color="grey lighten-4"
-                          ></v-text-field>
-                        </v-col>
-                      </v-row>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
-
                 <!-- Data Tambahan (Manual Input) -->
                 <v-col cols="12">
                   <v-card outlined class="mb-4">
@@ -294,36 +186,6 @@
                     </v-card-subtitle>
                     <v-card-text>
                       <v-row>
-                        <v-col cols="12" md="6">
-                          <v-text-field
-                            v-model="formData.tempatLahir"
-                            label="Tempat Lahir"
-                            outlined
-                            dense
-                            hint="Opsional"
-                          ></v-text-field>
-                        </v-col>
-                        <v-col cols="12" md="6">
-                          <v-text-field
-                            v-model="formData.tanggalLahir"
-                            label="Tanggal Lahir"
-                            type="date"
-                            :rules="requiredRules"
-                            outlined
-                            dense
-                            required
-                          ></v-text-field>
-                        </v-col>
-                        <v-col cols="12" md="6">
-                          <v-text-field
-                            v-model="formData.nomorIndukKependudukan"
-                            label="NIK"
-                            :rules="[...requiredRules, ...nikRules]"
-                            outlined
-                            dense
-                            required
-                          ></v-text-field>
-                        </v-col>
                         <v-col cols="12" md="6">
                           <v-file-input
                             v-model="photoFile"
@@ -390,157 +252,11 @@
                     </v-card-text>
                   </v-card>
                 </v-col>
-
-                <!-- Data Pendidikan -->
-                <v-col cols="12">
-                  <v-card outlined class="mb-4">
-                    <v-card-subtitle class="primary--text font-weight-bold">
-                      <v-icon left color="primary">mdi-school</v-icon>
-                      Data Pendidikan
-                    </v-card-subtitle>
-                    <v-card-text>
-                      <v-row>
-                        <v-col cols="12" md="6">
-                          <v-select
-                            v-model="formData.jenisPendidikan"
-                            :items="jenisPendidikanOptions"
-                            label="Jenis Pendidikan"
-                            :rules="requiredRules"
-                            outlined
-                            dense
-                            required
-                          ></v-select>
-                        </v-col>
-                        <v-col cols="12" md="6">
-                          <v-text-field
-                            v-model="formData.gelarPendidikan"
-                            label="Gelar Pendidikan"
-                            :rules="requiredRules"
-                            outlined
-                            dense
-                            required
-                          ></v-text-field>
-                        </v-col>
-                      </v-row>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
-
-                <!-- Data Akreditasi -->
-                <v-col cols="12">
-                  <v-card outlined class="mb-4">
-                    <v-card-subtitle class="primary--text font-weight-bold">
-                      <v-icon left color="primary">mdi-medal</v-icon>
-                      Data Akreditasi
-                    </v-card-subtitle>
-                    <v-card-text>
-                      <v-row>
-                        <v-col cols="12" md="6">
-                          <v-select
-                            v-model="formData.akreditasiProgramStudi"
-                            :items="akreditasiOptions"
-                            label="Akreditasi Program Studi"
-                            :rules="requiredRules"
-                            outlined
-                            dense
-                            required
-                          ></v-select>
-                        </v-col>
-                        <v-col cols="12" md="6">
-                          <v-text-field
-                            v-model="formData.keputusanAkreditasiProgramStudi"
-                            label="Keputusan Akreditasi Program Studi"
-                            :rules="requiredRules"
-                            outlined
-                            dense
-                            required
-                          ></v-text-field>
-                        </v-col>
-                      </v-row>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
-
-                <!-- Data Penerbitan -->
-                <v-col cols="12">
-                  <v-card outlined class="mb-4">
-                    <v-card-subtitle class="primary--text font-weight-bold">
-                      <v-icon left color="primary">mdi-calendar-check</v-icon>
-                      Data Penerbitan Ijazah
-                    </v-card-subtitle>
-                    <v-card-text>
-                      <v-row>
-                        <v-col cols="12" md="6">
-                          <v-text-field
-                            v-model="formData.tempatIjazahDiberikan"
-                            label="Tempat Ijazah Diberikan"
-                            :rules="requiredRules"
-                            outlined
-                            dense
-                            required
-                          ></v-text-field>
-                        </v-col>
-                        <v-col cols="12" md="6">
-                          <v-text-field
-                            v-model="formData.tanggalIjazahDiberikan"
-                            label="Tanggal Ijazah Diberikan"
-                            type="date"
-                            :rules="requiredRules"
-                            outlined
-                            dense
-                            required
-                          ></v-text-field>
-                        </v-col>
-                      </v-row>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
-
-                <!-- Data IPFS & Signature (Optional, bisa diisi nanti) -->
-                <v-col cols="12">
-                  <v-card outlined class="mb-4">
-                    <v-card-subtitle class="primary--text font-weight-bold">
-                      <v-icon left color="primary">mdi-link</v-icon>
-                      Data IPFS & Signature (Opsional)
-                    </v-card-subtitle>
-                    <v-card-text>
-                      <v-row>
-                        <v-col cols="12" md="4">
-                          <v-text-field
-                            v-model="formData.ipfsCID"
-                            label="IPFS CID (Certificate)"
-                            outlined
-                            dense
-                            hint="Akan diisi otomatis setelah upload"
-                          ></v-text-field>
-                        </v-col>
-                        <v-col cols="12" md="4">
-                          <v-text-field
-                            v-model="formData.signatureID"
-                            label="Signature ID"
-                            outlined
-                            dense
-                            hint="Akan diisi otomatis setelah signing"
-                          ></v-text-field>
-                        </v-col>
-                        <v-col cols="12" md="4">
-                          <v-text-field
-                            v-model="formData.photoCID"
-                            label="Photo IPFS CID"
-                            outlined
-                            dense
-                            hint="Akan diisi otomatis setelah upload foto"
-                          ></v-text-field>
-                        </v-col>
-                      </v-row>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
               </v-row>
             </v-form>
 
-            <div class="d-flex justify-space-between">
-              <v-btn color="grey" outlined @click="currentStep = 1">
+            <div class="d-flex justify-space-between pa-4">
+              <v-btn color="grey" outlined @click="goToStep(1)">
                 <v-icon left>mdi-arrow-left</v-icon>
                 Kembali
               </v-btn>
@@ -566,8 +282,8 @@
                 </v-btn>
               </div>
             </div>
-          </v-stepper-content>
-        </v-stepper-items>
+          </v-stepper-window-item>
+        </v-stepper-window>
       </v-stepper>
     </v-card>
   </v-dialog>
@@ -576,10 +292,28 @@
 <script lang="ts" setup>
 import { ref, watch, defineEmits, defineProps, onUnmounted } from 'vue'
 import { apiService, apiHelper, type ApiError } from '@/config/axios'
-import type { IjazahInput } from '@/config/ijazah'
+import { type IjazahInput } from '@/config/ijazah'
 
-// Import enum/const untuk status
-// const IJAZAH_STATUS = { /* your status values */ }
+// Define types for better type safety
+interface MahasiswaSearchResponse {
+  nama: string
+  nomorIndukMahasiswa: string
+  programStudi: string
+  fakultas: string
+  tahunDiterima: string
+  tanggalLulus: string
+  tempatLahir?: string
+  tanggalLahir?: string
+  nomorIndukKependudukan?: string
+  jenisPendidikan?: string
+  gelarPendidikan?: string
+  akreditasiProgramStudi?: string
+  keputusanAkreditasiProgramStudi?: string
+  tempatIjazahDiberikan?: string
+  tanggalIjazahDiberikan?: string
+  nomorIjazahNasional?: string
+  nomorDokumen?: string
+}
 
 // Props & Emits
 const props = defineProps<{
@@ -592,31 +326,6 @@ const emit = defineEmits<{
   error: [message: string]
 }>()
 
-// Interface sesuai dengan IjazahInput
-interface IjazahFormData {
-  nomorDokumen: string
-  nomorIjazahNasional: string
-  nama: string
-  tempatLahir?: string
-  tanggalLahir: string // ISO date string
-  nomorIndukKependudukan: string
-  programStudi: string
-  fakultas: string
-  tahunDiterima: string
-  nomorIndukMahasiswa: string
-  tanggalLulus: string // ISO date string
-  jenisPendidikan: string
-  gelarPendidikan: string
-  akreditasiProgramStudi: string
-  keputusanAkreditasiProgramStudi: string
-  tempatIjazahDiberikan: string
-  tanggalIjazahDiberikan: string // ISO date string
-  ipfsCID?: string
-  signatureID?: string
-  photoCID?: string
-  // Status akan ditambahkan di submitForm
-}
-
 // Reactive data
 const dialog = ref(false)
 const valid = ref(false)
@@ -625,15 +334,15 @@ const searchLoading = ref(false)
 const form = ref()
 const photoFile = ref<File | null>(null)
 const photoPreview = ref<string>('')
-const currentStep = ref(1)
+const currentStep = ref('1') // String untuk konsistensi dengan v-stepper
 
 // Search data
 const nimSearch = ref('')
 const searchError = ref('')
-const mahasiswaData = ref<IjazahFormData | null>(null)
+const mahasiswaData = ref<MahasiswaSearchResponse | null>(null)
 
 // Form data
-const formData = ref<IjazahFormData>({
+const formData = ref<IjazahInput>({
   nomorDokumen: '',
   nomorIjazahNasional: '',
   nama: '',
@@ -656,26 +365,9 @@ const formData = ref<IjazahFormData>({
   photoCID: '',
 })
 
-// Options for select fields
-const jenisPendidikanOptions = [
-  'Diploma (D3)',
-  'Sarjana Terapan (D4)',
-  'Sarjana (S1)',
-  'Magister (S2)',
-  'Doktor (S3)',
-]
-const akreditasiOptions = ['A', 'B', 'C', 'Unggul', 'Baik Sekali', 'Baik']
-
-// Validation rules
-const requiredRules = [(v: string) => !!v || 'Field ini wajib diisi']
-
 const nimRules = [
   (v: string) => !!v || 'NIM wajib diisi',
   (v: string) => v.length >= 5 || 'NIM minimal 5 karakter',
-]
-
-const nikRules = [
-  (v: string) => /^\d{16}$/.test(v) || 'NIK harus 16 digit angka',
 ]
 
 const photoRules = [
@@ -690,7 +382,7 @@ const photoRules = [
     }
 
     // Check file type
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg']
+    const allowedTypes = ['image/png']
     if (!allowedTypes.includes(file.type)) {
       return 'Format file harus PNG atau JPEG'
     }
@@ -720,8 +412,11 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('id-ID')
 }
 
-const convertIndonesianDateToISO = (indonesianDate: string): string => {
-  if (!indonesianDate || indonesianDate === 'NULL') return ''
+const convertIndonesianDateToISO = (indonesianDate: string | null): string => {
+  if (!indonesianDate || indonesianDate.trim().toUpperCase() === 'NULL') {
+    const today = new Date()
+    return today.toISOString().split('T')[0] // return tanggal hari ini
+  }
 
   // Map Indonesian month names to numbers
   const monthMap: { [key: string]: string } = {
@@ -739,7 +434,7 @@ const convertIndonesianDateToISO = (indonesianDate: string): string => {
     Desember: '12',
   }
 
-  // Parse "27 Juni 2024" format
+  // Parse format "27 Juni 2024"
   const parts = indonesianDate.trim().split(' ')
   if (parts.length === 3) {
     const day = parts[0].padStart(2, '0')
@@ -751,25 +446,46 @@ const convertIndonesianDateToISO = (indonesianDate: string): string => {
     }
   }
 
-  // If it's already in a valid format, try to parse it
+  // If it's already a valid date
   const date = new Date(indonesianDate)
   if (!isNaN(date.getTime())) {
     return date.toISOString().split('T')[0]
   }
 
-  return ''
+  // Jika semua gagal, fallback ke hari ini juga (opsional)
+  return new Date().toISOString().split('T')[0]
 }
 
-const convertDateTimeToISO = (dateTimeString: string): string => {
-  if (!dateTimeString || dateTimeString === 'NULL') return ''
+const convertDateTimeToISO = (dateTimeString?: string | null): string => {
+  if (!dateTimeString || dateTimeString.trim().toUpperCase() === 'NULL') {
+    return new Date().toISOString()
+  }
 
-  // Parse "2020-09-07 00:00:00.000" format
   const date = new Date(dateTimeString)
   if (!isNaN(date.getTime())) {
     return date.toISOString()
   }
 
-  return ''
+  return new Date().toISOString()
+}
+
+const getYearFromDateString = (dateString?: string | null): string => {
+  if (!dateString || dateString.trim().toUpperCase() === 'NULL') {
+    return new Date().getFullYear().toString()
+  }
+
+  const date = new Date(dateString)
+  if (!isNaN(date.getTime())) {
+    return date.getFullYear().toString()
+  }
+
+  // Kalau gagal parse, return tahun sekarang juga
+  return new Date().getFullYear().toString()
+}
+
+// Navigation methods
+const goToStep = (step: number) => {
+  currentStep.value = step.toString()
 }
 
 // Methods
@@ -787,16 +503,17 @@ const searchMahasiswa = async () => {
     const response = await apiService.ijazah.findMahasiswaByNim(nimSearch.value)
 
     if (apiHelper.isSuccess(response)) {
+      console.log(response)
       mahasiswaData.value = response.data.data
 
       if (!mahasiswaData.value) {
-        searchError.value =
-          'Mahasiswa dengan NIM tersebut tidak ditemukan di database'
+        searchError.value = `Mahasiswa dengan NIM "${nimSearch.value}" tidak ditemukan di database. Pastikan NIM yang dimasukkan benar.`
         return
       }
 
       // Pre-fill form data dengan data mahasiswa
       fillFormWithMahasiswaData(mahasiswaData.value)
+      console.log(mahasiswaData.value.nomorIndukMahasiswa)
 
       searchError.value = ''
     } else {
@@ -818,79 +535,68 @@ const searchMahasiswa = async () => {
   }
 }
 
-const fillFormWithMahasiswaData = (data: IjazahFormData) => {
-  formData.value.nama = data.nama
-  formData.value.nomorIndukMahasiswa = data.nomorIndukMahasiswa
-  formData.value.programStudi = data.programStudi
-  formData.value.fakultas = data.fakultas
+const fillFormWithMahasiswaData = (data: MahasiswaSearchResponse) => {
+  formData.value.nama = data.nama || ''
+  formData.value.nomorIndukMahasiswa = data.nomorIndukMahasiswa || ''
+  formData.value.programStudi = data.programStudi || ''
+  formData.value.fakultas = data.fakultas || ''
 
   // Convert tahunDiterima to string
-  formData.value.tahunDiterima = data.tahunDiterima
+  formData.value.tahunDiterima = getYearFromDateString(data.tahunDiterima)
 
   // Convert tanggalLulus to ISO format
   formData.value.tanggalLulus = convertIndonesianDateToISO(data.tanggalLulus)
 
-  // Fill other fields from data if available
-  if (data.tempatLahir && data.tempatLahir !== 'NULL') {
-    formData.value.tempatLahir = data.tempatLahir
-  }
+  formData.value.nomorDokumen = data.nomorDokumen || ''
+  formData.value.nomorIjazahNasional = data.nomorIjazahNasional || ''
 
-  if (data.tanggalLahir && data.tanggalLahir !== 'NULL') {
-    formData.value.tanggalLahir = convertDateTimeToISO(data.tanggalLahir)
-  }
+  formData.value.tempatLahir = data.tempatLahir || '-'
 
-  if (data.nomorIndukKependudukan) {
-    formData.value.nomorIndukKependudukan = data.nomorIndukKependudukan
-  }
+  formData.value.tanggalLahir = convertDateTimeToISO(data.tanggalLahir)
 
-  if (data.jenisPendidikan) {
-    formData.value.jenisPendidikan = data.jenisPendidikan
-  }
+  formData.value.nomorIndukKependudukan = data.nomorIndukKependudukan || '-'
 
-  if (data.gelarPendidikan) {
-    formData.value.gelarPendidikan = data.gelarPendidikan
-  }
+  formData.value.jenisPendidikan = data.jenisPendidikan || '-'
 
-  if (data.akreditasiProgramStudi) {
-    formData.value.akreditasiProgramStudi = data.akreditasiProgramStudi
-  }
+  formData.value.gelarPendidikan = data.gelarPendidikan || '-'
 
-  if (data.keputusanAkreditasiProgramStudi) {
-    formData.value.keputusanAkreditasiProgramStudi =
-      data.keputusanAkreditasiProgramStudi
-  }
+  formData.value.akreditasiProgramStudi = data.akreditasiProgramStudi || '-'
 
-  if (data.tempatIjazahDiberikan) {
-    formData.value.tempatIjazahDiberikan = data.tempatIjazahDiberikan
-  }
+  formData.value.keputusanAkreditasiProgramStudi =
+    data.keputusanAkreditasiProgramStudi || ''
 
-  if (data.tanggalIjazahDiberikan && data.tanggalIjazahDiberikan !== 'NULL') {
-    formData.value.tanggalIjazahDiberikan = convertDateTimeToISO(
-      data.tanggalIjazahDiberikan
-    )
-  }
+  formData.value.tempatIjazahDiberikan = data.tempatIjazahDiberikan || '-'
+
+  formData.value.tanggalIjazahDiberikan = convertDateTimeToISO(
+    data.tanggalIjazahDiberikan
+  )
+
+  console.log('formData:', { ...formData.value })
 }
 
-const onPhotoChange = (file: File | File[] | null) => {
-  // Clear previous preview
-  if (photoPreview.value) {
-    URL.revokeObjectURL(photoPreview.value)
-    photoPreview.value = ''
-  }
-
-  if (!file) {
-    photoFile.value = null
+function onPhotoChange() {
+  if (!photoFile.value) {
+    console.error('File tidak valid atau tidak dipilih.')
     return
   }
 
-  // Handle both single file and array of files
-  const selectedFile = Array.isArray(file) ? file[0] : file
-  photoFile.value = selectedFile
+  const file = photoFile.value
 
-  // Generate preview
-  if (selectedFile) {
-    photoPreview.value = URL.createObjectURL(selectedFile)
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg']
+  if (!allowedTypes.includes(file.type)) {
+    console.error('Jenis file tidak didukung:', file.type)
+    return
   }
+
+  // Optionally: Validasi ukuran
+  const maxSizeMB = 2
+  const sizeMB = file.size / 1024 / 1024
+  if (sizeMB > maxSizeMB) {
+    console.error('Ukuran file terlalu besar:', sizeMB, 'MB')
+    return
+  }
+
+  console.log('File diterima:', file.name)
 }
 
 const onPhotoClear = () => {
@@ -910,7 +616,7 @@ const resetForm = () => {
   nimSearch.value = ''
   searchError.value = ''
   mahasiswaData.value = null
-  currentStep.value = 1
+  currentStep.value = '1'
 
   // Reset photo
   if (photoPreview.value) {
@@ -962,15 +668,16 @@ const submitForm = async () => {
     return
   }
 
+  // Validate photo is required
   if (!photoFile.value) {
-    emit('error', 'File foto wajib diunggah')
-    console.error('No photo file selected')
+    emit('error', 'Foto mahasiswa wajib diupload sebelum menyimpan ijazah')
     return
   }
 
   loading.value = true
 
   try {
+    // Prepare data sesuai interface IjazahInput
     const ijazahData: IjazahInput = {
       nomorDokumen: formData.value.nomorDokumen,
       nomorIjazahNasional: formData.value.nomorIjazahNasional,
@@ -991,30 +698,38 @@ const submitForm = async () => {
       tanggalIjazahDiberikan: formData.value.tanggalIjazahDiberikan,
     }
 
-    // Optional fields
+    // Add optional fields only if they have values
     if (formData.value.tempatLahir) {
       ijazahData.tempatLahir = formData.value.tempatLahir
     }
+
     if (formData.value.ipfsCID) {
       ijazahData.ipfsCID = formData.value.ipfsCID
     }
+
     if (formData.value.signatureID) {
       ijazahData.signatureID = formData.value.signatureID
     }
+
     if (formData.value.photoCID) {
       ijazahData.photoCID = formData.value.photoCID
     }
 
-    // Buat FormData untuk multipart/form-data
-    const submitData = new FormData()
+    // Always submit with photo (multipart form data) since photo is required
+    const formDataToSubmit = new FormData()
+
+    // Add all ijazah data as individual fields
     Object.entries(ijazahData).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
-        submitData.append(key, value)
+        formDataToSubmit.append(key, value.toString())
       }
     })
-    submitData.append('photo', photoFile.value)
 
-    const response = await apiService.post('/api/ijazah', submitData, {
+    // Add photo file (required)
+    formDataToSubmit.append('photo', photoFile.value, photoFile.value.name)
+
+    // Call API to create ijazah
+    const response = await apiService.post('/api/ijazah', formDataToSubmit, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -1078,7 +793,7 @@ const submitForm = async () => {
 }
 
 /* Step content padding */
-.v-stepper-content {
+.v-stepper-window-item {
   padding: 24px !important;
 }
 </style>
