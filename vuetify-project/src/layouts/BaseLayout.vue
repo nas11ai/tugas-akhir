@@ -81,6 +81,28 @@ const handleLogout = async () => {
   }
 }
 
+const refreshFabricToken = async () => {
+  try {
+    if (!user.value) {
+      console.warn('No user available to refresh Fabric token.')
+      return
+    }
+
+    const response = await apiService.users.enrollFabricCA(
+      user.value.organization,
+      user.value.credentials.username,
+      user.value.credentials.password
+    )
+
+    const newToken = apiHelper.getData(response).data.token
+
+    localStorage.setItem('fabricToken', newToken)
+    console.log('Fabric token refreshed successfully.')
+  } catch (error) {
+    console.error('Failed to refresh Fabric token:', error)
+  }
+}
+
 const fetchUserData = async (firebaseUser) => {
   try {
     console.log('Fetching user data for:', firebaseUser.email)
@@ -143,6 +165,14 @@ onMounted(() => {
     if (firebaseUser) {
       try {
         await fetchUserData(firebaseUser)
+
+        // Set interval untuk refresh token setiap 10 menit
+        setInterval(
+          () => {
+            refreshFabricToken()
+          },
+          10 * 60 * 1000
+        ) // 10 menit
       } catch (error) {
         console.error('Failed to fetch user data:', error)
       }
