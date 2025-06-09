@@ -32,11 +32,12 @@
   </v-dialog>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import { ref, computed } from 'vue'
 import { auth, googleProvider, signInWithPopup } from '@/config/firebase'
-import { apiService, apiHelper } from '@/config/axios'
+import { apiService, apiHelper, type ApiError } from '@/config/axios'
 import { useRouter } from 'vue-router'
+import { FirebaseError } from 'firebase/app'
 
 const router = useRouter()
 
@@ -59,58 +60,68 @@ const signInWithGoogle = async () => {
   error.value = ''
 
   try {
-    const result = await signInWithPopup(auth, googleProvider)
-    const user = result.user
-
+    const user = await signInAndGetUser()
     const idToken = await user.getIdToken()
 
     localStorage.setItem('authToken', idToken)
 
-    try {
-      const response = await apiService.users.getCurrentUser()
-
-      const userResponse = apiHelper.getData(response)
-      emit('success', userResponse)
-      emit('close')
-
-      const userData = userResponse.data
-
-      if (!userData) {
-        throw new Error('User data not found')
-      }
-
-      if (!localStorage.getItem('fabricToken')) {
-        const enrollFabricCAResponse = await apiService.users.enrollFabricCA(
-          userData.organization,
-          userData.credentials.username,
-          userData.credentials.password
-        )
-
-        localStorage.setItem(
-          'fabricToken',
-          apiHelper.getData(enrollFabricCAResponse).data.token
-        )
-      }
-
-      await router.push('/ijazah')
-    } catch (apiError) {
-      const errorMessage = apiHelper.getErrorMessage(apiError)
-
-      if (apiError.response?.status === 404) {
-        error.value =
-          'User not found. Please contact admin to register your account.'
-      } else {
-        error.value = errorMessage
-      }
-
-      // Remove token from localStorage on API error
-      localStorage.removeItem('authToken')
-    }
-  } catch (firebaseError) {
-    console.error('Firebase login error:', firebaseError)
-    error.value = firebaseError.message || 'Failed to sign in with Google'
+    await handleUserAuthentication()
+    await router.push('/ijazah')
+  } catch (err) {
+    handleSignInError(err)
   } finally {
     loading.value = false
+  }
+}
+
+const signInAndGetUser = async () => {
+  const result = await signInWithPopup(auth, googleProvider)
+  return result.user
+}
+
+const handleUserAuthentication = async () => {
+  const response = await apiService.users.getCurrentUser()
+  const userResponse = apiHelper.getData(response)
+
+  emit('success', userResponse)
+  emit('close')
+
+  const userData = userResponse.data
+
+  if (!userData) {
+    throw new Error('User data not found')
+  }
+
+  if (!localStorage.getItem('fabricToken')) {
+    const enrollFabricCAResponse = await apiService.users.enrollFabricCA(
+      userData.organization,
+      userData.credentials.username,
+      userData.credentials.password
+    )
+
+    const fabricToken = apiHelper.getData(enrollFabricCAResponse).data.token
+    localStorage.setItem('fabricToken', fabricToken)
+  }
+}
+
+const handleSignInError = (err: unknown) => {
+  if (err instanceof FirebaseError) {
+    console.error('Firebase login error:', err)
+    error.value = err.message || 'Failed to sign in with Google'
+  } else if (err instanceof Error) {
+    const apiErr = err as ApiError
+    const message = apiHelper.getErrorMessage(apiErr)
+
+    if (apiErr.response?.status === 404) {
+      error.value =
+        'User not found. Please contact admin to register your account.'
+    } else {
+      error.value = message
+    }
+
+    localStorage.removeItem('authToken')
+  } else {
+    error.value = 'An unexpected error occurred during sign in'
   }
 }
 </script>
