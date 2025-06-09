@@ -44,7 +44,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import {
   onAuthStateChanged,
   signOut,
@@ -157,13 +157,6 @@ onMounted(() => {
     if (firebaseUser) {
       try {
         await fetchUserData(firebaseUser)
-
-        setInterval(
-          () => {
-            refreshFabricToken()
-          },
-          10 * 60 * 1000
-        ) // 10 menit
       } catch (error) {
         console.error('Failed to fetch user data:', error)
       }
@@ -173,6 +166,33 @@ onMounted(() => {
       localStorage.removeItem('authToken')
     }
   })
+})
+
+// Tambahkan ini di luar watch
+let refreshInterval: ReturnType<typeof setInterval> | null = null
+
+watch(user, (newUser) => {
+  if (newUser) {
+    // User baru login, mulai interval
+    console.log('User login detected, starting Fabric token refresh interval.')
+
+    // Hapus interval lama jika ada
+    if (refreshInterval) clearInterval(refreshInterval)
+
+    refreshInterval = setInterval(
+      () => {
+        refreshFabricToken()
+      },
+      10 * 60 * 1000
+    ) // 10 menit
+  } else {
+    // User logout, hentikan interval
+    if (refreshInterval) {
+      console.log('User logout detected, clearing Fabric token interval.')
+      clearInterval(refreshInterval)
+      refreshInterval = null
+    }
+  }
 })
 
 // Debug function (remove in production)
