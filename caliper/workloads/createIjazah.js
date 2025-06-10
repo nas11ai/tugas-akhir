@@ -42,7 +42,7 @@ class CreateIjazahWorkload extends WorkloadModuleBase {
       ipfsCID: `bafybeidummycert${this.txIndex}`, // dummy
       signatureID: `SIG-${ijazahId}`,
       photoCID: `bafybeidummyphoto${this.txIndex}`, // dummy
-      Status: "AKTIF",
+      Status: "aktif",
       CreatedAt: now,
       UpdatedAt: now
     };
