@@ -1,0 +1,86 @@
+test:
+  name: Ijazah Contract Performance Test
+  description: Testing performance of IjazahContract functions
+  workers:
+    type: local
+    number: 2
+  rounds:
+    - label: initialize
+      description: Initialize the ledger
+      txNumber: 1
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 1
+      workload:
+        module: workloads/init.js
+
+    - label: create-ijazah
+      description: Create Ijazah certificates
+      txNumber: 100
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: workloads/createIjazah.js
+
+    - label: read-ijazah
+      description: Read Ijazah certificates
+      txNumber: 200
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 20
+      workload:
+        module: workloads/readIjazah.js
+
+    - label: update-ijazah-status
+      description: Update Ijazah status
+      txNumber: 50
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 5
+      workload:
+        module: workloads/updateStatus.js
+
+    - label: signature-management
+      description: Test signature management functions
+      txNumber: 20
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 2
+      workload:
+        module: workloads/signatureManagement.js
+
+    - label: query-operations
+      description: Test query operations
+      txNumber: 100
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 15
+      workload:
+        module: workloads/queryOperations.js
+
+monitors:
+  resource:
+    - module: docker
+      options:
+        interval: 5
+        cpuUsageNormalization: true
+        containers:
+          - peer0.akademik.itk.ac.id
+          - orderer0.raft-group.orderer.itk.ac.id
+          - orderer1.raft-group.orderer.itk.ac.id
+          - orderer2.raft-group.orderer.itk.ac.id
+        charting:
+          bar:
+            metrics: [all]
+          polar:
+            metrics: [all]
+
+  transaction:
+    - module: logging
