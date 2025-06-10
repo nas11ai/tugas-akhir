@@ -24,9 +24,9 @@ organizations:
       certificates:
         - name: "Admin"
           clientPrivateKey:
-            path: "../../../fablo/fablo-target/fabric-config/crypto-config/peerOrganizations/akademik.itk.ac.id/users/Admin@akademik.itk.ac.id/msp/keystore/priv-key.pem"
+            path: "/home/nas11ai/projects/fablo/fablo-target/fabric-config/crypto-config/peerOrganizations/akademik.itk.ac.id/users/Admin@akademik.itk.ac.id/msp/keystore/priv-key.pem"
           clientSignedCert:
-            path: "../../../fablo/fablo-target/fabric-config/crypto-config/peerOrganizations/akademik.itk.ac.id/users/Admin@akademik.itk.ac.id/msp/signcerts/Admin@akademik.itk.ac.id-cert.pem"
+            path: "/home/nas11ai/projects/fablo/fablo-target/fabric-config/crypto-config/peerOrganizations/akademik.itk.ac.id/users/Admin@akademik.itk.ac.id/msp/signcerts/Admin@akademik.itk.ac.id-cert.pem"
     connectionProfile:
-      path: "../../../fablo/fablo-target/fabric-config/connection-profiles/connection-profile-akademik.yaml"
+      path: "/home/nas11ai/projects/fablo/fablo-target/fabric-config/connection-profiles/connection-profile-akademik.yaml"
       discover: true
