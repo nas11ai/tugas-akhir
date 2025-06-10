@@ -1,0 +1,32 @@
+name: Caliper test
+version: "2.0.0"
+
+caliper:
+  blockchain: fabric
+  sutOptions:
+    mutualTls: true
+
+info:
+  Version: 1.0.0
+  Size: 1 Orgs
+  Orderer: Raft
+  Distribution: Single Host
+  StateDB: CouchDB
+
+channels:
+  - channelName: ijazah-channel
+    contracts:
+      - id: IjazahContract
+
+organizations:
+  - mspid: AkademikMSP
+    identities:
+      certificates:
+        - name: "Admin"
+          clientPrivateKey:
+            path: "../../fablo/fablo-target/fabric-config/crypto-config/peerOrganizations/akademik.itk.ac.id/users/Admin@akademik.itk.ac.id/msp/keystore/priv-key.pem"
+          clientSignedCert:
+            path: "../../fablo/fablo-target/fabric-config/crypto-config/peerOrganizations/akademik.itk.ac.id/users/Admin@akademik.itk.ac.id/msp/signcerts/Admin@akademik.itk.ac.id-cert.pem"
+    connectionProfile:
+      path: "../../fablo/fablo-target/fabric-config/connection-profiles/connection-profile-akademik.yaml"
+      discover: true
