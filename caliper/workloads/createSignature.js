@@ -10,7 +10,7 @@ class CreateSignatureWorkload extends WorkloadModuleBase {
 
   async submitTransaction() {
     this.txIndex++;
-    const signatureId = `SIG_${this.workerIndex}_${this.txIndex}_${Date.now()}`;
+    const signatureId = `SIG_${this.workerIndex}_${this.txIndex}`;
     const signatureData = {
       ID: signatureId,
       CID: `Qm${Math.random().toString(36).substring(2, 15)}abcdef1234567890`,
