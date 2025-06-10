@@ -16,7 +16,7 @@ info:
 channels:
   - channelName: ijazah-channel
     contracts:
-      - id: IjazahContract
+      - id: ijazah-chaincode
 
 organizations:
   - mspid: AkademikMSP
