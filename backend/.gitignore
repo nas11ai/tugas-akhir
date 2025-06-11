@@ -6,3 +6,4 @@ src/configs/template.pdf
 src/configs/mahasiswa.json
 package-lock.json
 .env
+.env.test
