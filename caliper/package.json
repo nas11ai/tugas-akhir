@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npx caliper launch manager --caliper-bind-sut fabric:fabric-gateway --caliper-workspace . --caliper-benchconfig benchmarks/benchmark-config.yaml --caliper-networkconfig networks/network-config.yaml"
   },
   "keywords": [],
   "author": "",
