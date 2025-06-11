@@ -4,7 +4,7 @@ version: "2.0.0"
 caliper:
   blockchain: fabric
   sutOptions:
-    mutualTls: true
+    mutualTls: false
 
 info:
   Version: 1.0.0
@@ -24,9 +24,9 @@ organizations:
       certificates:
         - name: "Admin"
           clientPrivateKey:
-            path: "/home/nas11ai/projects/fablo/fablo-target/fabric-config/crypto-config/peerOrganizations/akademik.itk.ac.id/users/Admin@akademik.itk.ac.id/msp/keystore/priv-key.pem"
+            path: "./crypto-config/peerOrganizations/akademik.itk.ac.id/users/Admin@akademik.itk.ac.id/msp/keystore/priv-key.pem"
           clientSignedCert:
-            path: "/home/nas11ai/projects/fablo/fablo-target/fabric-config/crypto-config/peerOrganizations/akademik.itk.ac.id/users/Admin@akademik.itk.ac.id/msp/signcerts/Admin@akademik.itk.ac.id-cert.pem"
+            path: "./crypto-config/peerOrganizations/akademik.itk.ac.id/users/Admin@akademik.itk.ac.id/msp/signcerts/Admin@akademik.itk.ac.id-cert.pem"
     connectionProfile:
-      path: "/home/nas11ai/projects/fablo/fablo-target/fabric-config/connection-profiles/connection-profile-akademik.yaml"
-      discover: true
+      path: "./connection-profiles/connection-profile-akademik.yaml"
+      discover: false

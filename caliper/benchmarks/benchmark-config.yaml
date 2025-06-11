@@ -3,104 +3,81 @@ test:
   description: Testing performance of IjazahContract functions
   workers:
     type: local
-    number: 2
+    number: 1
   rounds:
-    - label: initialize
-      description: Initialize the ledger
-      txNumber: 1
+    - label: create-ijazah
+      description: Create Ijazah certificates
+      txNumber: 10
       rateControl:
         type: fixed-rate
         opts:
           tps: 1
       workload:
-        module: workloads/init.js
-
-    - label: create-ijazah
-      description: Create Ijazah certificates
-      txNumber: 100
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 10
-      workload:
         module: workloads/createIjazah.js
 
     - label: read-ijazah
       description: Read Ijazah certificates
-      txNumber: 200
+      txNumber: 20
       rateControl:
         type: fixed-rate
         opts:
-          tps: 20
+          tps: 2
       workload:
         module: workloads/readIjazah.js
 
     - label: update-ijazah-status
       description: Update Ijazah status
-      txNumber: 50
+      txNumber: 10
       rateControl:
         type: fixed-rate
         opts:
-          tps: 5
+          tps: 1
       workload:
         module: workloads/updateStatusIjazah.js
 
     - label: create-signature
       description: Create signature
-      txNumber: 100
+      txNumber: 10
       rateControl:
         type: fixed-rate
         opts:
-          tps: 10
+          tps: 1
       workload:
         module: workloads/createSignature.js
 
     - label: read-signature
       description: Read signature
-      txNumber: 200
+      txNumber: 20
       rateControl:
         type: fixed-rate
         opts:
-          tps: 20
+          tps: 2
       workload:
         module: workloads/readSignature.js
 
     - label: get-active-signature
       description: Get active signature
-      txNumber: 200
+      txNumber: 20
       rateControl:
         type: fixed-rate
         opts:
-          tps: 20
+          tps: 2
       workload:
         module: workloads/getActiveSignature.js
 
     - label: update-signature
       description: Update signature
-      txNumber: 50
+      txNumber: 10
       rateControl:
         type: fixed-rate
         opts:
-          tps: 5
+          tps: 1
       workload:
         module: workloads/updateSignature.js
 
 monitors:
   resource:
-    - module: docker
-      options:
-        interval: 5
-        cpuUsageNormalization: true
-        containers:
-          - peer0.akademik.itk.ac.id
-          - orderer0.raft-group.orderer.itk.ac.id
-          - orderer1.raft-group.orderer.itk.ac.id
-          - orderer2.raft-group.orderer.itk.ac.id
-        charting:
-          bar:
-            metrics: [all]
-          polar:
-            metrics: [all]
-
-  transaction:
-    - module: logging
+  - module: process
+    options:
+      interval: 3
+      processes: [{ command: 'node', arguments: 'caliper.js', multiOutput: 'avg' }]
