@@ -42,9 +42,13 @@ export class MockAPIResponses {
   static discoverSuccess() {
     return {
       response: {
-        peers: ["peer0.org1.example.com", "peer0.org2.example.com"],
-        orderers: ["orderer.example.com"],
-        channels: ["mychannel"],
+        peers: ["peer0.akademik.itk.ac.id"],
+        orderers: [
+          "orderer0.raft-group.orderer.itk.ac.id",
+          "orderer1.raft-group.orderer.itk.ac.id",
+          "orderer2.raft-group.orderer.itk.ac.id",
+        ],
+        channels: ["ijazah-channel"],
       },
     };
   }
@@ -55,21 +59,21 @@ export class MockAPIResponses {
   static identitiesSuccess() {
     return {
       response: {
-        caname: "ca-org1",
+        caname: "ca-akademik",
         identities: [
           {
-            affiliation: "org1.department1",
+            affiliation: "akademik",
             id: "admin",
             type: "client",
             attrs: [],
             max_enrollments: -1,
           },
           {
-            affiliation: "org1.department1",
+            affiliation: "akademik",
             id: "user1",
             type: "client",
             attrs: [],
-            max_enrollments: 1,
+            max_enrollments: -1,
           },
         ],
       },
