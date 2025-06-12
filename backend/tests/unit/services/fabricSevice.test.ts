@@ -70,6 +70,13 @@ describe("FabricService", () => {
   });
 
   beforeEach(async () => {
+    // Renew user token
+    mockUserToken = await fabloService.enrollUser(
+      Organization.AKADEMIK,
+      process.env.ADMIN_USERNAME || "admin",
+      process.env.ADMIN_PASSWORD || "adminpw"
+    );
+
     // Clear mock data before each test
     mockFabloService.clearMockData();
     mockIpfsClusterService.clearMockData();
