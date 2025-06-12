@@ -46,7 +46,10 @@ export class MockFabloService {
     username: string,
     password: string
   ): Promise<string> {
-    if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
+    if (
+      username === process.env.ADMIN_USERNAME &&
+      password === process.env.ADMIN_PASSWORD
+    ) {
       return this.mockTokens.get(organization) || "mock-token";
     }
 

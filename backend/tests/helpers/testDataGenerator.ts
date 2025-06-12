@@ -1,5 +1,7 @@
 import { IjazahInput, Signature } from "@/models/ijazah";
 import { Organization, Role, User, UserCredentials } from "@/models/user";
+import * as fs from "fs";
+import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
 
 export class TestDataGenerator {
@@ -86,45 +88,16 @@ export class TestDataGenerator {
    * Generate mock photo buffer
    */
   static generateMockPhotoBuffer(): Buffer {
-    // Simple PNG header + minimal data for testing
-    const pngHeader = Buffer.from([
-      0x89,
-      0x50,
-      0x4e,
-      0x47,
-      0x0d,
-      0x0a,
-      0x1a,
-      0x0a, // PNG signature
-      0x00,
-      0x00,
-      0x00,
-      0x0d, // IHDR chunk length
-      0x49,
-      0x48,
-      0x44,
-      0x52, // IHDR
-      0x00,
-      0x00,
-      0x00,
-      0x01, // Width: 1
-      0x00,
-      0x00,
-      0x00,
-      0x01, // Height: 1
-      0x08,
-      0x02,
-      0x00,
-      0x00,
-      0x00, // Bit depth, color type, etc.
-      0x90,
-      0x77,
-      0x53,
-      0xde, // CRC
-    ]);
+    const imagePath = path.resolve(__dirname, "../assets/test-photo.png");
+    const imageBuffer = fs.readFileSync(imagePath);
 
-    // Add some dummy data to make it a valid(ish) PNG for testing
-    const dummyData = Buffer.alloc(100, 0x00);
-    return Buffer.concat([pngHeader, dummyData]);
+    return imageBuffer;
+  }
+
+  static generateMockSignatureBuffer(): Buffer {
+    const imagePath = path.resolve(__dirname, "../assets/test-signature.png");
+    const imageBuffer = fs.readFileSync(imagePath);
+
+    return imageBuffer;
   }
 }
