@@ -103,31 +103,48 @@ export class FabricService {
     url: string,
     label: "Photo" | "Signature"
   ): Promise<ArrayBuffer> {
-    try {
-      const imageRequestOptions = {
-        method: "get",
-        headers: new Headers({
-          "ngrok-skip-browser-warning": "69420",
-        }),
-      };
-
-      const res = await fetch(url, imageRequestOptions);
-
-      if (!res.ok) {
-        throw new Error(`${label} fetch failed with status ${res.status}`);
+    const MAX_RETRIES = 10;
+    const BASE_DELAY = 500; // dalam ms, untuk backoff bertahap
+  
+    const imageRequestOptions = {
+      method: "get",
+      headers: new Headers({
+        "ngrok-skip-browser-warning": "69420",
+        "User-Agent": "Mozilla/5.0",
+      }),
+    };
+  
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const res = await fetch(url, imageRequestOptions);
+  
+        if (!res.ok) {
+          logger.warn(`[${label}] Attempt ${attempt}: Fetch failed with status ${res.status}`);
+          throw new Error(`${label} fetch failed with status ${res.status}`);
+        }
+  
+        const buffer = await res.arrayBuffer();
+  
+        if (!this.isPNG(buffer)) {
+          throw new Error(`${label} is not in PNG format`);
+        }
+  
+        return this.resizeImageByLabel(Buffer.from(buffer), label);
+      } catch (err) {
+        logger.error(`[${label}] Attempt ${attempt} failed: ${(err as Error).message}`);
+  
+        if (attempt < MAX_RETRIES) {
+          const delay = Math.min(BASE_DELAY * attempt, 5000); // Maksimal delay 5 detik
+          logger.info(`[${label}] Retrying in ${delay}ms...`);
+          await new Promise(res => setTimeout(res, delay));
+        } else {
+          throw new Error(`Error fetching ${label} after ${MAX_RETRIES} attempts: ${(err as Error).message}`);
+        }
       }
-
-      const buffer = await res.arrayBuffer();
-
-      if (!this.isPNG(buffer)) {
-        throw new Error(`${label} is not in PNG format`);
-      }
-
-      return this.resizeImageByLabel(Buffer.from(buffer), label);
-    } catch (err) {
-      throw new Error(`Error fetching ${label}: ${(err as Error).message}`);
     }
-  }
+  
+    throw new Error(`Unexpected error while fetching ${label}`);
+  }  
 
   /**
    * Generate certificate PDF from template with provided data
@@ -269,7 +286,6 @@ export class FabricService {
 
         // Pin the photo
         await ipfsClusterService.pin(photoCID);
-        logger.info(`Photo uploaded and pinned with CID: ${photoCID}`);
       }
 
       if (!photoCID) {
@@ -985,6 +1001,8 @@ export class FabricService {
           args: [],
         }
       );
+
+      logger.error("Inspecting ijazah array:", ijazahArrayStr);
 
       return JSON.parse(ijazahArrayStr);
     } catch (error) {

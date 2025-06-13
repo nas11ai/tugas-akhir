@@ -1,5 +1,5 @@
-import { IjazahInput, Signature } from "@/models/ijazah";
-import { Organization, Role, User, UserCredentials } from "@/models/user";
+import { IjazahInput, Signature } from "../../src/models/ijazah";
+import { Organization, Role, User, UserCredentials } from "../../src/models/user";
 import * as fs from "fs";
 import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
@@ -87,16 +87,16 @@ export class TestDataGenerator {
   /**
    * Generate mock photo buffer
    */
-  static generateMockPhotoBuffer(): Buffer {
+  static async generateMockPhotoBuffer(): Promise<Buffer> {
     const imagePath = path.resolve(__dirname, "../assets/test-photo.png");
-    const imageBuffer = fs.readFileSync(imagePath);
-
+    const imageBuffer = await fs.promises.readFile(imagePath);
+  
     return imageBuffer;
-  }
+  }  
 
-  static generateMockSignatureBuffer(): Buffer {
+  static async generateMockSignatureBuffer(): Promise<Buffer> {
     const imagePath = path.resolve(__dirname, "../assets/test-signature.png");
-    const imageBuffer = fs.readFileSync(imagePath);
+    const imageBuffer = await fs.promises.readFile(imagePath);
 
     return imageBuffer;
   }

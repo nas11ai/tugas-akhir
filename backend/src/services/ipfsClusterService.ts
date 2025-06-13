@@ -43,8 +43,6 @@ export class IpfsClusterService {
         ...formData.getHeaders(),
       });
 
-      console.log("cluster ipfs response", response);
-
       if (
         !response.data ||
         !Array.isArray(response.data) ||

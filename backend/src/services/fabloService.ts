@@ -61,16 +61,7 @@ export class FabloService {
       this.adminTokens.set(Organization.AKADEMIK, akademikToken);
       setFabricAuthHeader(akademikClient, akademikToken);
 
-      // Enroll admin for rektor organization
-      const rektorToken = await this.enrollUser(
-        Organization.REKTOR,
-        adminUsername,
-        adminPassword
-      );
-      this.adminTokens.set(Organization.REKTOR, rektorToken);
-      setFabricAuthHeader(rektorClient, rektorToken);
-
-      logger.info("Admin tokens initialized for both organizations");
+      logger.info("Admin tokens initialized for Akademik organization");
     } catch (error) {
       logger.error("Failed to initialize admin tokens:", error);
     }
