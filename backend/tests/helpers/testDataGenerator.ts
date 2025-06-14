@@ -56,7 +56,7 @@ export class TestDataGenerator {
       nama: `Test Graduate ${randomId}`,
       tempatLahir: "Jakarta",
       tanggalLahir: "1995-01-01",
-      nomorIndukKependudukan: `31710${randomId}0001`,
+      nomorIndukKependudukan: `1234567891011121`,
       programStudi: "Teknik Informatika",
       fakultas: "Fakultas Teknik",
       tahunDiterima: "2020",
