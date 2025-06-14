@@ -192,10 +192,6 @@ class IjazahContract extends Contract {
       throw new Error('ID tanda tangan harus diisi');
     }
 
-    if (!signature.CID) {
-      throw new Error('CID tanda tangan harus diisi');
-    }
-
     // Add prefix to make signature keys identifiable
     const key = `signature_${signature.ID}`;
 
@@ -232,10 +228,6 @@ class IjazahContract extends Contract {
       throw new Error('ID tanda tangan harus diisi');
     }
 
-    if (!signature.CID) {
-      throw new Error('CID tanda tangan harus diisi');
-    }
-
     // Add prefix to make signature keys identifiable
     const key = `signature_${signature.ID}`;
 
@@ -252,7 +244,7 @@ class IjazahContract extends Contract {
     // Prepare updated signature object
     const updatedSignature = {
       ID: signature.ID,
-      CID: signature.CID, // Update CID as provided in interface
+      filePath: signature.filePath,
       Type: 'signature',
       Owner: existingSignature.Owner,
       CreatedAt: existingSignature.CreatedAt,
