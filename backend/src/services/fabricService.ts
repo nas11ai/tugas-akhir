@@ -68,87 +68,6 @@ export class FabricService {
   }
 
   /**
-   * Check if buffer is PNG
-   */
-  private isPNG(buffer: ArrayBuffer): boolean {
-    const header = new Uint8Array(buffer.slice(0, 8));
-    const pngSignature = [137, 80, 78, 71, 13, 10, 26, 10];
-
-    return pngSignature.every((byte, i) => header[i] === byte);
-  }
-
-  private async resizeImageByLabel(
-    buffer: Buffer,
-    label: "Photo" | "Signature"
-  ): Promise<Buffer> {
-    const dimensions: Record<typeof label, { width: number; height: number }> =
-      {
-        Photo: { width: 496, height: 659 },
-        Signature: { width: 667, height: 276 },
-      };
-
-    const size = dimensions[label];
-    if (!size) {
-      throw new Error(`Unknown label: ${label}`);
-    }
-
-    return sharp(buffer)
-      .resize(size.width, size.height, { fit: "fill" })
-      .png()
-      .toBuffer();
-  }
-
-  /**
-   * Fetch and validate PNG file
-   */
-  private async fetchAndValidatePNG(
-    url: string,
-    label: "Photo" | "Signature"
-  ): Promise<ArrayBuffer> {
-    const MAX_RETRIES = 10;
-    const BASE_DELAY = 500; // dalam ms, untuk backoff bertahap
-  
-    const imageRequestOptions = {
-      method: "get",
-      headers: new Headers({
-        "ngrok-skip-browser-warning": "69420",
-        "User-Agent": "Mozilla/5.0",
-      }),
-    };
-  
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        const res = await fetch(url, imageRequestOptions);
-  
-        if (!res.ok) {
-          logger.warn(`[${label}] Attempt ${attempt}: Fetch failed with status ${res.status}`);
-          throw new Error(`${label} fetch failed with status ${res.status}`);
-        }
-  
-        const buffer = await res.arrayBuffer();
-  
-        if (!this.isPNG(buffer)) {
-          throw new Error(`${label} is not in PNG format`);
-        }
-  
-        return this.resizeImageByLabel(Buffer.from(buffer), label);
-      } catch (err) {
-        logger.error(`[${label}] Attempt ${attempt} failed: ${(err as Error).message}`);
-  
-        if (attempt < MAX_RETRIES) {
-          const delay = Math.min(BASE_DELAY * attempt, 5000); // Maksimal delay 5 detik
-          logger.info(`[${label}] Retrying in ${delay}ms...`);
-          await new Promise(res => setTimeout(res, delay));
-        } else {
-          throw new Error(`Error fetching ${label} after ${MAX_RETRIES} attempts: ${(err as Error).message}`);
-        }
-      }
-    }
-  
-    throw new Error(`Unexpected error while fetching ${label}`);
-  }  
-
-  /**
    * Generate certificate PDF from template with provided data
    */
   private async generateCertificatePDF(
@@ -268,15 +187,16 @@ export class FabricService {
       // Save photo to local storage if provided
       let photoPath: string | undefined;
       if (photoFile && photoFile.length > 0) {
-        logger.info("Uploading photo to IPFS...");
-        const photoResult = await ipfsClusterService.add(photoFile, {
-          filename: `${ijazahId}_photo.jpg`,
-          local: false,
-        });
-        photoCID = photoResult.cid;
-
-        // Pin the photo
-        await ipfsClusterService.pin(photoCID);
+        logger.info("Saving photo to local storage...");
+        const photoFileName = fileStorageService.generateFileName(
+          `photo_${ijazahId}`,
+          "photo.png"
+        );
+        photoPath = await fileStorageService.savePhoto(
+          photoFile,
+          photoFileName
+        );
+        logger.info(`Photo saved with filename: ${photoPath}`);
       }
 
       if (!photoPath) {
@@ -508,7 +428,7 @@ export class FabricService {
   }
 
   /**
-   * Approve ijazah certificate with rector signature
+   * Approve ijazah certificate with rector signature (REKTOR only)
    */
   async approveIjazah(
     organization: Organization,
@@ -658,6 +578,90 @@ export class FabricService {
   // The pattern is similar: replace photoCID with photoPath and CID with filePath for signatures
 
   /**
+   * Get ijazah certificate by ID
+   */
+  async getIjazah(
+    organization: Organization,
+    userToken: string,
+    ijazahId: string
+  ): Promise<Ijazah> {
+    try {
+      logger.info(`Getting ijazah certificate with ID: ${ijazahId}`);
+
+      const ijazahStr = await fabloService.queryChaincode(
+        organization,
+        userToken,
+        {
+          method: "ReadIjazah",
+          args: [ijazahId],
+        }
+      );
+
+      if (!ijazahStr) {
+        throw new Error("Ijazah not found");
+      }
+
+      return JSON.parse(ijazahStr);
+    } catch (error) {
+      logger.error("Error getting ijazah certificate:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all ijazah certificates
+   */
+  async getAllIjazah(
+    organization: Organization,
+    userToken: string
+  ): Promise<Ijazah[]> {
+    try {
+      logger.info("Getting all ijazah certificates");
+
+      const ijazahArrayStr = await fabloService.queryChaincode(
+        organization,
+        userToken,
+        {
+          method: "GetAllIjazah",
+          args: [],
+        }
+      );
+
+      return JSON.parse(ijazahArrayStr);
+    } catch (error) {
+      logger.error("Error getting all ijazah certificates:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get ijazah certificates by status
+   */
+  async getIjazahByStatus(
+    organization: Organization,
+    userToken: string,
+    status: string
+  ): Promise<Ijazah[]> {
+    try {
+      logger.info(`Getting ijazah certificates with status: ${status}`);
+
+      const ijazahArrayStr = await fabloService.queryChaincode(
+        organization,
+        userToken,
+        {
+          method: "GetIjazahByStatus",
+          args: [status],
+        }
+      );
+
+      return JSON.parse(ijazahArrayStr);
+    } catch (error) {
+      logger.error("Error getting ijazah certificates by status:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Reject ijazah certificate (REKTOR only)
    */
   async rejectIjazah(
@@ -726,7 +730,7 @@ export class FabricService {
   }
 
   /**
-   * Activate approved ijazah certificate
+   * Activate approved ijazah certificate (REKTOR only)
    */
   async activateIjazah(
     organization: Organization,
@@ -791,7 +795,7 @@ export class FabricService {
   }
 
   /**
-   * Regenerate certificate PDF with current signature
+   * Regenerate certificate PDF with current signature (REKTOR only)
    */
   async regenerateCertificateWithSignature(
     organization: Organization,
@@ -946,93 +950,6 @@ export class FabricService {
 
   /**
    * Update ijazah status
-   * Get ijazah certificate by ID
-   */
-  async getIjazah(
-    organization: Organization,
-    userToken: string,
-    ijazahId: string
-  ): Promise<Ijazah> {
-    try {
-      logger.info(`Getting ijazah certificate with ID: ${ijazahId}`);
-
-      const ijazahStr = await fabloService.queryChaincode(
-        organization,
-        userToken,
-        {
-          method: "ReadIjazah",
-          args: [ijazahId],
-        }
-      );
-
-      if (!ijazahStr) {
-        throw new Error("Ijazah not found");
-      }
-
-      return JSON.parse(ijazahStr);
-    } catch (error) {
-      logger.error("Error getting ijazah certificate:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get all ijazah certificates
-   */
-  async getAllIjazah(
-    organization: Organization,
-    userToken: string
-  ): Promise<Ijazah[]> {
-    try {
-      logger.info("Getting all ijazah certificates");
-
-      const ijazahArrayStr = await fabloService.queryChaincode(
-        organization,
-        userToken,
-        {
-          method: "GetAllIjazah",
-          args: [],
-        }
-      );
-
-      logger.error("Inspecting ijazah array:", ijazahArrayStr);
-
-      return JSON.parse(ijazahArrayStr);
-    } catch (error) {
-      logger.error("Error getting all ijazah certificates:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get ijazah certificates by status
-   */
-  async getIjazahByStatus(
-    organization: Organization,
-    userToken: string,
-    status: string
-  ): Promise<Ijazah[]> {
-    try {
-      logger.info(`Getting ijazah certificates with status: ${status}`);
-
-      const ijazahArrayStr = await fabloService.queryChaincode(
-        organization,
-        userToken,
-        {
-          method: "GetIjazahByStatus",
-          args: [status],
-        }
-      );
-
-      return JSON.parse(ijazahArrayStr);
-    } catch (error) {
-      logger.error("Error getting ijazah certificates by status:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update ijazah status (REKTOR only for approval/rejection)
    */
   async updateIjazahStatus(
     organization: Organization,
@@ -1041,7 +958,7 @@ export class FabricService {
     newStatus: string
   ): Promise<Ijazah> {
     try {
-      // For approval/rejection
+      // For approval/rejection, only REKTOR can do this
       if (
         newStatus === IJAZAH_STATUS.DISETUJUI ||
         newStatus === IJAZAH_STATUS.DITOLAK
@@ -1139,7 +1056,7 @@ export class FabricService {
   // === Signature Management Functions ===
 
   /**
-   * Create signature
+   * Create signature (REKTOR only)
    */
   async createSignature(
     organization: Organization,
@@ -1168,7 +1085,7 @@ export class FabricService {
   }
 
   /**
-   * Update signature
+   * Update signature (REKTOR only)
    */
   async updateSignature(
     organization: Organization,
@@ -1296,7 +1213,7 @@ export class FabricService {
   }
 
   /**
-   * Set active signature
+   * Set active signature (REKTOR only)
    */
   async setActiveSignature(
     organization: Organization,
@@ -1325,7 +1242,7 @@ export class FabricService {
   }
 
   /**
-   * Delete signature
+   * Delete signature (REKTOR only)
    */
   async deleteSignature(
     organization: Organization,
