@@ -20,7 +20,7 @@ export interface Ijazah {
   tanggalIjazahDiberikan: string; // ISO date string
   ipfsCID?: string; // IPFS Content Identifier for certificate PDF
   signatureID?: string; // Reference to the active signature
-  photoCID?: string; // IPFS Content Identifier for student photo
+  photoPath?: string; // Local file path for student photo
   Status: string;
   CreatedAt: string; // ISO date string
   UpdatedAt: string; // ISO date string
@@ -49,14 +49,14 @@ export interface Mahasiswa {
 export interface IjazahInput extends Mahasiswa {
   ipfsCID?: string; // IPFS Content Identifier for certificate PDF
   signatureID?: string; // Reference to the active signature
-  photoCID?: string; // IPFS Content Identifier for student photo
+  photoPath?: string; // Local file path for student photo
   Status: string;
 }
 
 export interface Signature {
   ID: string;
   Type: "signature";
-  CID: string;
+  filePath: string; // Local file path for signature
   IsActive: boolean;
   Owner: string;
   CreatedAt: string; // ISO date string
@@ -65,6 +65,6 @@ export interface Signature {
 
 export interface SignatureInput {
   ID: string;
-  CID: string;
+  filePath: string; // Local file path for signature
   IsActive?: boolean;
 }
