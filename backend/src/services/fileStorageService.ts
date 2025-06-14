@@ -1,0 +1,244 @@
+import fs from "fs/promises";
+import path from "path";
+import { logger } from "../utils/logger";
+import sharp from "sharp";
+
+/**
+ * Local File Storage Service
+ * Handles storage of photos and signatures locally
+ */
+export class FileStorageService {
+  private readonly uploadsDir: string;
+  private readonly photosDir: string;
+  private readonly signaturesDir: string;
+
+  constructor() {
+    // Define storage directories
+    this.uploadsDir = path.join(process.cwd(), "uploads");
+    this.photosDir = path.join(this.uploadsDir, "photos");
+    this.signaturesDir = path.join(this.uploadsDir, "signatures");
+
+    // Initialize directories
+    this.initializeDirectories();
+  }
+
+  /**
+   * Initialize storage directories
+   */
+  private async initializeDirectories(): Promise<void> {
+    try {
+      await fs.mkdir(this.uploadsDir, { recursive: true });
+      await fs.mkdir(this.photosDir, { recursive: true });
+      await fs.mkdir(this.signaturesDir, { recursive: true });
+      logger.info("Storage directories initialized");
+    } catch (error) {
+      logger.error("Failed to initialize storage directories:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Save photo file locally
+   */
+  async savePhoto(buffer: Buffer, fileName: string): Promise<string> {
+    try {
+      // Process and resize photo
+      const processedBuffer = await sharp(buffer)
+        .resize(496, 659, { fit: "fill" })
+        .png()
+        .toBuffer();
+
+      const photoPath = path.join(this.photosDir, fileName);
+      await fs.writeFile(photoPath, processedBuffer);
+
+      logger.info(`Photo saved: ${fileName}`);
+      return fileName; // Return relative filename
+    } catch (error) {
+      logger.error("Failed to save photo:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Save signature file locally
+   */
+  async saveSignature(buffer: Buffer, fileName: string): Promise<string> {
+    try {
+      // Process and resize signature
+      const processedBuffer = await sharp(buffer)
+        .resize(667, 276, { fit: "fill" })
+        .png()
+        .toBuffer();
+
+      const signaturePath = path.join(this.signaturesDir, fileName);
+      await fs.writeFile(signaturePath, processedBuffer);
+
+      logger.info(`Signature saved: ${fileName}`);
+      return fileName; // Return relative filename
+    } catch (error) {
+      logger.error("Failed to save signature:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get photo file
+   */
+  async getPhoto(fileName: string): Promise<Buffer> {
+    try {
+      const photoPath = path.join(this.photosDir, fileName);
+      const buffer = await fs.readFile(photoPath);
+      return buffer;
+    } catch (error) {
+      logger.error(`Failed to get photo ${fileName}:`, error);
+      throw new Error(`Photo not found: ${fileName}`);
+    }
+  }
+
+  /**
+   * Get signature file
+   */
+  async getSignature(fileName: string): Promise<Buffer> {
+    try {
+      const signaturePath = path.join(this.signaturesDir, fileName);
+      const buffer = await fs.readFile(signaturePath);
+      return buffer;
+    } catch (error) {
+      logger.error(`Failed to get signature ${fileName}:`, error);
+      throw new Error(`Signature not found: ${fileName}`);
+    }
+  }
+
+  /**
+   * Delete photo file
+   */
+  async deletePhoto(fileName: string): Promise<boolean> {
+    try {
+      const photoPath = path.join(this.photosDir, fileName);
+      await fs.unlink(photoPath);
+      logger.info(`Photo deleted: ${fileName}`);
+      return true;
+    } catch (error) {
+      logger.warn(`Failed to delete photo ${fileName}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Delete signature file
+   */
+  async deleteSignature(fileName: string): Promise<boolean> {
+    try {
+      const signaturePath = path.join(this.signaturesDir, fileName);
+      await fs.unlink(signaturePath);
+      logger.info(`Signature deleted: ${fileName}`);
+      return true;
+    } catch (error) {
+      logger.warn(`Failed to delete signature ${fileName}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if photo exists
+   */
+  async photoExists(fileName: string): Promise<boolean> {
+    try {
+      const photoPath = path.join(this.photosDir, fileName);
+      await fs.access(photoPath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Check if signature exists
+   */
+  async signatureExists(fileName: string): Promise<boolean> {
+    try {
+      const signaturePath = path.join(this.signaturesDir, fileName);
+      await fs.access(signaturePath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Generate unique filename
+   */
+  generateFileName(prefix: string, originalName: string): string {
+    const timestamp = Date.now();
+    const extension = path.extname(originalName) || ".png";
+    return `${prefix}_${timestamp}${extension}`;
+  }
+
+  /**
+   * Get photo full path
+   */
+  getPhotoPath(fileName: string): string {
+    return path.join(this.photosDir, fileName);
+  }
+
+  /**
+   * Get signature full path
+   */
+  getSignaturePath(fileName: string): string {
+    return path.join(this.signaturesDir, fileName);
+  }
+
+  /**
+   * Get storage statistics
+   */
+  async getStorageStats(): Promise<{
+    photos: { count: number; totalSize: number };
+    signatures: { count: number; totalSize: number };
+  }> {
+    try {
+      const [photoFiles, signatureFiles] = await Promise.all([
+        fs.readdir(this.photosDir),
+        fs.readdir(this.signaturesDir),
+      ]);
+
+      // Calculate photo stats
+      let photoTotalSize = 0;
+      for (const file of photoFiles) {
+        try {
+          const stats = await fs.stat(path.join(this.photosDir, file));
+          photoTotalSize += stats.size;
+        } catch (error) {
+          logger.warn(`Failed to get stats for photo ${file}:`, error);
+        }
+      }
+
+      // Calculate signature stats
+      let signatureTotalSize = 0;
+      for (const file of signatureFiles) {
+        try {
+          const stats = await fs.stat(path.join(this.signaturesDir, file));
+          signatureTotalSize += stats.size;
+        } catch (error) {
+          logger.warn(`Failed to get stats for signature ${file}:`, error);
+        }
+      }
+
+      return {
+        photos: {
+          count: photoFiles.length,
+          totalSize: photoTotalSize,
+        },
+        signatures: {
+          count: signatureFiles.length,
+          totalSize: signatureTotalSize,
+        },
+      };
+    } catch (error) {
+      logger.error("Failed to get storage stats:", error);
+      throw error;
+    }
+  }
+}
+
+// Export singleton instance
+export const fileStorageService = new FileStorageService();
