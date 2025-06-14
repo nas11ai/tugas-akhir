@@ -289,12 +289,6 @@ export const validateCreateSignature = [
       "Signature ID can only contain letters, numbers, hyphens, and underscores"
     ),
 
-  body("URL")
-    .notEmpty()
-    .withMessage("Signature URL is required")
-    .isURL()
-    .withMessage("Signature URL must be a valid URL"),
-
   body("IsActive")
     .optional()
     .isBoolean()
