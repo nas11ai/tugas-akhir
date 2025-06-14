@@ -1,5 +1,6 @@
 import { fabloService } from "./fabloService";
 import { ipfsClusterService } from "./ipfsClusterService";
+import { fileStorageService } from "./fileStorageService";
 import { logger } from "../utils/logger";
 import { Organization } from "../models/user";
 import {
@@ -29,6 +30,7 @@ interface CertificateGenerationOptions {
 /**
  * Fabric Service for Certificate Management
  * Integrates Hyperledger Fabric with IPFS for certificate management
+ * Uses local storage for photos and signatures
  */
 export class FabricService {
   private readonly defaultTemplatePath = path.join(
@@ -151,22 +153,18 @@ export class FabricService {
    */
   private async generateCertificatePDF(
     ijazahData: IjazahInput,
-    photoCID: string,
-    signatureCID: string
+    photoPath: string,
+    signaturePath: string
   ): Promise<Buffer> {
     try {
       logger.info(
         `Generating certificate PDF for ${ijazahData.nama} - NIM ${ijazahData.nomorIndukMahasiswa}`
       );
 
-      const baseUrl = process.env.BACKEND_URL || "http://localhost:3000";
-      const photoUrl = `${baseUrl}/ipfs/${photoCID}`;
-      const signatureUrl = `${baseUrl}/ipfs/${signatureCID}`;
-
-      const photoImageBytes = await this.fetchAndValidatePNG(photoUrl, "Photo");
-      const signatureImageBytes = await this.fetchAndValidatePNG(
-        signatureUrl,
-        "Signature"
+      // Read photo and signature from local storage
+      const photoImageBytes = await fileStorageService.getPhoto(photoPath);
+      const signatureImageBytes = await fileStorageService.getSignature(
+        signaturePath
       );
 
       const templateBytes = await fs.readFile(this.defaultTemplatePath);
@@ -231,13 +229,9 @@ export class FabricService {
         }
       }
 
-      // Simpan jadi Uint8Array
       const pdfBytes = await pdfDoc.save();
-
-      // Konversi ke Buffer
       const pdfBuffer = Buffer.from(pdfBytes);
 
-      // Convert text to buffer (in real implementation, this would be actual PDF)
       return pdfBuffer;
     } catch (error) {
       logger.error("Error generating certificate PDF:", error);
@@ -247,10 +241,7 @@ export class FabricService {
 
   /**
    * Find mahasiswa by NIM
-   * @param nim NIM of the mahasiswa
-   * @returns Mahasiswa object
    */
-
   findMahasiswaByNim(nim: string): Mahasiswa | undefined {
     const result = mahasiswa.find((mhs) => mhs.nomorIndukMahasiswa === nim);
     return result;
@@ -274,8 +265,8 @@ export class FabricService {
 
       logger.info(`Creating ijazah certificate with ID: ${ijazahId}`);
 
-      // Upload photo to IPFS if provided
-      let photoCID: string | undefined;
+      // Save photo to local storage if provided
+      let photoPath: string | undefined;
       if (photoFile && photoFile.length > 0) {
         logger.info("Uploading photo to IPFS...");
         const photoResult = await ipfsClusterService.add(photoFile, {
@@ -288,10 +279,11 @@ export class FabricService {
         await ipfsClusterService.pin(photoCID);
       }
 
-      if (!photoCID) {
+      if (!photoPath) {
         throw new Error("Photo is required");
       }
 
+      // Get active signature
       const signatureStr: string = await fabloService.queryChaincode(
         organization,
         userToken,
@@ -308,15 +300,16 @@ export class FabricService {
         ipfsCID: _ipfsCID,
         signatureID: _signatureID,
         Status: _status,
+        photoPath: _photoPath,
         ...certificateData
       } = ijazahData as any;
 
-      // Generate certificate PDF (without signature - will be added later)
+      // Generate certificate PDF
       logger.info("Generating certificate PDF...");
       const certificatePDF = await this.generateCertificatePDF(
         certificateData,
-        photoCID,
-        signatureData.CID
+        photoPath,
+        signatureData.filePath
       );
 
       // Upload certificate PDF to IPFS
@@ -332,6 +325,7 @@ export class FabricService {
         `Certificate PDF uploaded and pinned with CID: ${certificateResult.cid}`
       );
 
+      // Clean ijazah data
       const { photo: _, ...cleanIjazahData } = ijazahData as any;
 
       // Prepare ijazah data for blockchain
@@ -340,7 +334,7 @@ export class FabricService {
         Type: "certificate",
         ...cleanIjazahData,
         ipfsCID: certificateResult.cid,
-        photoCID,
+        photoPath,
       };
 
       // Store in blockchain via chaincode
@@ -366,7 +360,6 @@ export class FabricService {
 
   /**
    * Update existing ijazah certificate (AKADEMIK only)
-   * Can only update if status is not "menunggu tanda tangan rektor"
    */
   async updateIjazah(
     organization: Organization,
@@ -405,33 +398,28 @@ export class FabricService {
       };
 
       // Handle photo update if provided
-      let photoCID = existingIjazah.photoCID;
+      let photoPath = existingIjazah.photoPath;
       if (photoFile && photoFile.length > 0) {
-        logger.info("Uploading new photo to IPFS...");
+        logger.info("Updating photo in local storage...");
 
-        // Unpin old photo if exists
-        if (photoCID) {
-          try {
-            await ipfsClusterService.unpin(photoCID);
-          } catch (error) {
-            logger.warn(`Failed to unpin old photo CID: ${photoCID}`, error);
-          }
+        // Delete old photo if exists
+        if (photoPath) {
+          await fileStorageService.deletePhoto(photoPath);
         }
 
-        // Upload new photo
-        const photoResult = await ipfsClusterService.add(photoFile, {
-          filename: `${ijazahId}_photo_updated.jpg`,
-          local: false,
-        });
-
-        photoCID = photoResult.cid;
-
-        // Pin the new photo
-        await ipfsClusterService.pin(photoCID);
-        logger.info(`New photo uploaded and pinned with CID: ${photoCID}`);
+        // Save new photo
+        const photoFileName = fileStorageService.generateFileName(
+          `photo_${ijazahId}`,
+          "photo.png"
+        );
+        photoPath = await fileStorageService.savePhoto(
+          photoFile,
+          photoFileName
+        );
+        logger.info(`New photo saved with filename: ${photoPath}`);
       }
 
-      if (!photoCID) {
+      if (!photoPath) {
         throw new Error("Photo file is required");
       }
 
@@ -454,13 +442,14 @@ export class FabricService {
         ipfsCID: _ipfsCID,
         signatureID: _signatureID,
         Status: _status,
+        photoPath: _photoPath,
         ...certificateData
       } = updatedData as any;
 
       const certificatePDF = await this.generateCertificatePDF(
         certificateData,
-        photoCID,
-        signatureData.CID
+        photoPath,
+        signatureData.filePath
       );
 
       // Unpin old certificate
@@ -493,7 +482,7 @@ export class FabricService {
         ...existingIjazah,
         ...updatedData,
         ipfsCID: certificateResult.cid,
-        photoCID,
+        photoPath,
         UpdatedAt: new Date().toISOString(),
       };
 
@@ -519,7 +508,7 @@ export class FabricService {
   }
 
   /**
-   * Approve ijazah certificate with rector signature (REKTOR only)
+   * Approve ijazah certificate with rector signature
    */
   async approveIjazah(
     organization: Organization,
@@ -556,7 +545,7 @@ export class FabricService {
         );
       }
 
-      if (!existingIjazah.photoCID) {
+      if (!existingIjazah.photoPath) {
         throw new Error("Photo file is required");
       }
 
@@ -595,6 +584,7 @@ export class FabricService {
         ipfsCID: _ipfsCID,
         signatureID: _signatureID,
         Status: _status,
+        photoPath: _photoPath,
         ...certificateData
       } = existingIjazah as any;
 
@@ -602,8 +592,8 @@ export class FabricService {
       logger.info("Generating approved certificate PDF with signature...");
       const approvedCertificatePDF = await this.generateCertificatePDF(
         certificateData,
-        existingIjazah.photoCID,
-        activeSignature.CID
+        existingIjazah.photoPath!,
+        activeSignature.filePath
       );
 
       // Unpin old certificate
@@ -663,6 +653,9 @@ export class FabricService {
       throw error;
     }
   }
+
+  // ... (Continue with other methods - reject, activate, regenerate, etc.)
+  // The pattern is similar: replace photoCID with photoPath and CID with filePath for signatures
 
   /**
    * Reject ijazah certificate (REKTOR only)
@@ -733,8 +726,7 @@ export class FabricService {
   }
 
   /**
-   * Activate approved ijazah certificate (REKTOR only)
-   * Changes status from "disetujui rektor" to "aktif"
+   * Activate approved ijazah certificate
    */
   async activateIjazah(
     organization: Organization,
@@ -799,8 +791,7 @@ export class FabricService {
   }
 
   /**
-   * Regenerate certificate PDF with current signature (REKTOR only)
-   * Useful when signature is updated and certificates need to be regenerated
+   * Regenerate certificate PDF with current signature
    */
   async regenerateCertificateWithSignature(
     organization: Organization,
@@ -843,7 +834,7 @@ export class FabricService {
         );
       }
 
-      if (!existingIjazah.photoCID) {
+      if (!existingIjazah.photoPath) {
         throw new Error("Photo file is required");
       }
 
@@ -886,6 +877,7 @@ export class FabricService {
         ipfsCID: _ipfsCID,
         signatureID: _signatureID,
         Status: _status,
+        photoPath: _photoPath,
         ...certificateData
       } = existingIjazah as any;
 
@@ -893,8 +885,8 @@ export class FabricService {
       logger.info("Regenerating certificate PDF with updated signature...");
       const regeneratedCertificatePDF = await this.generateCertificatePDF(
         certificateData,
-        existingIjazah.photoCID,
-        targetSignature.CID
+        existingIjazah.photoPath,
+        targetSignature.filePath
       );
 
       // Unpin old certificate
@@ -953,6 +945,7 @@ export class FabricService {
   }
 
   /**
+   * Update ijazah status
    * Get ijazah certificate by ID
    */
   async getIjazah(
@@ -1048,7 +1041,7 @@ export class FabricService {
     newStatus: string
   ): Promise<Ijazah> {
     try {
-      // For approval/rejection, only REKTOR can do this
+      // For approval/rejection
       if (
         newStatus === IJAZAH_STATUS.DISETUJUI ||
         newStatus === IJAZAH_STATUS.DITOLAK
@@ -1088,7 +1081,7 @@ export class FabricService {
       // Validate access
       this.validateAkademikAccess(organization);
 
-      // Get ijazah data first to clean up IPFS files
+      // Get ijazah data first to clean up files
       try {
         const existingIjazah = await this.getIjazah(
           organization,
@@ -1096,7 +1089,7 @@ export class FabricService {
           ijazahId
         );
 
-        // Unpin files from IPFS
+        // Unpin certificate from IPFS
         if (existingIjazah.ipfsCID) {
           try {
             await ipfsClusterService.unpin(existingIjazah.ipfsCID);
@@ -1109,13 +1102,14 @@ export class FabricService {
           }
         }
 
-        if (existingIjazah.photoCID) {
+        // Delete photo from local storage
+        if (existingIjazah.photoPath) {
           try {
-            await ipfsClusterService.unpin(existingIjazah.photoCID);
-            logger.info(`Unpinned photo CID: ${existingIjazah.photoCID}`);
+            await fileStorageService.deletePhoto(existingIjazah.photoPath);
+            logger.info(`Deleted photo: ${existingIjazah.photoPath}`);
           } catch (error) {
             logger.warn(
-              `Failed to unpin photo CID: ${existingIjazah.photoCID}`,
+              `Failed to delete photo: ${existingIjazah.photoPath}`,
               error
             );
           }
@@ -1145,7 +1139,7 @@ export class FabricService {
   // === Signature Management Functions ===
 
   /**
-   * Create signature (REKTOR only)
+   * Create signature
    */
   async createSignature(
     organization: Organization,
@@ -1174,7 +1168,7 @@ export class FabricService {
   }
 
   /**
-   * Update signature (REKTOR only)
+   * Update signature
    */
   async updateSignature(
     organization: Organization,
@@ -1192,7 +1186,7 @@ export class FabricService {
         ...signatureData,
       };
 
-      if (!updateData.CID) {
+      if (!updateData.filePath) {
         const existingSignature = await this.getSignature(
           organization,
           userToken,
@@ -1203,7 +1197,7 @@ export class FabricService {
           throw new Error("Signature not found");
         }
 
-        updateData.CID = existingSignature.CID;
+        updateData.filePath = existingSignature.filePath;
       }
 
       const result = await fabloService.invokeChaincode(
@@ -1302,7 +1296,7 @@ export class FabricService {
   }
 
   /**
-   * Set active signature (REKTOR only)
+   * Set active signature
    */
   async setActiveSignature(
     organization: Organization,
@@ -1331,7 +1325,7 @@ export class FabricService {
   }
 
   /**
-   * Delete signature (REKTOR only)
+   * Delete signature
    */
   async deleteSignature(
     organization: Organization,
@@ -1340,6 +1334,22 @@ export class FabricService {
   ): Promise<{ success: boolean; message: string }> {
     try {
       this.validateRektorAkademikAccess(organization);
+
+      // Get signature data first to clean up local file
+      try {
+        const existingSignature = await this.getSignature(
+          organization,
+          userToken,
+          signatureId
+        );
+
+        if (existingSignature && existingSignature.filePath) {
+          await fileStorageService.deleteSignature(existingSignature.filePath);
+          logger.info(`Deleted signature file: ${existingSignature.filePath}`);
+        }
+      } catch (error) {
+        logger.warn("Failed to get signature data for cleanup:", error);
+      }
 
       logger.info(`Deleting signature with ID: ${signatureId}`);
 
@@ -1367,22 +1377,9 @@ export class FabricService {
   getCertificateDownloadUrl(ipfsCID: string): string | null {
     if (!ipfsCID) return null;
 
-    // Assuming getIpfsGatewayUrl is available from config
-    // This should return the public IPFS gateway URL
     return `${
       process.env.IPFS_GATEWAY_URL || "https://gateway.ipfs.io"
     }/ipfs/${ipfsCID}`;
-  }
-
-  /**
-   * Get photo download URL from IPFS
-   */
-  getPhotoDownloadUrl(photoCID: string): string | null {
-    if (!photoCID) return null;
-
-    return `${
-      process.env.IPFS_GATEWAY_URL || "https://gateway.ipfs.io"
-    }/ipfs/${photoCID}`;
   }
 
   /**
@@ -1391,6 +1388,7 @@ export class FabricService {
   async healthCheck(): Promise<{
     fabric: { akademik: boolean; rektor: boolean };
     ipfs: boolean;
+    localStorage: boolean;
     overall: boolean;
   }> {
     try {
@@ -1406,12 +1404,25 @@ export class FabricService {
         logger.warn("IPFS health check failed:", error);
       }
 
+      // Check local storage health
+      let localStorageHealth = false;
+      try {
+        await fileStorageService.getStorageStats();
+        localStorageHealth = true;
+      } catch (error) {
+        logger.warn("Local storage health check failed:", error);
+      }
+
       const overall =
-        fabricHealth.akademik && fabricHealth.rektor && ipfsHealth;
+        fabricHealth.akademik &&
+        fabricHealth.rektor &&
+        ipfsHealth &&
+        localStorageHealth;
 
       return {
         fabric: fabricHealth,
         ipfs: ipfsHealth,
+        localStorage: localStorageHealth,
         overall,
       };
     } catch (error) {
@@ -1419,6 +1430,7 @@ export class FabricService {
       return {
         fabric: { akademik: false, rektor: false },
         ipfs: false,
+        localStorage: false,
         overall: false,
       };
     }
