@@ -199,8 +199,8 @@ const certificateUrl = computed(() => {
 })
 
 const photoUrl = computed(() => {
-  if (ijazah.value?.photoCID) {
-    return `${import.meta.env.VITE_API_BASE_URL}/ipfs/${ijazah.value.photoCID}`
+  if (ijazah.value?.photoPath) {
+    return `${import.meta.env.VITE_API_BASE_URL}/api/files/photos/${ijazah.value.photoPath}`
   }
   return null
 })

@@ -13,8 +13,6 @@ const router = Router();
  */
 router.get(
   "/photos/:filename",
-  authenticate,
-  requireOrganization([Organization.AKADEMIK]),
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { filename } = req.params;
@@ -75,8 +73,6 @@ router.get(
  */
 router.get(
   "/signatures/:filename",
-  authenticate,
-  requireOrganization([Organization.AKADEMIK]),
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { filename } = req.params;

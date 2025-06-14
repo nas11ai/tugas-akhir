@@ -87,11 +87,11 @@
             <v-tooltip text="Lihat gambar" location="top">
               <template #activator="{ props }">
                 <v-btn
-                  v-if="item.CID"
+                  v-if="item.filePath"
                   icon
                   x-small
                   color="white"
-                  @click="openImageInNewTab(item.CID)"
+                  @click="openImageInNewTab(item.filePath)"
                   class="mt-1"
                   v-bind="props"
                 >
@@ -193,14 +193,14 @@
             />
 
             <div
-              v-if="isEditingSignature && currentSignature?.CID"
+              v-if="isEditingSignature && currentSignature?.filePath"
               class="mb-4"
             >
               <v-card outlined>
                 <v-card-subtitle>Tanda Tangan Saat Ini</v-card-subtitle>
                 <v-card-text class="text-center">
                   <v-img
-                    :src="getProxiedImageUrl(currentSignature.CID)"
+                    :src="getProxiedImageUrl(currentSignature.filePath)"
                     max-width="200"
                     max-height="100"
                     contain
@@ -232,7 +232,7 @@
                     small
                     outlined
                     color="blue"
-                    @click="openImageInNewTab(currentSignature.CID)"
+                    @click="openImageInNewTab(currentSignature.filePath)"
                     class="mt-2"
                   >
                     <v-icon left small>mdi-open-in-new</v-icon>
@@ -356,6 +356,7 @@ import BaseLayout from '@/layouts/BaseLayout.vue'
 import { ref, onMounted } from 'vue'
 import { apiService, apiHelper } from '@/config/axios'
 import { formatTableDate } from '@/helpers/formatTableDate'
+import type { Signature, SignatureInput } from '@/config/ijazah'
 
 // Reactive data
 const search = ref('')
@@ -369,27 +370,11 @@ const signatureFile = ref<File | null>(null)
 const isEditingSignature = ref(false)
 
 // Signature data
-const signatures = ref<
-  Array<{
-    ID: string
-    CID: string
-    IsActive: boolean
-    CreatedAt?: string
-    UpdatedAt?: string
-  }>
->([])
+const signatures = ref<Array<Signature>>([])
 
-const currentSignature = ref<{
-  ID: string
-  CID: string
-  IsActive: boolean
-} | null>(null)
+const currentSignature = ref<SignatureInput | null>(null)
 
-const signatureToDelete = ref<{
-  ID: string
-  CID: string
-  IsActive: boolean
-} | null>(null)
+const signatureToDelete = ref<SignatureInput | null>(null)
 
 const signatureFormData = ref({
   ID: '',
@@ -626,8 +611,8 @@ const deleteSignature = async () => {
   }
 }
 
-const openImageInNewTab = (cid: string) => {
-  const url = getProxiedImageUrl(cid)
+const openImageInNewTab = (path: string) => {
+  const url = getProxiedImageUrl(path)
   // Open with ngrok headers
   const newWindow = window.open('', '_blank')
   if (newWindow) {
@@ -642,19 +627,13 @@ const openImageInNewTab = (cid: string) => {
   }
 }
 
-// Helper function untuk convert CID ke proxy URL
-const getProxiedImageUrl = (cid: string) => {
-  if (!cid) return ''
-
-  // Extract IPFS hash jika format lengkap IPFS URL
-  let hash = cid
-  if (cid.includes('/ipfs/')) {
-    hash = cid.split('/ipfs/')[1]
-  }
+// Helper function untuk convert filePath ke proxy URL
+const getProxiedImageUrl = (path: string) => {
+  if (!path) return ''
 
   // Use backend proxy endpoint
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
-  return `${baseUrl}/ipfs/${hash}`
+  return `${baseUrl}/api/files/signatures/${path}`
 }
 
 const showSnackbar = (message: string, color: string = 'success') => {
