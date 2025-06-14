@@ -1,6 +1,8 @@
 import { Router, Request, Response } from "express";
 import { fileStorageService } from "../services/fileStorageService";
 import { logger } from "../utils/logger";
+import { authenticate, requireOrganization } from "../middlewares/auth";
+import { Organization } from "../models/user";
 
 const router = Router();
 
@@ -11,6 +13,8 @@ const router = Router();
  */
 router.get(
   "/photos/:filename",
+  authenticate,
+  requireOrganization([Organization.AKADEMIK]),
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { filename } = req.params;
@@ -71,6 +75,8 @@ router.get(
  */
 router.get(
   "/signatures/:filename",
+  authenticate,
+  requireOrganization([Organization.AKADEMIK]),
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { filename } = req.params;
@@ -131,6 +137,8 @@ router.get(
  */
 router.get(
   "/info/:type/:filename",
+  authenticate,
+  requireOrganization([Organization.AKADEMIK]),
   async (req: Request, res: Response): Promise<void> => {
     try {
       // Basic authentication check (you might want to add proper auth middleware)
@@ -216,76 +224,86 @@ router.get(
  * GET /api/files/stats
  * Access: Admin only
  */
-router.get("/stats", async (req: Request, res: Response): Promise<void> => {
-  try {
-    // Check admin access (you might want to add proper admin middleware)
-    if (!req.user || req.user.role !== "admin") {
-      res.status(403).json({
-        success: false,
-        message: "Admin access required",
-      });
-      return;
-    }
+router.get(
+  "/stats",
+  authenticate,
+  requireOrganization([Organization.AKADEMIK]),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      // Check admin access (you might want to add proper admin middleware)
+      if (!req.user || req.user.role !== "admin") {
+        res.status(403).json({
+          success: false,
+          message: "Admin access required",
+        });
+        return;
+      }
 
-    const stats = await fileStorageService.getStorageStats();
+      const stats = await fileStorageService.getStorageStats();
 
-    res.json({
-      success: true,
-      message: "Storage statistics retrieved successfully",
-      data: {
-        ...stats,
-        totalFiles: stats.photos.count + stats.signatures.count,
-        totalSize: stats.photos.totalSize + stats.signatures.totalSize,
-        formattedSizes: {
-          photos: formatBytes(stats.photos.totalSize),
-          signatures: formatBytes(stats.signatures.totalSize),
-          total: formatBytes(
-            stats.photos.totalSize + stats.signatures.totalSize
-          ),
+      res.json({
+        success: true,
+        message: "Storage statistics retrieved successfully",
+        data: {
+          ...stats,
+          totalFiles: stats.photos.count + stats.signatures.count,
+          totalSize: stats.photos.totalSize + stats.signatures.totalSize,
+          formattedSizes: {
+            photos: formatBytes(stats.photos.totalSize),
+            signatures: formatBytes(stats.signatures.totalSize),
+            total: formatBytes(
+              stats.photos.totalSize + stats.signatures.totalSize
+            ),
+          },
         },
-      },
-    });
-  } catch (error) {
-    logger.error("Error getting storage stats:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to retrieve storage statistics",
-    });
+      });
+    } catch (error) {
+      logger.error("Error getting storage stats:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to retrieve storage statistics",
+      });
+    }
   }
-});
+);
 
 /**
  * Health check for file storage
  * GET /api/files/health
  * Access: Public
  */
-router.get("/health", async (req: Request, res: Response): Promise<void> => {
-  try {
-    const stats = await fileStorageService.getStorageStats();
+router.get(
+  "/health",
+  authenticate,
+  requireOrganization([Organization.AKADEMIK]),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const stats = await fileStorageService.getStorageStats();
 
-    res.json({
-      success: true,
-      message: "File storage is healthy",
-      data: {
-        status: "healthy",
-        photosDir: stats.photos.count > 0 ? "accessible" : "empty",
-        signaturesDir: stats.signatures.count > 0 ? "accessible" : "empty",
-        timestamp: new Date().toISOString(),
-      },
-    });
-  } catch (error) {
-    logger.error("File storage health check failed:", error);
-    res.status(503).json({
-      success: false,
-      message: "File storage is unhealthy",
-      data: {
-        status: "unhealthy",
-        error: error instanceof Error ? error.message : "Unknown error",
-        timestamp: new Date().toISOString(),
-      },
-    });
+      res.json({
+        success: true,
+        message: "File storage is healthy",
+        data: {
+          status: "healthy",
+          photosDir: stats.photos.count > 0 ? "accessible" : "empty",
+          signaturesDir: stats.signatures.count > 0 ? "accessible" : "empty",
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      logger.error("File storage health check failed:", error);
+      res.status(503).json({
+        success: false,
+        message: "File storage is unhealthy",
+        data: {
+          status: "unhealthy",
+          error: error instanceof Error ? error.message : "Unknown error",
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
   }
-});
+);
 
 /**
  * Helper function to format bytes

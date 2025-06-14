@@ -2,6 +2,7 @@ import { Router } from "express";
 import ijazahRoutes from "./ijazahRoutes";
 import signatureRoutes from "./signatureRoutes";
 import userRoutes from "./userRoutes";
+import fileRoutes from "./fileRoutes";
 import { fabricService } from "../services/fabricService";
 
 const router = Router();
@@ -101,5 +102,8 @@ router.get("/info", (req, res) => {
 router.use("/ijazah", ijazahRoutes);
 router.use("/signature", signatureRoutes);
 router.use("/user", userRoutes);
+
+// File serving routes (for photos and signatures)
+router.use("/files", fileRoutes);
 
 export default router;
