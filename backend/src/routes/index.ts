@@ -39,8 +39,6 @@ router.get("/info", (req, res) => {
       public: {
         "GET /api/ijazah/:id":
           "Get ijazah certificate by ID (Public access for validation)",
-        "GET /api/ijazah/:id/validate": "Validate ijazah certificate (Public)",
-        "GET /api/ijazah/:id/verify": "Quick verification check (Public)",
         "GET /api/health": "Service health check",
         "GET /api/info": "API information",
       },
@@ -49,43 +47,21 @@ router.get("/info", (req, res) => {
         "POST /api/ijazah": "Create new ijazah certificate (AKADEMIK only)",
         "PUT /api/ijazah/:id": "Update ijazah certificate (AKADEMIK only)",
         "GET /api/ijazah": "Get all ijazah certificates (Authenticated)",
-        "GET /api/ijazah/pending":
-          "Get pending certificates awaiting approval (REKTOR only)",
-        "GET /api/ijazah/status/:status":
-          "Get ijazah certificates by status (Authenticated)",
-        "PUT /api/ijazah/:id/status":
-          "Update ijazah status (REKTOR for approval)",
-        "PUT /api/ijazah/:id/approve":
-          "Approve certificate with signature (REKTOR only)",
-        "PUT /api/ijazah/:id/reject": "Reject certificate (REKTOR only)",
-        "PUT /api/ijazah/:id/activate":
-          "Activate approved certificate (REKTOR only)",
-        "PUT /api/ijazah/:id/regenerate":
-          "Regenerate certificate with signature (REKTOR only)",
-        "POST /api/ijazah/bulk-approve":
-          "Bulk approve multiple certificates (REKTOR only)",
         "DELETE /api/ijazah/:id": "Delete ijazah certificate (AKADEMIK only)",
-        "GET /api/ijazah/:id/certificate":
-          "Get certificate download URL (Authenticated)",
-        "GET /api/ijazah/:id/photo": "Get photo download URL (Authenticated)",
-        "GET /api/ijazah/statuses":
-          "Get available status options (Authenticated)",
       },
       signature: {
-        "POST /api/signature": "Create new signature (REKTOR only)",
-        "POST /api/signature/upload": "Upload signature file (REKTOR only)",
-        "PUT /api/signature/:id": "Update signature (REKTOR only)",
+        "POST /api/signature": "Create new signature (AKADEMIK only)",
+        "POST /api/signature/upload": "Upload signature file (AKADEMIK only)",
+        "PUT /api/signature/:id": "Update signature (AKADEMIK only)",
         "GET /api/signature/:id": "Get signature by ID (Authenticated)",
         "GET /api/signature": "Get all signatures (Authenticated)",
         "GET /api/signature/active": "Get active signature (Authenticated)",
         "PUT /api/signature/:id/activate":
-          "Set signature as active (REKTOR only)",
+          "Set signature as active (AKADEMIK only)",
         "PUT /api/signature/:id/deactivate":
-          "Deactivate signature (REKTOR only)",
-        "DELETE /api/signature/:id": "Delete signature (REKTOR only)",
-        "GET /api/signature/stats": "Get signature statistics (REKTOR only)",
-        "POST /api/signature/validate-url":
-          "Validate signature URL (REKTOR only)",
+          "Deactivate signature (AKADEMIK only)",
+        "DELETE /api/signature/:id": "Delete signature (AKADEMIK only)",
+        "GET /api/signature/stats": "Get signature statistics (AKADEMIK only)",
       },
       user: {
         "POST /api/user": "Create new user",
@@ -108,16 +84,14 @@ router.get("/info", (req, res) => {
       format: "Authorization: Bearer <firebase-jwt-token>",
     },
     organizations: {
-      AKADEMIK: "Can create, update, and delete ijazah certificates",
-      REKTOR: "Can manage signatures and approve/reject ijazah certificates",
+      AKADEMIK:
+        "Can create, update, and delete ijazah certificates and signatures",
       PUBLIC: "Can validate and verify ijazah certificates",
     },
     validation: {
       description: "Public certificate validation system",
       usage: [
         "GET /api/ijazah/{certificate-id} - Full certificate details with validation info",
-        "GET /api/ijazah/{certificate-id}/validate - Detailed validation with limited public info",
-        "GET /api/ijazah/{certificate-id}/verify - Quick verification check",
       ],
     },
   });
