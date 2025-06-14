@@ -5,9 +5,9 @@ import { TestDataGenerator } from "../../helpers";
 import { mockFabloService, mockIpfsClusterService } from "../../mocks";
 import { fabloService } from "../../../src/services/fabloService";
 import dotenv from "dotenv";
-import { ipfsClusterService } from "../../../src/services/ipfsClusterService";
 import { v4 as uuidv4 } from "uuid";
-import { Ijazah, Signature } from "../../../src/models/ijazah";
+import { Ijazah, Signature, SignatureInput } from "../../../src/models/ijazah";
+import path from "path";
 
 dotenv.config();
 
@@ -19,6 +19,10 @@ describe("FabricService", () => {
   let signatureFile: Buffer;
   let photoFile: Buffer;
 
+  const signatureTestFilePath = path.resolve(
+    __dirname,
+    "../../assets/test-signature.png"
+  );
 
   beforeAll(async () => {
     mockUserToken = await fabloService.enrollUser(
@@ -30,23 +34,13 @@ describe("FabricService", () => {
 
     signatureFile = await TestDataGenerator.generateMockSignatureBuffer();
 
-    // Pin signature to IPFS
-    const signatureResult = await ipfsClusterService.add(signatureFile, {
-      filename: `signature_${uuidv4()}.png`,
-      local: false,
-    });
-
-    const signatureCID = signatureResult.cid;
-
-    await ipfsClusterService.pin(signatureCID);
-
     // Mock active signature
     existingSignature = await fabricService.createSignature(
       Organization.AKADEMIK,
       mockUserToken,
       {
-        ID: "signature_test_001",
-        CID: signatureCID,
+        ID: `signature_test_${uuidv4()}_${Date.now()}`,
+        filePath: signatureTestFilePath,
         IsActive: true,
       }
     );
@@ -135,7 +129,7 @@ describe("FabricService", () => {
   describe("updateIjazah", () => {
     it("should update ijazah certificate successfully", async () => {
       // Arrange
-      const updateData = {
+      const updateData: Partial<Ijazah> = {
         nama: "Updated Graduate Name",
         programStudi: "Updated Program",
       };
@@ -173,15 +167,15 @@ describe("FabricService", () => {
     });
 
     it("should throw error when ijazah not found", async () => {
-      jest.spyOn(fabloService, "queryChaincode").mockImplementation(
-        async (org, token, { method, args }) => {
+      jest
+        .spyOn(fabloService, "queryChaincode")
+        .mockImplementation(async (org, token, { method, args }) => {
           if (method === "ReadIjazah" && args[0] === "non-existent-id") {
             return null;
           }
           return "";
-        }
-      );
-    
+        });
+
       await expect(
         fabricService.getIjazah(
           Organization.AKADEMIK,
@@ -189,7 +183,7 @@ describe("FabricService", () => {
           "non-existent-id"
         )
       ).rejects.toThrow("Ijazah not found");
-    });    
+    });
   });
 
   describe("deleteIjazah", () => {
@@ -212,6 +206,7 @@ describe("FabricService", () => {
       it("should create signature successfully", async () => {
         // Arrange
         const signatureData = TestDataGenerator.generateSignatureData();
+        signatureData.filePath = signatureTestFilePath;
 
         // Act
         const result = await fabricService.createSignature(
@@ -223,15 +218,15 @@ describe("FabricService", () => {
         // Assert
         expect(result).toBeDefined();
         expect(result.ID).toBe(signatureData.ID);
-        expect(result.CID).toBe(signatureData.CID);
+        expect(result.filePath).toBe(signatureData.filePath);
       });
     });
 
     describe("updateSignature", () => {
       it("should update signature successfully", async () => {
         // Arrange
-        const updateData = {
-          CID: "QmNewSignatureCID",
+        const updateData: Partial<SignatureInput> = {
+          filePath: signatureTestFilePath,
           IsActive: false,
         };
 
@@ -245,7 +240,7 @@ describe("FabricService", () => {
 
         // Assert
         expect(result).toBeDefined();
-        expect(result.CID).toBe("QmNewSignatureCID");
+        expect(result.filePath).toBe(signatureTestFilePath);
         expect(result.IsActive).toBe(false);
       });
     });

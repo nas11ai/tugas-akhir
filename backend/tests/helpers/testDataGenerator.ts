@@ -1,5 +1,10 @@
 import { IjazahInput, Signature } from "../../src/models/ijazah";
-import { Organization, Role, User, UserCredentials } from "../../src/models/user";
+import {
+  Organization,
+  Role,
+  User,
+  UserCredentials,
+} from "../../src/models/user";
 import * as fs from "fs";
 import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
@@ -78,8 +83,8 @@ export class TestDataGenerator {
 
     return {
       ID: `SIG${randomId.toUpperCase()}`,
-      CID: `Qm${randomId}TestSignatureCID`,
-      IsActive: false,
+      filePath: `test-signature-${randomId}.png`,
+      IsActive: Math.random() > 0.5,
       ...overrides,
     };
   }
@@ -90,9 +95,9 @@ export class TestDataGenerator {
   static async generateMockPhotoBuffer(): Promise<Buffer> {
     const imagePath = path.resolve(__dirname, "../assets/test-photo.png");
     const imageBuffer = await fs.promises.readFile(imagePath);
-  
+
     return imageBuffer;
-  }  
+  }
 
   static async generateMockSignatureBuffer(): Promise<Buffer> {
     const imagePath = path.resolve(__dirname, "../assets/test-signature.png");
