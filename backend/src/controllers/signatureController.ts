@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { validationResult } from "express-validator";
 import { fabricService } from "../services/fabricService";
+import { fileStorageService } from "../services/fileStorageService";
 import { logger } from "../utils/logger";
 import { Organization } from "../models/user";
 import { SignatureInput } from "../models/ijazah";
@@ -62,7 +63,12 @@ export class SignatureController {
       res.status(201).json({
         success: true,
         message: "Signature created successfully",
-        data: newSignature,
+        data: {
+          ...newSignature,
+          signatureUrl: newSignature.filePath
+            ? `/api/files/signatures/${newSignature.filePath}`
+            : null,
+        },
       });
     } catch (error) {
       logger.error("Error in createSignature controller:", error);
@@ -125,18 +131,37 @@ export class SignatureController {
 
       logger.info(`Updating signature with ID: ${id}`);
 
+      const existingSignature = await fabricService.getSignature(
+        req.user.organization as Organization,
+        req.fabricToken,
+        id
+      );
+
+      if (!existingSignature) {
+        res.status(404).json({
+          success: false,
+          message: "Signature not found",
+        });
+        return;
+      }
+
       // Update signature using fabric service
       const updatedSignature = await fabricService.updateSignature(
         req.user.organization as Organization,
         req.fabricToken,
-        id,
+        existingSignature.ID,
         signatureData
       );
 
       res.status(200).json({
         success: true,
         message: "Signature updated successfully",
-        data: updatedSignature,
+        data: {
+          ...updatedSignature,
+          signatureUrl: updatedSignature.filePath
+            ? `/api/files/signatures/${updatedSignature.filePath}`
+            : null,
+        },
       });
     } catch (error) {
       logger.error("Error in updateSignature controller:", error);
@@ -195,7 +220,12 @@ export class SignatureController {
       res.status(200).json({
         success: true,
         message: "Signature retrieved successfully",
-        data: signature,
+        data: {
+          ...signature,
+          signatureUrl: signature.filePath
+            ? `/api/files/signatures/${signature.filePath}`
+            : null,
+        },
       });
     } catch (error) {
       logger.error("Error in getSignature controller:", error);
@@ -240,11 +270,19 @@ export class SignatureController {
         req.fabricToken
       );
 
+      // Add signature URLs to each signature
+      const enrichedSignatures = signatures.map((signature) => ({
+        ...signature,
+        signatureUrl: signature.filePath
+          ? `/api/files/signatures/${signature.filePath}`
+          : null,
+      }));
+
       res.status(200).json({
         success: true,
         message: "Signatures retrieved successfully",
-        data: signatures,
-        count: signatures.length,
+        data: enrichedSignatures,
+        count: enrichedSignatures.length,
       });
     } catch (error) {
       logger.error("Error in getAllSignatures controller:", error);
@@ -285,13 +323,150 @@ export class SignatureController {
       res.status(200).json({
         success: true,
         message: "Active signature retrieved successfully",
-        data: activeSignature,
+        data: {
+          ...activeSignature,
+          signatureUrl: activeSignature.filePath
+            ? `/api/files/signatures/${activeSignature.filePath}`
+            : null,
+        },
       });
     } catch (error) {
       logger.error("Error in getActiveSignature controller:", error);
 
       if (error instanceof Error) {
         res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Internal server error",
+        });
+      }
+    }
+  }
+
+  /**
+   * Upload signature file and create signature record
+   * POST /api/signature/upload
+   */
+  async uploadSignature(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      // Check user authentication and organization
+      if (!req.user) {
+        res.status(401).json({
+          success: false,
+          message: "Authentication required",
+        });
+        return;
+      }
+
+      if (!req.fabricToken) {
+        res.status(401).json({
+          success: false,
+          message: "Fabric token required",
+        });
+        return;
+      }
+
+      // Check if file is uploaded
+      if (!req.file) {
+        res.status(400).json({
+          success: false,
+          message: "Signature file is required",
+        });
+        return;
+      }
+
+      // Get signature metadata from request body
+      const { ID, IsActive } = req.body;
+
+      if (!ID) {
+        res.status(400).json({
+          success: false,
+          message: "Signature ID is required",
+        });
+        return;
+      }
+
+      logger.info(`Uploading signature file for ID: ${ID}`);
+
+      // Generate filename for signature
+      const signatureFileName = fileStorageService.generateFileName(
+        `signature_${ID}`,
+        req.file.originalname
+      );
+
+      // Save signature file to local storage
+      const filePath = await fileStorageService.saveSignature(
+        req.file.buffer,
+        signatureFileName
+      );
+
+      logger.info(`Signature file saved with filename: ${filePath}`);
+
+      // Create signature record in blockchain
+      const signatureData: SignatureInput = {
+        ID,
+        filePath,
+        IsActive: IsActive === "true" || IsActive === true,
+      };
+
+      // Check if signature already exists
+      const existingSignature = await fabricService.getSignature(
+        req.user.organization as Organization,
+        req.fabricToken,
+        ID
+      );
+
+      if (existingSignature) {
+        // Delete old signature file if it exists
+        if (existingSignature.filePath) {
+          await fileStorageService.deleteSignature(existingSignature.filePath);
+        }
+
+        const updatedSignature = await fabricService.updateSignature(
+          req.user.organization as Organization,
+          req.fabricToken,
+          ID,
+          signatureData
+        );
+
+        res.status(200).json({
+          success: true,
+          message: "Signature uploaded and updated successfully",
+          data: {
+            ...updatedSignature,
+            signatureUrl: `/api/files/signatures/${filePath}`,
+          },
+        });
+        return;
+      }
+
+      const newSignature = await fabricService.createSignature(
+        req.user.organization as Organization,
+        req.fabricToken,
+        signatureData
+      );
+
+      res.status(201).json({
+        success: true,
+        message: "Signature uploaded and created successfully",
+        data: {
+          ...newSignature,
+          signatureUrl: `/api/files/signatures/${filePath}`,
+        },
+      });
+    } catch (error) {
+      logger.error("Error in uploadSignature controller:", error);
+
+      if (error instanceof Error) {
+        res.status(400).json({
           success: false,
           message: error.message,
         });
@@ -345,91 +520,15 @@ export class SignatureController {
       res.status(200).json({
         success: true,
         message: "Signature set as active successfully",
-        data: activeSignature,
+        data: {
+          ...activeSignature,
+          signatureUrl: activeSignature.filePath
+            ? `/api/files/signatures/${activeSignature.filePath}`
+            : null,
+        },
       });
     } catch (error) {
       logger.error("Error in setActiveSignature controller:", error);
-
-      if (error instanceof Error) {
-        res.status(400).json({
-          success: false,
-          message: error.message,
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          message: "Internal server error",
-        });
-      }
-    }
-  }
-
-  /**
-   * Deactivate signature
-   * PUT /api/signature/:id/deactivate
-   * Access: REKTOR only
-   */
-  async deactivateSignature(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      // Check user authentication and organization
-      if (!req.user) {
-        res.status(401).json({
-          success: false,
-          message: "Authentication required",
-        });
-        return;
-      }
-
-      if (!req.fabricToken) {
-        res.status(401).json({
-          success: false,
-          message: "Fabric token required",
-        });
-        return;
-      }
-
-      const { id } = req.params;
-
-      logger.info(`Deactivating signature with ID: ${id}`);
-
-      // Check if signature exists
-      const signature = await fabricService.getSignature(
-        req.user.organization as Organization,
-        req.fabricToken,
-        id
-      );
-
-      if (!signature) {
-        res.status(404).json({
-          success: false,
-          message: "Signature not found",
-        });
-        return;
-      }
-
-      // Update signature to set IsActive to false
-      const updatedSignature = await fabricService.updateSignature(
-        req.user.organization as Organization,
-        req.fabricToken,
-        id,
-        {
-          ID: signature.ID,
-          CID: signature.CID,
-          IsActive: false,
-        }
-      );
-
-      res.status(200).json({
-        success: true,
-        message: "Signature deactivated successfully",
-        data: updatedSignature,
-      });
-    } catch (error) {
-      logger.error("Error in deactivateSignature controller:", error);
 
       if (error instanceof Error) {
         res.status(400).json({
@@ -506,18 +605,17 @@ export class SignatureController {
   }
 
   /**
-   * Upload signature file and create signature record
-   * POST /api/signature/upload
-   * Access: REKTOR only
+   * Get signature URL
+   * GET /api/signature/:id/url
+   * Access: All authenticated users
    */
-  async uploadSignature(
+  async getSignatureUrl(
     req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      // Check user authentication and organization
-      if (!req.user) {
+      if (!req.user || !req.fabricToken) {
         res.status(401).json({
           success: false,
           message: "Authentication required",
@@ -525,100 +623,48 @@ export class SignatureController {
         return;
       }
 
-      if (!req.fabricToken) {
-        res.status(401).json({
-          success: false,
-          message: "Fabric token required",
-        });
-        return;
-      }
+      const { id } = req.params;
 
-      // Check if file is uploaded
-      if (!req.file) {
-        res.status(400).json({
-          success: false,
-          message: "Signature file is required",
-        });
-        return;
-      }
-
-      // Get signature metadata from request body
-      const { ID, IsActive } = req.body;
-
-      if (!ID) {
-        res.status(400).json({
-          success: false,
-          message: "Signature ID is required",
-        });
-        return;
-      }
-
-      logger.info(`Uploading signature file for ID: ${ID}`);
-
-      // Upload signature file to IPFS
-      const { ipfsClusterService } = require("../services/ipfsClusterService");
-      const signatureResult = await ipfsClusterService.add(req.file.buffer, {
-        filename: `signature_${ID}.${req.file.originalname.split(".").pop()}`,
-        local: false,
-      });
-
-      // Pin the signature file
-      await ipfsClusterService.pin(signatureResult.cid);
-      logger.info(
-        `Signature file uploaded and pinned with CID: ${signatureResult.cid}`
-      );
-
-      // Create signature record in blockchain
-      const signatureData: SignatureInput = {
-        ID,
-        CID: signatureResult.cid,
-        IsActive: IsActive === "true" || IsActive === true,
-      };
-
-      const existingSignature = await fabricService.getSignature(
+      // Get signature data first
+      const signature = await fabricService.getSignature(
         req.user.organization as Organization,
         req.fabricToken,
-        ID
+        id
       );
 
-      if (existingSignature) {
-        const updatedSignature = await fabricService.updateSignature(
-          req.user.organization as Organization,
-          req.fabricToken,
-          ID,
-          signatureData
-        );
-
-        res.status(200).json({
-          success: true,
-          message: "Signature uploaded and updated successfully",
-          data: {
-            ...updatedSignature,
-            ipfsCID: signatureResult.cid,
-          },
+      if (!signature) {
+        res.status(404).json({
+          success: false,
+          message: "Signature not found",
         });
         return;
       }
 
-      const newSignature = await fabricService.createSignature(
-        req.user.organization as Organization,
-        req.fabricToken,
-        signatureData
-      );
+      if (!signature.filePath) {
+        res.status(404).json({
+          success: false,
+          message: "Signature file not found",
+        });
+        return;
+      }
 
-      res.status(201).json({
+      const signatureUrl = `/api/files/signatures/${signature.filePath}`;
+
+      res.status(200).json({
         success: true,
-        message: "Signature uploaded and created successfully",
+        message: "Signature URL retrieved successfully",
         data: {
-          ...newSignature,
-          ipfsCID: signatureResult.cid,
+          url: signatureUrl,
+          filePath: signature.filePath,
+          signatureId: signature.ID,
+          isActive: signature.IsActive,
         },
       });
     } catch (error) {
-      logger.error("Error in uploadSignature controller:", error);
+      logger.error("Error in getSignatureUrl controller:", error);
 
       if (error instanceof Error) {
-        res.status(400).json({
+        res.status(404).json({
           success: false,
           message: error.message,
         });
@@ -672,13 +718,25 @@ export class SignatureController {
       const activeSignatures = signatures.filter((sig) => sig.IsActive).length;
       const inactiveSignatures = totalSignatures - activeSignatures;
 
+      // Get storage stats for signatures
+      const storageStats = await fileStorageService.getStorageStats();
+
       const stats = {
         total: totalSignatures,
         active: activeSignatures,
         inactive: inactiveSignatures,
+        storageInfo: {
+          fileCount: storageStats.signatures.count,
+          totalSize: storageStats.signatures.totalSize,
+          formattedSize: formatBytes(storageStats.signatures.totalSize),
+        },
         signatures: signatures.map((sig) => ({
           ID: sig.ID,
           IsActive: sig.IsActive,
+          filePath: sig.filePath,
+          signatureUrl: sig.filePath
+            ? `/api/files/signatures/${sig.filePath}`
+            : null,
           CreatedAt: sig.CreatedAt,
           UpdatedAt: sig.UpdatedAt,
         })),
@@ -698,96 +756,21 @@ export class SignatureController {
       });
     }
   }
+}
 
-  /**
-   * Validate signature URL accessibility
-   * POST /api/signature/validate-url
-   * Access: REKTOR only
-   */
-  async validateSignatureUrl(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      // Check user authentication and organization
-      if (!req.user) {
-        res.status(401).json({
-          success: false,
-          message: "Authentication required",
-        });
-        return;
-      }
+/**
+ * Helper function to format bytes
+ */
+function formatBytes(bytes: number, decimals = 2): string {
+  if (bytes === 0) return "0 Bytes";
 
-      const { url } = req.body;
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
 
-      if (!url) {
-        res.status(400).json({
-          success: false,
-          message: "URL is required",
-        });
-        return;
-      }
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-      logger.info(`Validating signature URL: ${url}`);
-
-      // Basic URL validation
-      try {
-        new URL(url);
-      } catch (error) {
-        res.status(400).json({
-          success: false,
-          message: "Invalid URL format",
-        });
-        return;
-      }
-
-      // Try to fetch the URL to check accessibility
-      const fetch = require("node-fetch");
-      try {
-        const response = await fetch(url, { method: "HEAD", timeout: 10000 });
-
-        if (response.ok) {
-          res.status(200).json({
-            success: true,
-            message: "Signature URL is valid and accessible",
-            data: {
-              url,
-              status: response.status,
-              accessible: true,
-            },
-          });
-        } else {
-          res.status(400).json({
-            success: false,
-            message: "Signature URL is not accessible",
-            data: {
-              url,
-              status: response.status,
-              accessible: false,
-            },
-          });
-        }
-      } catch (error) {
-        res.status(400).json({
-          success: false,
-          message: "Failed to access signature URL",
-          data: {
-            url,
-            accessible: false,
-            error: error instanceof Error ? error.message : "Unknown error",
-          },
-        });
-      }
-    } catch (error) {
-      logger.error("Error in validateSignatureUrl controller:", error);
-
-      res.status(500).json({
-        success: false,
-        message: "Internal server error",
-      });
-    }
-  }
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
 }
 
 // Export controller instance
