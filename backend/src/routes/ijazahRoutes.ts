@@ -55,28 +55,6 @@ router.get(
   ijazahController.getIjazah.bind(ijazahController)
 );
 
-/**
- * @route   GET /api/ijazah/:id/validate
- * @desc    Validate ijazah certificate for public verification
- * @access  Public (no authentication required)
- */
-router.get(
-  "/:id/validate",
-  validate(validateIdParam),
-  ijazahController.validateIjazah.bind(ijazahController)
-);
-
-/**
- * @route   GET /api/ijazah/:id/verify
- * @desc    Quick verification check for ijazah certificate
- * @access  Public (no authentication required)
- */
-router.get(
-  "/:id/verify",
-  validate(validateIdParam),
-  ijazahController.verifyIjazah.bind(ijazahController)
-);
-
 // ===== AUTHENTICATED ROUTES (All authenticated users) =====
 
 /**
@@ -89,56 +67,6 @@ router.get(
   authenticate,
   requireFabricToken,
   ijazahController.getAllIjazah.bind(ijazahController)
-);
-
-/**
- * @route   GET /api/ijazah/statuses
- * @desc    Get available status options
- * @access  All authenticated users
- */
-router.get(
-  "/statuses",
-  authenticate,
-  requireFabricToken,
-  ijazahController.getAvailableStatuses.bind(ijazahController)
-);
-
-/**
- * @route   GET /api/ijazah/status/:status
- * @desc    Get ijazah certificates by status
- * @access  All authenticated users
- */
-router.get(
-  "/status/:status",
-  authenticate,
-  requireFabricToken,
-  ijazahController.getIjazahByStatus.bind(ijazahController)
-);
-
-/**
- * @route   GET /api/ijazah/:id/certificate
- * @desc    Get download URL for certificate PDF
- * @access  All authenticated users
- */
-router.get(
-  "/:id/certificate",
-  authenticate,
-  requireFabricToken,
-  validate(validateIdParam),
-  ijazahController.getCertificateDownloadUrl.bind(ijazahController)
-);
-
-/**
- * @route   GET /api/ijazah/:id/photo
- * @desc    Get download URL for student photo
- * @access  All authenticated users
- */
-router.get(
-  "/:id/photo",
-  authenticate,
-  requireFabricToken,
-  validate(validateIdParam),
-  ijazahController.getPhotoDownloadUrl.bind(ijazahController)
 );
 
 // ===== AKADEMIK ONLY ROUTES =====
@@ -200,107 +128,6 @@ router.delete(
   requireOrganization([Organization.AKADEMIK]),
   validate(validateIdParam),
   ijazahController.deleteIjazah.bind(ijazahController)
-);
-
-// ===== REKTOR & AKADEMIK ROUTES =====
-
-/**
- * @route   GET /api/ijazah/pending
- * @desc    Get pending ijazah certificates awaiting rector approval
- * @access  REKTOR & AKADEMIK
- */
-router.get(
-  "/pending",
-  authenticate,
-  requireFabricToken,
-  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
-  ijazahController.getPendingIjazah.bind(ijazahController)
-);
-
-/**
- * @route   PUT /api/ijazah/:id/approve
- * @desc    Approve ijazah certificate with rector signature
- * @access  REKTOR & AKADEMIK
- */
-router.put(
-  "/:id/approve",
-  authenticate,
-  requireFabricToken,
-  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
-  validate(validateIdParam),
-  ijazahController.approveIjazah.bind(ijazahController)
-);
-
-/**
- * @route   PUT /api/ijazah/:id/reject
- * @desc    Reject ijazah certificate
- * @access  REKTOR & AKADEMIK
- */
-router.put(
-  "/:id/reject",
-  authenticate,
-  requireFabricToken,
-  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
-  validate(validateIdParam),
-  validate(validateRejectionReason),
-  ijazahController.rejectIjazah.bind(ijazahController)
-);
-
-/**
- * @route   PUT /api/ijazah/:id/activate
- * @desc    Activate approved ijazah certificate
- * @access  REKTOR & AKADEMIK
- */
-router.put(
-  "/:id/activate",
-  authenticate,
-  requireFabricToken,
-  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
-  validate(validateIdParam),
-  ijazahController.activateIjazah.bind(ijazahController)
-);
-
-/**
- * @route   PUT /api/ijazah/:id/regenerate
- * @desc    Regenerate certificate PDF with current or specified signature
- * @access  REKTOR & AKADEMIK
- */
-router.put(
-  "/:id/regenerate",
-  authenticate,
-  requireFabricToken,
-  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
-  validate(validateIdParam),
-  ijazahController.regenerateCertificate.bind(ijazahController)
-);
-
-/**
- * @route   PUT /api/ijazah/:id/status
- * @desc    Update ijazah status
- * @access  REKTOR & AKADEMIK (for approval/rejection), AKADEMIK for other status changes
- */
-router.put(
-  "/:id/status",
-  authenticate,
-  requireFabricToken,
-  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]), // Only REKTOR can change status as per fabricService
-  validate(validateIdParam),
-  validate(validateStatusUpdate),
-  ijazahController.updateIjazahStatus.bind(ijazahController)
-);
-
-/**
- * @route   POST /api/ijazah/bulk-approve
- * @desc    Bulk approve multiple ijazah certificates
- * @access  REKTOR & AKADEMIK
- */
-router.post(
-  "/bulk-approve",
-  authenticate,
-  requireFabricToken,
-  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
-  validate(validateBulkIds),
-  ijazahController.bulkApproveIjazah.bind(ijazahController)
 );
 
 export default router;
