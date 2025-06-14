@@ -756,6 +756,86 @@ export class SignatureController {
       });
     }
   }
+
+  /**
+   * Deactivate signature
+   * PUT /api/signature/:id/deactivate
+   */
+  async deactivateSignature(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      // Check user authentication and organization
+      if (!req.user) {
+        res.status(401).json({
+          success: false,
+          message: "Authentication required",
+        });
+        return;
+      }
+
+      if (!req.fabricToken) {
+        res.status(401).json({
+          success: false,
+          message: "Fabric token required",
+        });
+        return;
+      }
+
+      const { id } = req.params;
+
+      logger.info(`Deactivating signature with ID: ${id}`);
+
+      // Check if signature exists
+      const signature = await fabricService.getSignature(
+        req.user.organization as Organization,
+        req.fabricToken,
+        id
+      );
+
+      if (!signature) {
+        res.status(404).json({
+          success: false,
+          message: "Signature not found",
+        });
+        return;
+      }
+
+      // Update signature to set IsActive to false
+      const updatedSignature = await fabricService.updateSignature(
+        req.user.organization as Organization,
+        req.fabricToken,
+        id,
+        {
+          ID: signature.ID,
+          filePath: signature.filePath,
+          IsActive: false,
+        }
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Signature deactivated successfully",
+        data: updatedSignature,
+      });
+    } catch (error) {
+      logger.error("Error in deactivateSignature controller:", error);
+
+      if (error instanceof Error) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Internal server error",
+        });
+      }
+    }
+  }
 }
 
 /**

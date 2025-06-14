@@ -11,7 +11,6 @@ import {
   validateIdParam,
   validateCreateSignature,
   validateUpdateSignature,
-  validateUrl,
 } from "../middlewares/validation";
 import { Organization } from "../models/user";
 
@@ -176,20 +175,6 @@ router.get(
   requireFabricToken,
   requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   signatureController.getSignatureStats.bind(signatureController)
-);
-
-/**
- * @route   POST /api/signature/validate-url
- * @desc    Validate signature URL accessibility
- * @access  REKTOR only
- */
-router.post(
-  "/validate-url",
-  authenticate,
-  requireFabricToken,
-  requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
-  validate(validateUrl),
-  signatureController.validateSignatureUrl.bind(signatureController)
 );
 
 export default router;
