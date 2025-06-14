@@ -8,6 +8,8 @@ import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
 import { Ijazah, Signature, SignatureInput } from "../../../src/models/ijazah";
 import path from "path";
+import { fileStorageService } from "../../../src/services/fileStorageService";
+import { logger } from "../../../src/utils/logger";
 
 dotenv.config();
 
@@ -18,6 +20,7 @@ describe("FabricService", () => {
   let existingSignature: Signature;
   let signatureFile: Buffer;
   let photoFile: Buffer;
+  let savedSignatureFilename: string;
 
   const signatureTestFilePath = path.resolve(
     __dirname,
@@ -34,16 +37,23 @@ describe("FabricService", () => {
 
     signatureFile = await TestDataGenerator.generateMockSignatureBuffer();
 
+    savedSignatureFilename = await fileStorageService.saveSignature(
+      signatureFile,
+      fileStorageService.generateFileName("test_signature", "test-signature.png")
+    );
+
     // Mock active signature
     existingSignature = await fabricService.createSignature(
       Organization.AKADEMIK,
       mockUserToken,
       {
         ID: `signature_test_${uuidv4()}_${Date.now()}`,
-        filePath: signatureTestFilePath,
+        filePath: savedSignatureFilename,
         IsActive: true,
       }
     );
+
+    logger.debug(`Signature data: ${JSON.stringify(existingSignature)}`);
 
     const ijazahData = TestDataGenerator.generateIjazahData();
     photoFile = await TestDataGenerator.generateMockPhotoBuffer();
@@ -120,7 +130,8 @@ describe("FabricService", () => {
         fabricService.createIjazah(
           Organization.AKADEMIK,
           mockUserToken,
-          ijazahData
+          ijazahData,
+          photoFile
         )
       ).rejects.toThrow("Photo is required");
     });
@@ -206,7 +217,14 @@ describe("FabricService", () => {
       it("should create signature successfully", async () => {
         // Arrange
         const signatureData = TestDataGenerator.generateSignatureData();
-        signatureData.filePath = signatureTestFilePath;
+
+        // Save signature file first
+        const newSignatureFilename = await fileStorageService.saveSignature(
+          signatureFile,
+          fileStorageService.generateFileName("new_test_signature", "new-signature.png")
+        );
+
+        signatureData.filePath = newSignatureFilename; // Use the saved filename
 
         // Act
         const result = await fabricService.createSignature(

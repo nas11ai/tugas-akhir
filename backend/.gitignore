@@ -5,6 +5,7 @@ src/configs/serviceAccountKey.json
 src/configs/template.pdf
 src/configs/mahasiswa.json
 tests/assets/
+uploads/
 package-lock.json
 .env
 .env.test

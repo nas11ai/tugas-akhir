@@ -38,6 +38,30 @@ export class FileStorageService {
   }
 
   /**
+   * Resolve file path - handles both absolute paths and relative filenames
+   */
+  private resolveSignaturePath(fileNameOrPath: string): string {
+    // If it's an absolute path, use it directly
+    if (path.isAbsolute(fileNameOrPath)) {
+      return fileNameOrPath;
+    }
+    // Otherwise, treat it as a filename relative to signatures directory
+    return path.join(this.signaturesDir, fileNameOrPath);
+  }
+
+  /**
+   * Resolve photo path - handles both absolute paths and relative filenames
+   */
+  private resolvePhotoPath(fileNameOrPath: string): string {
+    // If it's an absolute path, use it directly
+    if (path.isAbsolute(fileNameOrPath)) {
+      return fileNameOrPath;
+    }
+    // Otherwise, treat it as a filename relative to photos directory
+    return path.join(this.photosDir, fileNameOrPath);
+  }
+
+  /**
    * Save photo file locally
    */
   async savePhoto(buffer: Buffer, fileName: string): Promise<string> {
@@ -84,42 +108,42 @@ export class FileStorageService {
   /**
    * Get photo file
    */
-  async getPhoto(fileName: string): Promise<Buffer> {
+  async getPhoto(fileNameOrPath: string): Promise<Buffer> {
     try {
-      const photoPath = path.join(this.photosDir, fileName);
+      const photoPath = this.resolvePhotoPath(fileNameOrPath);
       const buffer = await fs.readFile(photoPath);
       return buffer;
     } catch (error) {
-      logger.error(`Failed to get photo ${fileName}:`, error);
-      throw new Error(`Photo not found: ${fileName}`);
+      logger.error(`Failed to get photo ${fileNameOrPath}:`, error);
+      throw new Error(`Photo not found: ${fileNameOrPath}`);
     }
   }
 
   /**
    * Get signature file
    */
-  async getSignature(fileName: string): Promise<Buffer> {
+  async getSignature(fileNameOrPath: string): Promise<Buffer> {
     try {
-      const signaturePath = path.join(this.signaturesDir, fileName);
+      const signaturePath = this.resolveSignaturePath(fileNameOrPath);
       const buffer = await fs.readFile(signaturePath);
       return buffer;
     } catch (error) {
-      logger.error(`Failed to get signature ${fileName}:`, error);
-      throw new Error(`Signature not found: ${fileName}`);
+      logger.error(`Failed to get signature ${fileNameOrPath}:`, error);
+      throw new Error(`Signature not found: ${fileNameOrPath}`);
     }
   }
 
   /**
    * Delete photo file
    */
-  async deletePhoto(fileName: string): Promise<boolean> {
+  async deletePhoto(fileNameOrPath: string): Promise<boolean> {
     try {
-      const photoPath = path.join(this.photosDir, fileName);
+      const photoPath = this.resolvePhotoPath(fileNameOrPath);
       await fs.unlink(photoPath);
-      logger.info(`Photo deleted: ${fileName}`);
+      logger.info(`Photo deleted: ${fileNameOrPath}`);
       return true;
     } catch (error) {
-      logger.warn(`Failed to delete photo ${fileName}:`, error);
+      logger.warn(`Failed to delete photo ${fileNameOrPath}:`, error);
       return false;
     }
   }
@@ -127,14 +151,14 @@ export class FileStorageService {
   /**
    * Delete signature file
    */
-  async deleteSignature(fileName: string): Promise<boolean> {
+  async deleteSignature(fileNameOrPath: string): Promise<boolean> {
     try {
-      const signaturePath = path.join(this.signaturesDir, fileName);
+      const signaturePath = this.resolveSignaturePath(fileNameOrPath);
       await fs.unlink(signaturePath);
-      logger.info(`Signature deleted: ${fileName}`);
+      logger.info(`Signature deleted: ${fileNameOrPath}`);
       return true;
     } catch (error) {
-      logger.warn(`Failed to delete signature ${fileName}:`, error);
+      logger.warn(`Failed to delete signature ${fileNameOrPath}:`, error);
       return false;
     }
   }
@@ -142,9 +166,9 @@ export class FileStorageService {
   /**
    * Check if photo exists
    */
-  async photoExists(fileName: string): Promise<boolean> {
+  async photoExists(fileNameOrPath: string): Promise<boolean> {
     try {
-      const photoPath = path.join(this.photosDir, fileName);
+      const photoPath = this.resolvePhotoPath(fileNameOrPath);
       await fs.access(photoPath);
       return true;
     } catch {
@@ -155,9 +179,9 @@ export class FileStorageService {
   /**
    * Check if signature exists
    */
-  async signatureExists(fileName: string): Promise<boolean> {
+  async signatureExists(fileNameOrPath: string): Promise<boolean> {
     try {
-      const signaturePath = path.join(this.signaturesDir, fileName);
+      const signaturePath = this.resolveSignaturePath(fileNameOrPath);
       await fs.access(signaturePath);
       return true;
     } catch {
@@ -177,15 +201,15 @@ export class FileStorageService {
   /**
    * Get photo full path
    */
-  getPhotoPath(fileName: string): string {
-    return path.join(this.photosDir, fileName);
+  getPhotoPath(fileNameOrPath: string): string {
+    return this.resolvePhotoPath(fileNameOrPath);
   }
 
   /**
    * Get signature full path
    */
-  getSignaturePath(fileName: string): string {
-    return path.join(this.signaturesDir, fileName);
+  getSignaturePath(fileNameOrPath: string): string {
+    return this.resolveSignaturePath(fileNameOrPath);
   }
 
   /**
