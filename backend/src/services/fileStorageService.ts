@@ -12,13 +12,11 @@ export class FileStorageService {
   private readonly photosDir: string;
   private readonly signaturesDir: string;
 
-  constructor() {
-    // Define storage directories
-    this.uploadsDir = path.join(process.cwd(), "uploads");
+  constructor(baseDir: string = path.join(process.cwd(), "uploads")) {
+    this.uploadsDir = baseDir;
     this.photosDir = path.join(this.uploadsDir, "photos");
     this.signaturesDir = path.join(this.uploadsDir, "signatures");
 
-    // Initialize directories
     this.initializeDirectories();
   }
 
