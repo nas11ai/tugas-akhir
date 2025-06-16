@@ -339,7 +339,7 @@ const photoFile = ref<File | null>(null)
 
 // Computed property to check if there's existing photo
 const hasExistingPhoto = computed(() => {
-  return props.editData?.photoCID || false
+  return props.editData?.photoPath || false
 })
 
 // Form data interface

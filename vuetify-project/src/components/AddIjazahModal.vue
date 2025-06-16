@@ -362,7 +362,8 @@ const formData = ref<IjazahInput>({
   tanggalIjazahDiberikan: '',
   ipfsCID: '',
   signatureID: '',
-  photoCID: '',
+  Status: '',
+  photoCID: undefined
 })
 
 const nimRules = [
@@ -647,6 +648,7 @@ const resetForm = () => {
     ipfsCID: '',
     signatureID: '',
     photoCID: '',
+    Status: '',
   }
 
   valid.value = false
@@ -692,10 +694,11 @@ const submitForm = async () => {
       jenisPendidikan: formData.value.jenisPendidikan,
       gelarPendidikan: formData.value.gelarPendidikan,
       akreditasiProgramStudi: formData.value.akreditasiProgramStudi,
-      keputusanAkreditasiProgramStudi:
-        formData.value.keputusanAkreditasiProgramStudi,
+      keputusanAkreditasiProgramStudi: formData.value.keputusanAkreditasiProgramStudi,
       tempatIjazahDiberikan: formData.value.tempatIjazahDiberikan,
       tanggalIjazahDiberikan: formData.value.tanggalIjazahDiberikan,
+      Status: '',
+      photoCID: undefined
     }
 
     // Add optional fields only if they have values

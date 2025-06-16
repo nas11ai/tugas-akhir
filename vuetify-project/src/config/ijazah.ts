@@ -47,6 +47,7 @@ export interface Mahasiswa {
 }
 
 export interface IjazahInput extends Mahasiswa {
+  photoCID: unknown
   ipfsCID?: string // IPFS Content Identifier for certificate PDF
   signatureID?: string // Reference to the active signature
   photoPath?: string // Local file path for student photo
