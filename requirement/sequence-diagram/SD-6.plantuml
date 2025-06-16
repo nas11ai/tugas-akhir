@@ -1,42 +1,74 @@
 @startuml SD-6
+!theme plain
+title Sequence Diagram - Mengakses Halaman Tanda Tangan Rektor oleh Akademik
 
-title Detail Sertifikat Ijazah
+skinparam sequenceGroupBackgroundColor #E8F5E8
+skinparam sequenceLifeLineBackgroundColor #F0F8FF
 
-actor       Akademik                      as user
-boundary    "Antarmuka Web"               as ui
-control     API                           as api
-entity      "Hyperledger Fabric"          as fabric
-entity      IPFS                          as ipfs
+actor Akademik
+participant "Antarmuka Web" as Web
+participant "API" as API
+participant "Hyperledger Fabric" as HLF
 
-user -> ui : Akses halaman permintaan sertifikat ijazah
-ui -> api : GET request
-api -> fabric: Query data
-fabric -> api: Data permintaan
-api -> ui: Data permintaan
-ui -> user: Tampilkan permintaan
+== Mengakses Halaman Tanda Tangan Rektor ==
+Akademik -> Web: Mengakses halaman tanda tangan rektor
+activate Web
 
-user -> ui : Menekan tombol detail sertifikat ijazah
-ui -> api : GET request
-api -> fabric: Query chaincode
+Web -> API: Melakukan get request semua data tanda tangan rektor
+activate API
 
-alt#Gold #LightBlue ID valid di Hyperledger Fabric
-    fabric -> api: ID sertifikat ijazah
-    api -> ipfs: GET request
+API -> HLF: Melakukan query chaincode
+activate HLF
 
-    alt#Gold #LightBlue ID valid di IPFS
-        ipfs -> api: Mengirimkan file sertifikat ijazah
-        api -> ui: Mengirimkan file sertifikat ijazah
-        ui -> user: Menampilkan file sertifikat ijazah
-    else #Pink ID tidak valid di IPFS
-        fabric -> api: Mengirim pesan error
-        api -> ui: Mengirim pesan error
-        ui -> user: Menampilkan pesan error
+HLF -> API: Mengirim data
+deactivate HLF
+
+API -> Web: Mengirim data
+deactivate API
+
+Web -> Akademik: Menampilkan data
+deactivate Web
+
+== Menekan Tombol Lihat Tanda Tangan Rektor ==
+Akademik -> Web: Menekan tombol lihat tanda tangan rektor
+activate Web
+
+Web -> API: Melakukan get request by ID data tanda tangan rektor
+activate API
+
+API -> HLF: Melakukan query chaincode data tanda tangan rektor berdasarkan ID
+activate HLF
+
+alt #lightgreen ID Valid
+    HLF -> API: Mengirim detail data tanda tangan rektor
+    deactivate HLF
+    
+    API -> API: Cek lokasi file tanda tangan rektor
+    
+    alt #lightgreen File Ada
+        API -> Web: Mengirim file dan detail data tanda tangan rektor
+        deactivate API
+        
+        Web -> Akademik: Menampilkan file dan detail data tanda tangan rektor
+        deactivate Web
+        
+    else #lightcoral File Tidak Ada
+        API -> Web: Mengirim pesan error
+        deactivate API
+        
+        Web -> Akademik: Menampilkan pesan error
+        deactivate Web
     end
-
-else #Pink ID tidak valid di Hyperledger Fabric
-    fabric -> api: Mengirim pesan error
-    api -> ui: Mengirim pesan error
-    ui -> user: Menampilkan pesan error
+    
+else #lightcoral ID Tidak Valid
+    HLF -> API: Mengirim pesan error
+    deactivate HLF
+    
+    API -> Web: Mengirim pesan error
+    deactivate API
+    
+    Web -> Akademik: Menampilkan pesan error
+    deactivate Web
 end
 
 @enduml

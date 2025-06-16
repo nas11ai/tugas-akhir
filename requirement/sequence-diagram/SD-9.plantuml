@@ -1,6 +1,6 @@
-@startuml SD-5
+@startuml SD-9
 !theme plain
-title Sequence Diagram - Hapus Sertifikat Ijazah oleh Akademik
+title Sequence Diagram - Hapus Tanda Tangan Rektor oleh Akademik
 
 skinparam sequenceGroupBackgroundColor #E8F5E8
 skinparam sequenceLifeLineBackgroundColor #F0F8FF
@@ -10,17 +10,17 @@ participant "Antarmuka Web" as Web
 participant "API" as API
 participant "Hyperledger Fabric" as HLF
 
-== Submit Data Request untuk Hapus Sertifikat Ijazah ==
-Akademik -> Web: Submit data request untuk hapus sertifikat ijazah
+== Submit Data Request untuk Hapus Tanda Tangan Rektor ==
+Akademik -> Web: Submit data request untuk hapus tanda tangan rektor
 activate Web
 
 Web -> API: Mengirim request
 activate API
 
-API -> API: Melakukan pengecekan sertifikat ijazah
+API -> API: Melakukan pengecekan tanda tangan rektor
 
-alt #lightgreen Sertifikat Ijazah Ada
-    API -> HLF: Melakukan invoke chaincode untuk menghapus data sertifikat ijazah
+alt #lightgreen Tanda Tangan Rektor Ada
+    API -> HLF: Melakukan invoke chaincode untuk menghapus data tanda tangan rektor
     activate HLF
     
     alt #lightgreen Invoke Berhasil
@@ -44,7 +44,7 @@ alt #lightgreen Sertifikat Ijazah Ada
         deactivate Web
     end
     
-else #lightcoral Sertifikat Ijazah Tidak Ada
+else #lightcoral Tanda Tangan Rektor Tidak Ada
     API -> Web: Menampilkan pesan error
     deactivate API
     

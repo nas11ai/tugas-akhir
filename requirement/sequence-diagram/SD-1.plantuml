@@ -1,35 +1,55 @@
 @startuml SD-1
+!theme plain
+title Sequence Diagram - Verifikasi Sertifikat Ijazah oleh User
 
-title Cari Sertifikat Ijazah
+skinparam sequenceGroupBackgroundColor #E8F5E8
+skinparam sequenceLifeLineBackgroundColor #F0F8FF
 
-actor       User                        as user
-boundary    "Antarmuka Web"             as ui
-control     API                         as api
-entity      "Hyperledger Fabric"        as fabric
-entity      IPFS                        as ipfs
+actor User
+participant "Antarmuka Web" as Web
+participant "API" as API
+participant "Hyperledger Fabric" as HLF
 
-user -> ui : Input ID sertifikat ijazah
-ui -> api : //GET request by ID//
-api -> fabric: //Query chaincode by ID//
+== Submit Data Request untuk Cari Sertifikat Ijazah ==
+User -> Web: Submit data request untuk cari sertifikat ijazah di halaman utama
+activate Web
 
-alt#Gold #LightBlue ID valid di Hyperleder Fabric
-    fabric -> api: Mengirim pesan ID valid
-    api -> ipfs: //GET request by ID//
+Web -> API: Mengirim request
+activate API
 
-    alt#Gold #LightBlue ID valid di IPFS
-       ipfs -> api: Mengirim file sertifikat ijazah
-       api -> ui: Mengirim file sertifikat ijazah
-       ui -> user: Menampilkan file sertifikat ijazah
-    else #Pink ID tidak valid di IPFS
-        ipfs -> api: Mengirim pesan error
-        api -> ui: Mengirim pesan error
-        ui -> user: Menampilkan pesan error
+API -> API: Melakukan pengecekan sertifikat ijazah
+
+alt #lightgreen Sertifikat Ijazah Ada
+    API -> HLF: Melakukan query chaincode untuk mengambil data sertifikat ijazah
+    activate HLF
+    
+    alt #lightgreen Query Berhasil
+        HLF -> API: Mengirim data sertifikat ijazah
+        deactivate HLF
+        
+        API -> Web: Mengirim data sertifikat ijazah
+        deactivate API
+        
+        Web -> User: Menampilkan sebagian data sertifikat ijazah untuk menjaga privasi
+        deactivate Web
+        
+    else #lightcoral Query Gagal
+        HLF -> API: Mengirim pesan error
+        deactivate HLF
+        
+        API -> Web: Mengirim pesan error
+        deactivate API
+        
+        Web -> User: Menampilkan pesan error
+        deactivate Web
     end
-
-else #Pink ID tidak valid di Hyperledger Fabric
-    fabric -> api: Mengirim pesan error
-    api -> ui: Mengirim pesan error
-    ui -> user: Menampilkan pesan error
+    
+else #lightcoral Sertifikat Ijazah Tidak Ada
+    API -> Web: Menampilkan pesan error
+    deactivate API
+    
+    Web -> User: Menampilkan pesan error
+    deactivate Web
 end
 
 @enduml

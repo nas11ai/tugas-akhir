@@ -1,0 +1,68 @@
+@startuml SD-8
+!theme plain
+title Sequence Diagram - Submit Data untuk Ubah Tanda Tangan Rektor oleh Akademik
+
+skinparam sequenceGroupBackgroundColor #E8F5E8
+skinparam sequenceLifeLineBackgroundColor #F0F8FF
+
+actor Akademik
+participant "Antarmuka Web" as Web
+participant "API" as API
+participant "Hyperledger Fabric" as HLF
+
+== Submit Data untuk Ubah Tanda Tangan Rektor ==
+Akademik -> Web: Submit data untuk ubah tanda tangan rektor
+activate Web
+
+Web -> API: Mengirim request
+activate API
+
+API -> API: Pengecekan ada request file?
+
+alt #lightgreen Ada Request File
+    API -> API: Menyimpan file tanda tangan rektor baru
+    
+    alt #lightgreen Unggah File Berhasil
+        API -> API: Menyimpan sementara lokasi file tanda tangan rektor
+        
+        API -> HLF: Melakukan invoke chaincode untuk data tanda tangan rektor baru\nmenggunakan data request dan lokasi file tanda tangan rektor
+        activate HLF
+        
+        alt #lightgreen Invoke Berhasil
+            HLF -> API: Mengirim pesan berhasil
+            deactivate HLF
+            
+            API -> Web: Mengirim pesan berhasil
+            deactivate API
+            
+            Web -> Akademik: Menampilkan pesan berhasil
+            deactivate Web
+            
+        else #lightcoral Invoke Gagal
+            HLF -> API: Mengirim pesan error
+            deactivate HLF
+            
+            API -> Web: Mengirim pesan error
+            deactivate API
+            
+            Web -> Akademik: Menampilkan pesan error
+            deactivate Web
+        end
+        
+    else #lightcoral Unggah File Gagal
+        API -> Web: Mengirim pesan error
+        deactivate API
+        
+        Web -> Akademik: Menampilkan pesan error
+        deactivate Web
+    end
+    
+else #lightcoral Tidak Ada Request File
+    API -> Web: Mengirim pesan error
+    deactivate API
+    
+    Web -> Akademik: Menampilkan pesan error
+    deactivate Web
+end
+
+@enduml

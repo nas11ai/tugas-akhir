@@ -1,46 +1,82 @@
 @startuml SD-2
+!theme plain
+title Sequence Diagram - Lihat Sertifikat Ijazah oleh Akademik
 
-title Proses Tanda Tangan Sertifikat Ijazah
+skinparam sequenceGroupBackgroundColor #E8F5E8
+skinparam sequenceLifeLineBackgroundColor #F0F8FF
 
-actor       Rektor                        as user
-boundary    "Antarmuka Web"             as ui
-control     API                         as api
-entity      "Hyperledger Fabric"        as fabric
-entity      IPFS                        as ipfs
+actor Akademik
+participant "Antarmuka Web" as Web
+participant "API" as API
+participant "Hyperledger Fabric" as HLF
+participant "IPFS" as IPFS
 
-user -> ui : Akses halaman permintaan tanda tangan
-ui -> api : GET request
-api -> fabric: Query data
-fabric -> api: Data permintaan
-api -> ui: Data permintaan
-ui -> user: Tampilkan permintaan
+== Mengakses Halaman Ijazah ==
+Akademik -> Web: Mengakses halaman ijazah
+activate Web
 
-user -> ui : Akses detail permintaan
-ui -> api : GET request
-api -> fabric: Query data
-fabric -> api: Data detail
-api -> ui: Data detail
-ui -> user: Tampilkan detail
+Web -> API: GET request semua data ijazah yang aktif
+activate API
 
-alt#Gold #LightBlue Data valid
-    user -> ui: Tandatangani sertifikat ijazah
-    ui -> api: PUT request
-    api -> ipfs: POST request
-    ipfs -> ipfs: Simpan sertifikat ijazah
-    ipfs -> api: ID sertifikat ijazah
-    api -> fabric: Invoke chaincode
-    fabric -> fabric: Simpan ID sertifikat ijazah
-    fabric -> api: Sukses simpan data
-    api -> ui: Sukses simpan data
-    ui -> user: Tampilkan pesan sukses
-else #Pink Data tidak valid
-    user -> ui: Tolak tanda tangan
-    ui -> api: PUT request
-    api -> fabric: Invoke chaincode
-    fabric -> fabric: Simpan status sertifikat ijazah tidak valid
-    fabric -> api: Sukses simpan data
-    api -> ui: Sukses simpan data
-    ui -> user: Tampilkan pesan sukses
+API -> HLF: Query chaincode
+activate HLF
+
+HLF -> API: Mengirim data ijazah
+deactivate HLF
+
+API -> Web: Mengirim data
+deactivate API
+
+Web -> Akademik: Menampilkan data
+deactivate Web
+
+== Melihat Detail Sertifikat Ijazah ==
+Akademik -> Web: Menekan tombol lihat detail sertifikat ijazah
+activate Web
+
+Web -> API: GET request by ID data ijazah
+activate API
+
+API -> HLF: Query chaincode data ijazah berdasarkan ID
+activate HLF
+
+alt #lightgreen ID Valid
+    HLF -> API: Mengirim detail data sertifikat ijazah
+    deactivate HLF
+    
+    API -> IPFS: GET request untuk mendapatkan file sertifikat ijazah
+    activate IPFS
+    
+    alt #lightgreen File Ada
+        IPFS -> API: Mengirim file sertifikat ijazah
+        deactivate IPFS
+        
+        API -> Web: Mengirim file dan detail data sertifikat ijazah
+        deactivate API
+        
+        Web -> Akademik: Menampilkan file dan detail data sertifikat ijazah
+        deactivate Web
+        
+    else #lightcoral File Tidak Ada
+        IPFS -> API: Mengirim pesan error
+        deactivate IPFS
+        
+        API -> Web: Mengirim pesan error
+        deactivate API
+        
+        Web -> Akademik: Menampilkan pesan error
+        deactivate Web
+    end
+    
+else #lightcoral ID Tidak Valid
+    HLF -> API: Mengirim pesan error
+    deactivate HLF
+    
+    API -> Web: Mengirim pesan error
+    deactivate API
+    
+    Web -> Akademik: Menampilkan pesan error
+    deactivate Web
 end
 
 @enduml

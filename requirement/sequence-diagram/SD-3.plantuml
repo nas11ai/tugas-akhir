@@ -1,43 +1,118 @@
 @startuml SD-3
+!theme plain
+title Sequence Diagram - Submit Data Sertifikat Ijazah Baru oleh Akademik
 
-title Proses Pembuatan Sertifikat Ijazah
+skinparam sequenceGroupBackgroundColor #E8F5E8
+skinparam sequenceLifeLineBackgroundColor #F0F8FF
 
-actor       Akademik                      as user
-boundary    "Antarmuka Web"               as ui
-control     API                           as api
-entity      "Hyperledger Fabric"          as fabric
+actor Akademik
+participant "Antarmuka Web" as Web
+participant "API" as API
+participant "Hyperledger Fabric" as HLF
+participant "IPFS" as IPFS
 
-user -> ui : Akses halaman permintaan sertifikat ijazah
-ui -> api : GET request
-api -> fabric: Query data
-fabric -> api: Data permintaan
-api -> ui: Data permintaan
-ui -> user: Tampilkan permintaan
+== Submit Data Sertifikat Ijazah Baru ==
+Akademik -> Web: Submit data sertifikat ijazah baru
+activate Web
 
-user -> ui : Menekan tombol tambah sertifikat ijazah
-ui -> user: Menampilkan form
-user -> ui: Mengisi form
-user-> ui: Menekan tombol submit
-ui -> api : POST request
+Web -> API: Mengirim request
+activate API
 
-alt#Gold #LightBlue Request valid
-    api -> fabric: Invoke chaincode
+API -> HLF: Melakukan query chaincode untuk mengecek data sertifikat berdasarkan rektor aktif
+activate HLF
 
-    alt#Gold #LightBlue Request valid
-        fabric -> fabric: Simpan data
-        fabric -> api: Sukses simpan data
-        api -> api: Request tanda tangan rektor
-        api -> ui: Sukses membuat permintaan sertifikat ijazah
-        ui -> user: Menampilkan pesan sukses
-    else #Pink Data tidak valid
-        fabric -> api: Mengirim pesan error
-        api -> ui: Mengirim pesan error
-        ui -> user: Menampilkan pesan error
+alt #lightgreen Query Berhasil
+    HLF -> API: Mengirim data rektor aktif
+    deactivate HLF
+    
+    API -> API: Validasi lokasi file tanda tangan rektor
+    
+    alt #lightgreen Lokasi File Valid
+        API -> API: Menyimpan sementara lokasi file tanda tangan rektor
+        
+        API -> API: Menyimpan file foto mahasiswa dan request
+        
+        alt #lightgreen Foto Berhasil Disimpan
+            API -> API: Menyimpan sementara lokasi file foto untuk membuat sertifikat ijazah
+            
+            API -> API: Membuat file sertifikat ijazah berdasarkan sekolah mahasiswa, foto, tanda tangan rektor, dan data request
+            
+            alt #lightgreen Berhasil Membuat File Sertifikat
+                API -> IPFS: Upload file sertifikat ijazah
+                activate IPFS
+                
+                alt #lightgreen Upload File Berhasil
+                    IPFS -> API: Mengirim CID file sertifikat ijazah
+                    deactivate IPFS
+                    
+                    API -> HLF: Melakukan invoke chaincode untuk menyimpan data menggunakan request dan CID file sertifikat ijazah
+                    activate HLF
+                    
+                    alt #lightgreen Invoke Berhasil
+                        HLF -> API: Mengirim pesan berhasil
+                        deactivate HLF
+                        
+                        API -> Web: Mengirim pesan berhasil
+                        deactivate API
+                        
+                        Web -> Akademik: Menampilkan pesan berhasil
+                        deactivate Web
+                        
+                    else #lightcoral Invoke Gagal
+                        HLF -> API: Mengirim pesan error
+                        deactivate HLF
+                        
+                        API -> Web: Mengirim pesan error
+                        deactivate API
+                        
+                        Web -> Akademik: Menampilkan pesan error
+                        deactivate Web
+                    end
+                    
+                else #lightcoral Upload File Gagal
+                    IPFS -> API: Mengirim pesan error
+                    deactivate IPFS
+                    
+                    API -> Web: Mengirim pesan error
+                    deactivate API
+                    
+                    Web -> Akademik: Menampilkan pesan error
+                    deactivate Web
+                end
+                
+            else #lightcoral Gagal Membuat File Sertifikat
+                API -> Web: Mengirim pesan error
+                deactivate API
+                
+                Web -> Akademik: Menampilkan pesan error
+                deactivate Web
+            end
+            
+        else #lightcoral Foto Gagal Disimpan
+            API -> Web: Mengirim pesan error
+            deactivate API
+            
+            Web -> Akademik: Menampilkan pesan error
+            deactivate Web
+        end
+        
+    else #lightcoral Lokasi File Tidak Valid
+        API -> Web: Mengirim pesan error
+        deactivate API
+        
+        Web -> Akademik: Menampilkan pesan error
+        deactivate Web
     end
-
-else #Pink Data tidak valid
-    api -> ui: Mengirim pesan error
-    ui -> user: Menampilkan pesan error
+    
+else #lightcoral Query Gagal
+    HLF -> API: Mengirim pesan error
+    deactivate HLF
+    
+    API -> Web: Mengirim pesan error
+    deactivate API
+    
+    Web -> Akademik: Menampilkan pesan error
+    deactivate Web
 end
 
 @enduml
