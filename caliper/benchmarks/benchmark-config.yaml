@@ -35,6 +35,16 @@ test:
       workload:
         module: workloads/updateStatusIjazah.js
 
+    - label: delete-ijazah
+      description: Delete Ijazah certificates
+      txNumber: 10
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 1
+      workload:
+        module: workloads/deleteIjazah.js
+
     - label: create-signature
       description: Create signature
       txNumber: 10
@@ -74,6 +84,16 @@ test:
           tps: 1
       workload:
         module: workloads/updateSignature.js
+
+    - label: delete-signature
+      description: Delete signature
+      txNumber: 10
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 1
+      workload:
+        module: workloads/deleteSignature.js
 
 monitors:
   resource:
