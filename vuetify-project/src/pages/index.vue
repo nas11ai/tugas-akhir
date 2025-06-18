@@ -3,30 +3,17 @@
   <BaseLayout>
     <div class="d-flex flex-column justify-center align-center pt-16 ga-4">
       <v-img :src="logo" alt="logo ITK" width="200" height="200"></v-img>
-      <h1 class="text-h1 mt-4">Lorem Ipsum</h1>
+      <h1 class="text-h1 mt-4">Certichain</h1>
       <p class="text-body-1 text-center px-4">
-        "Neque porro quisquam est qui dolorem ipsum quia dolor sit amet,
-        consectetur, adipisci velit..."
+        "Verifikasi Ijazah Mahasiswa Institut Teknologi Kalimantan Secara Digital"
       </p>
 
       <!-- Search Bar -->
       <div class="mt-8 w-100 w-md-50">
-        <v-text-field
-          v-model="searchQuery"
-          label="Masukkan ID Ijazah untuk Verifikasi"
-          variant="outlined"
-          prepend-inner-icon="mdi-magnify"
-          append-icon="mdi-send"
-          class="w-100"
-          color="primary"
-          clearable
-          :loading="searching"
-          :error="!!searchError"
-          :error-messages="searchError"
-          @keyup.enter="searchIjazah"
-          @click:clear="clearSearch"
-          @click:append="searchIjazah"
-        ></v-text-field>
+        <v-text-field v-model="searchQuery" label="Masukkan ID Ijazah untuk Verifikasi" variant="outlined"
+          prepend-inner-icon="mdi-magnify" append-icon="mdi-send" class="w-100" color="primary" clearable
+          :loading="searching" :error="!!searchError" :error-messages="searchError" @keyup.enter="searchIjazah"
+          @click:clear="clearSearch" @click:append="searchIjazah"></v-text-field>
       </div>
     </div>
 
@@ -35,11 +22,7 @@
       <v-card>
         <!-- Header Modal -->
         <v-card-title class="d-flex align-center pa-6">
-          <v-icon
-            :color="modalData.success ? 'success' : 'error'"
-            size="32"
-            class="mr-3"
-          >
+          <v-icon :color="modalData.success ? 'success' : 'error'" size="32" class="mr-3">
             {{ modalData.success ? 'mdi-check-circle' : 'mdi-alert-circle' }}
           </v-icon>
           <span class="text-h5">
@@ -69,9 +52,7 @@
               <div class="ijazah-info-column">
                 <div class="info-item mb-3">
                   <div class="info-label">
-                    <v-icon small color="primary" class="mr-2"
-                      >mdi-account</v-icon
-                    >
+                    <v-icon small color="primary" class="mr-2">mdi-account</v-icon>
                     <strong>Nama Lengkap</strong>
                   </div>
                   <div class="info-value">{{ modalData.ijazah.nama }}</div>
@@ -79,9 +60,7 @@
 
                 <div class="info-item mb-3">
                   <div class="info-label">
-                    <v-icon small color="primary" class="mr-2"
-                      >mdi-card-account-details</v-icon
-                    >
+                    <v-icon small color="primary" class="mr-2">mdi-card-account-details</v-icon>
                     <strong>NIM</strong>
                   </div>
                   <div class="info-value">
@@ -91,9 +70,7 @@
 
                 <div class="info-item mb-3">
                   <div class="info-label">
-                    <v-icon small color="primary" class="mr-2"
-                      >mdi-school</v-icon
-                    >
+                    <v-icon small color="primary" class="mr-2">mdi-school</v-icon>
                     <strong>Program Studi</strong>
                   </div>
                   <div class="info-value">
@@ -103,9 +80,7 @@
 
                 <div class="info-item mb-3">
                   <div class="info-label">
-                    <v-icon small color="primary" class="mr-2"
-                      >mdi-domain</v-icon
-                    >
+                    <v-icon small color="primary" class="mr-2">mdi-domain</v-icon>
                     <strong>Fakultas</strong>
                   </div>
                   <div class="info-value">{{ modalData.ijazah.fakultas }}</div>
@@ -125,9 +100,7 @@
 
                 <div class="info-item mb-3">
                   <div class="info-label">
-                    <v-icon small color="primary" class="mr-2"
-                      >mdi-book-education</v-icon
-                    >
+                    <v-icon small color="primary" class="mr-2">mdi-book-education</v-icon>
                     <strong>Jenis Pendidikan</strong>
                   </div>
                   <div class="info-value">
@@ -137,9 +110,7 @@
 
                 <div class="info-item mb-3">
                   <div class="info-label">
-                    <v-icon small color="primary" class="mr-2"
-                      >mdi-calendar-check</v-icon
-                    >
+                    <v-icon small color="primary" class="mr-2">mdi-calendar-check</v-icon>
                     <strong>Tanggal Lulus</strong>
                   </div>
                   <div class="info-value">
@@ -198,11 +169,7 @@
     <!-- Loading Overlay -->
     <v-overlay v-model="searching" class="d-flex justify-center align-center">
       <div class="text-center">
-        <v-progress-circular
-          indeterminate
-          color="primary"
-          size="64"
-        ></v-progress-circular>
+        <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
         <p class="mt-4">Mencari ijazah...</p>
       </div>
     </v-overlay>
