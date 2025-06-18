@@ -25,16 +25,6 @@ test:
       workload:
         module: workloads/readIjazah.js
 
-    - label: update-ijazah-status
-      description: Update Ijazah status
-      txNumber: 10
-      rateControl:
-        type: fixed-rate
-        opts:
-          tps: 1
-      workload:
-        module: workloads/updateStatusIjazah.js
-
     - label: delete-ijazah
       description: Delete Ijazah certificates
       txNumber: 10

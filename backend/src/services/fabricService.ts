@@ -10,9 +10,8 @@ import {
   Signature,
   SignatureInput,
 } from "../models/ijazah";
-import sharp from "sharp";
 import fs from "fs/promises";
-import { PDFDocument, StandardFonts } from "pdf-lib";
+import { PDFDocument } from "pdf-lib";
 import { v4 as uuidv4 } from "uuid";
 import * as path from "path";
 import { IJAZAH_STATUS } from "../configs/fabric";
@@ -20,12 +19,6 @@ import dotenv from "dotenv";
 import mahasiswa from "../configs/mahasiswa.json";
 
 dotenv.config();
-
-interface CertificateGenerationOptions {
-  templatePath?: string;
-  outputFormat?: "pdf" | "png";
-  dpi?: number;
-}
 
 /**
  * Fabric Service for Certificate Management
@@ -40,7 +33,7 @@ export class FabricService {
     "template.pdf"
   );
 
-  constructor() {}
+  constructor() { }
 
   /**
    * Validate user organization access for ijazah operations
@@ -635,33 +628,6 @@ export class FabricService {
   }
 
   /**
-   * Get ijazah certificates by status
-   */
-  async getIjazahByStatus(
-    organization: Organization,
-    userToken: string,
-    status: string
-  ): Promise<Ijazah[]> {
-    try {
-      logger.info(`Getting ijazah certificates with status: ${status}`);
-
-      const ijazahArrayStr = await fabloService.queryChaincode(
-        organization,
-        userToken,
-        {
-          method: "GetIjazahByStatus",
-          args: [status],
-        }
-      );
-
-      return JSON.parse(ijazahArrayStr);
-    } catch (error) {
-      logger.error("Error getting ijazah certificates by status:", error);
-      throw error;
-    }
-  }
-
-  /**
    * Reject ijazah certificate (REKTOR only)
    */
   async rejectIjazah(
@@ -944,44 +910,6 @@ export class FabricService {
       return JSON.parse(blockchainResult);
     } catch (error) {
       logger.error("Error regenerating certificate:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update ijazah status
-   */
-  async updateIjazahStatus(
-    organization: Organization,
-    userToken: string,
-    ijazahId: string,
-    newStatus: string
-  ): Promise<Ijazah> {
-    try {
-      // For approval/rejection, only REKTOR can do this
-      if (
-        newStatus === IJAZAH_STATUS.DISETUJUI ||
-        newStatus === IJAZAH_STATUS.DITOLAK
-      ) {
-        this.validateRektorAkademikAccess(organization);
-      }
-
-      logger.info(
-        `Updating ijazah status to: ${newStatus} for ID: ${ijazahId}`
-      );
-
-      const ijazahStr = await fabloService.invokeChaincode(
-        organization,
-        userToken,
-        {
-          method: "UpdateIjazahStatus",
-          args: [ijazahId, newStatus],
-        }
-      );
-
-      return JSON.parse(ijazahStr);
-    } catch (error) {
-      logger.error("Error updating ijazah status:", error);
       throw error;
     }
   }
@@ -1294,9 +1222,8 @@ export class FabricService {
   getCertificateDownloadUrl(ipfsCID: string): string | null {
     if (!ipfsCID) return null;
 
-    return `${
-      process.env.IPFS_GATEWAY_URL || "https://gateway.ipfs.io"
-    }/ipfs/${ipfsCID}`;
+    return `${process.env.IPFS_GATEWAY_URL || "https://gateway.ipfs.io"
+      }/ipfs/${ipfsCID}`;
   }
 
   /**

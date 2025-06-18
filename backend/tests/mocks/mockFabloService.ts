@@ -102,16 +102,6 @@ export class MockFabloService {
         this.mockChaincode.set(updateData.ID, updated);
         return JSON.stringify(updated);
 
-      case "UpdateIjazahStatus":
-        const [ijazahId, newStatus] = args;
-        const ijazah = this.mockChaincode.get(ijazahId);
-        if (!ijazah) {
-          throw new Error(`Ijazah with ID ${ijazahId} tidak ditemukan`);
-        }
-        ijazah.Status = newStatus;
-        ijazah.UpdatedAt = new Date().toISOString();
-        return JSON.stringify(ijazah);
-
       case "DeleteIjazah":
         const deleteId = args[0];
         if (this.mockChaincode.has(deleteId)) {
@@ -214,13 +204,6 @@ export class MockFabloService {
           (item) => item.Type === "certificate"
         );
         return JSON.stringify(allIjazah);
-
-      case "GetIjazahByStatus":
-        const status = args[0];
-        const ijazahByStatus = Array.from(this.mockChaincode.values()).filter(
-          (item) => item.Type === "certificate" && item.Status === status
-        );
-        return JSON.stringify(ijazahByStatus);
 
       case "ReadSignature":
         const signatureId = args[0];

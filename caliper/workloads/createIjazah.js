@@ -139,24 +139,6 @@ class CreateIjazahWorkload extends WorkloadModuleBase {
         } catch (error) {
           console.error(`Worker ${this.workerIndex}: Failed to cleanup certificate ${certificateId}:`, error.message);
           cleanupFailCount++;
-
-          // Try alternative cleanup method (set status to inactive)
-          try {
-            const updateRequest = {
-              contractId: 'ijazah-chaincode',
-              contractFunction: 'UpdateIjazahStatus',
-              contractArguments: [certificateId, 'inactive'],
-              readOnly: false
-            };
-
-            await this.sutAdapter.sendRequests(updateRequest);
-            console.log(`Worker ${this.workerIndex}: Successfully marked certificate ${certificateId} as inactive`);
-            cleanupSuccessCount++;
-            cleanupFailCount--; // Adjust count since we succeeded with alternative method
-
-          } catch (alternativeError) {
-            console.error(`Worker ${this.workerIndex}: Alternative cleanup also failed for ${certificateId}:`, alternativeError.message);
-          }
         }
       });
 

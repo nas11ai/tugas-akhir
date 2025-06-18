@@ -205,24 +205,6 @@ class ReadIjazahWorkload extends WorkloadModuleBase {
                 } catch (error) {
                     console.error(`Worker ${this.workerIndex}: Failed to cleanup ijazah ${ijazahId}:`, error.message);
                     cleanupFailCount++;
-
-                    // Try alternative cleanup method (set status to inactive)
-                    try {
-                        const updateRequest = {
-                            contractId: 'ijazah-chaincode',
-                            contractFunction: 'UpdateIjazahStatus',
-                            contractArguments: [ijazahId, 'inactive'],
-                            readOnly: false
-                        };
-
-                        await this.sutAdapter.sendRequests(updateRequest);
-                        console.log(`Worker ${this.workerIndex}: Successfully marked ijazah ${ijazahId} as inactive`);
-                        cleanupSuccessCount++;
-                        cleanupFailCount--; // Adjust count since we succeeded with alternative method
-
-                    } catch (alternativeError) {
-                        console.error(`Worker ${this.workerIndex}: Alternative cleanup also failed for ${ijazahId}:`, alternativeError.message);
-                    }
                 }
             });
 

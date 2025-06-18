@@ -49,7 +49,6 @@ jest.mock("../../../src/services/fabricService", () => ({
         getIjazah: jest.fn(),
         getAllIjazah: jest.fn(),
         deleteIjazah: jest.fn(),
-        getIjazahByStatus: jest.fn(),
         getCertificateDownloadUrl: jest.fn((cid) => `https://ipfs.io/ipfs/${cid}`),
         findMahasiswaByNim: jest.fn()
     }

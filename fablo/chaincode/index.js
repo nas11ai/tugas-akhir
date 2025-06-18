@@ -119,63 +119,6 @@ class IjazahContract extends Contract {
     return JSON.stringify(allResults);
   }
 
-  // === Status Management Functions ===
-
-  async UpdateIjazahStatus(ctx, id, newStatus) {
-    const ijazahBuffer = await ctx.stub.getState(id);
-    if (!ijazahBuffer || ijazahBuffer.length === 0) {
-      throw new Error(`Ijazah dengan ID ${id} tidak ditemukan`);
-    }
-
-    // Validate status
-    if (!Object.values(STATUS).includes(newStatus)) {
-      throw new Error(`Status tidak valid. Status harus salah satu dari: ${Object.values(STATUS).join(', ')}`);
-    }
-
-    const ijazah = JSON.parse(ijazahBuffer.toString());
-    ijazah.Status = newStatus;
-    ijazah.UpdatedAt = new Date().toISOString();
-
-    await ctx.stub.putState(
-      id,
-      Buffer.from(stringify(sortKeysRecursive(ijazah)))
-    );
-
-    return JSON.stringify(ijazah);
-  }
-
-  async GetIjazahByStatus(ctx, status) {
-    // Validate status
-    if (!Object.values(STATUS).includes(status)) {
-      throw new Error(`Status tidak valid. Status harus salah satu dari: ${Object.values(STATUS).join(', ')}`);
-    }
-
-    const iterator = await ctx.stub.getStateByRange('', '');
-    const allResults = [];
-
-    while (true) {
-      const res = await iterator.next();
-      if (res.value && res.value.value.toString()) {
-        try {
-          const record = JSON.parse(res.value.value.toString());
-          // Skip non-Ijazah records and filter by status
-          if (record.ID !== 'rektor_signature' && record.Status === status) {
-            allResults.push(record);
-          }
-        } catch (err) {
-          console.error(`Gagal parse record: ${err.message}`);
-        }
-      }
-
-      if (res.done) {
-        await iterator.close();
-        break;
-      }
-    }
-
-    return JSON.stringify(allResults);
-  }
-
   // === Signature Management Functions ===
 
   async CreateSignature(ctx, signatureStr) {
