@@ -10,10 +10,7 @@ import { Organization } from "../models/user";
 import dotenv from "dotenv";
 import {
   FabloEnrollResponse,
-  FabloIdentitiesResponse,
-  FabloIdentity,
   FabloInvokeRequest,
-  FabloRegisterResponse,
   FabloResponse,
 } from "../models/fablo";
 
@@ -144,72 +141,6 @@ export class FabloService {
   }
 
   /**
-   * Register new user (requires admin token)
-   */
-  async registerUser(
-    organization: Organization,
-    username: string,
-    password: string
-  ): Promise<void> {
-    try {
-      const client = this.getClient(organization);
-      const adminToken = this.getAdminToken(organization);
-
-      const response = await client.post(
-        "/user/register",
-        {
-          id: username,
-          secret: password,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${adminToken}`,
-          },
-        }
-      );
-
-      const data: FabloRegisterResponse = response.data;
-
-      if (data.message === "ok") {
-        logger.info(
-          `User ${username} registered successfully in ${organization} organization`
-        );
-      } else {
-        throw new Error(`Registration failed: ${data.message}`);
-      }
-    } catch (error) {
-      logger.error(
-        `Error registering user ${username} in ${organization}:`,
-        error
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Get list of identities (requires admin token)
-   */
-  async getIdentities(organization: Organization): Promise<FabloIdentity[]> {
-    try {
-      const client = this.getClient(organization);
-      const adminToken = this.getAdminToken(organization);
-
-      const response = await client.get("/user/identities", {
-        headers: {
-          Authorization: `Bearer ${adminToken}`,
-        },
-      });
-
-      const data: FabloIdentitiesResponse = response.data;
-
-      return data.response.identities;
-    } catch (error) {
-      logger.error(`Error getting identities for ${organization}:`, error);
-      throw error;
-    }
-  }
-
-  /**
    * Invoke chaincode method
    */
   async invokeChaincode(
@@ -276,34 +207,6 @@ export class FabloService {
   }
 
   /**
-   * Discover network for channel
-   */
-  async discoverNetwork(
-    organization: Organization,
-    userToken: string,
-    channel: string = chaincode.channel
-  ): Promise<any> {
-    try {
-      const client = this.getClient(organization);
-
-      const response = await client.post(
-        `/discover/${channel}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-          },
-        }
-      );
-
-      return response.data;
-    } catch (error) {
-      logger.error(`Error discovering network for channel ${channel}:`, error);
-      throw error;
-    }
-  }
-
-  /**
    * Check if user token is still valid
    */
   async validateToken(
@@ -362,77 +265,6 @@ export class FabloService {
     }
 
     return health;
-  }
-
-  /**
-   * Create asset using Fablo REST API
-   */
-  async createAsset(
-    organization: Organization,
-    userToken: string,
-    assetId: string,
-    assetData: any
-  ): Promise<any> {
-    return this.invokeChaincode(organization, userToken, {
-      method: "CreateAsset",
-      args: [assetId, JSON.stringify(assetData)],
-    });
-  }
-
-  /**
-   * Read asset using Fablo REST API
-   */
-  async readAsset(
-    organization: Organization,
-    userToken: string,
-    assetId: string
-  ): Promise<any> {
-    return this.queryChaincode(organization, userToken, {
-      method: "ReadAsset",
-      args: [assetId],
-    });
-  }
-
-  /**
-   * Update asset using Fablo REST API
-   */
-  async updateAsset(
-    organization: Organization,
-    userToken: string,
-    assetId: string,
-    assetData: any
-  ): Promise<any> {
-    return this.invokeChaincode(organization, userToken, {
-      method: "UpdateAsset",
-      args: [assetId, JSON.stringify(assetData)],
-    });
-  }
-
-  /**
-   * Delete asset using Fablo REST API
-   */
-  async deleteAsset(
-    organization: Organization,
-    userToken: string,
-    assetId: string
-  ): Promise<any> {
-    return this.invokeChaincode(organization, userToken, {
-      method: "DeleteAsset",
-      args: [assetId],
-    });
-  }
-
-  /**
-   * Get all assets using Fablo REST API
-   */
-  async getAllAssets(
-    organization: Organization,
-    userToken: string
-  ): Promise<any> {
-    return this.queryChaincode(organization, userToken, {
-      method: "GetAllAssets",
-      args: [],
-    });
   }
 }
 

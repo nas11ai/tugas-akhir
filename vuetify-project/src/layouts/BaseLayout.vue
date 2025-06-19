@@ -61,7 +61,6 @@ const user = ref<UserWithCredentials | null>(null)
 const showLogin = ref(false)
 
 const handleLoginSuccess = (userData: UserWithCredentials) => {
-  console.log('Login successful, setting user data:', userData)
   user.value = userData
 }
 
@@ -71,7 +70,6 @@ const handleLogout = async () => {
     user.value = null
     localStorage.removeItem('authToken')
     localStorage.removeItem('fabricToken')
-    console.log('Logout successful')
     await router.push('/')
   } catch (error) {
     console.error('Logout error:', error)
@@ -93,7 +91,6 @@ const refreshFabricToken = async () => {
 
     const newToken = apiHelper.getData(response).data.token
     localStorage.setItem('fabricToken', newToken)
-    console.log('Fabric token refreshed successfully.')
   } catch (error) {
     console.error('Failed to refresh Fabric token:', error)
   }
@@ -101,7 +98,6 @@ const refreshFabricToken = async () => {
 
 const fetchUserData = async (firebaseUser: FirebaseUser) => {
   try {
-    console.log('Fetching user data for:', firebaseUser.email)
 
     const idToken = await firebaseUser.getIdToken()
     localStorage.setItem('authToken', idToken)
@@ -124,8 +120,6 @@ const fetchUserData = async (firebaseUser: FirebaseUser) => {
         apiHelper.getData(enrollFabricCAResponse).data.token
       )
     }
-
-    console.log('User data fetched successfully:', userData)
     user.value = userData
   } catch (error: unknown) {
     console.error('Error fetching user data:', error)
@@ -147,13 +141,7 @@ const fetchUserData = async (firebaseUser: FirebaseUser) => {
 }
 
 onMounted(() => {
-  console.log('Setting up auth state listener...')
   onAuthStateChanged(auth, async (firebaseUser) => {
-    console.log(
-      'Auth state changed:',
-      firebaseUser ? 'User signed in' : 'User signed out'
-    )
-
     if (firebaseUser) {
       try {
         await fetchUserData(firebaseUser)
@@ -161,7 +149,6 @@ onMounted(() => {
         console.error('Failed to fetch user data:', error)
       }
     } else {
-      console.log('User signed out, clearing data')
       user.value = null
       localStorage.removeItem('authToken')
     }
@@ -173,9 +160,6 @@ let refreshInterval: ReturnType<typeof setInterval> | null = null
 
 watch(user, (newUser) => {
   if (newUser) {
-    // User baru login, mulai interval
-    console.log('User login detected, starting Fabric token refresh interval.')
-
     // Hapus interval lama jika ada
     if (refreshInterval) clearInterval(refreshInterval)
 
@@ -188,7 +172,6 @@ watch(user, (newUser) => {
   } else {
     // User logout, hentikan interval
     if (refreshInterval) {
-      console.log('User logout detected, clearing Fabric token interval.')
       clearInterval(refreshInterval)
       refreshInterval = null
     }

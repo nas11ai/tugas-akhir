@@ -214,18 +214,13 @@ const searchIjazah = async () => {
   searching.value = true
 
   try {
-    console.log('🔍 Searching for ijazah:', searchQuery.value)
 
     // Call API to get ijazah data
     const response = await apiService.ijazah.getPublic(searchQuery.value.trim())
 
-    console.log('📡 API Response:', response)
-
     // Check if response has data
     if (response.data) {
       const ijazahData = response.data.data || response.data
-
-      console.log('📊 Ijazah Data:', ijazahData)
 
       // Check if ijazah status is active
       if (ijazahData.Status === IJAZAH_STATUS.AKTIF) {

@@ -314,8 +314,6 @@ const loadIjazahData = async () => {
         CreatedAt: formatTableDate(ijazah.CreatedAt),
         UpdatedAt: formatTableDate(ijazah.UpdatedAt),
       }))
-
-      console.log('items:', items.value)
     } else {
       throw new Error(apiHelper.getErrorMessage(response))
     }

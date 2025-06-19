@@ -504,7 +504,6 @@ const searchMahasiswa = async () => {
     const response = await apiService.ijazah.findMahasiswaByNim(nimSearch.value)
 
     if (apiHelper.isSuccess(response)) {
-      console.log(response)
       mahasiswaData.value = response.data.data
 
       if (!mahasiswaData.value) {
@@ -514,7 +513,6 @@ const searchMahasiswa = async () => {
 
       // Pre-fill form data dengan data mahasiswa
       fillFormWithMahasiswaData(mahasiswaData.value)
-      console.log(mahasiswaData.value.nomorIndukMahasiswa)
 
       searchError.value = ''
     } else {
@@ -571,8 +569,6 @@ const fillFormWithMahasiswaData = (data: MahasiswaSearchResponse) => {
   formData.value.tanggalIjazahDiberikan = convertDateTimeToISO(
     data.tanggalIjazahDiberikan
   )
-
-  console.log('formData:', { ...formData.value })
 }
 
 function onPhotoChange() {
@@ -596,8 +592,6 @@ function onPhotoChange() {
     console.error('Ukuran file terlalu besar:', sizeMB, 'MB')
     return
   }
-
-  console.log('File diterima:', file.name)
 }
 
 const onPhotoClear = () => {

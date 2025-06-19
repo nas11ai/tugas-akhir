@@ -23,9 +23,6 @@ export const chaincode = {
 };
 
 export const IJAZAH_STATUS = {
-  MENUNGGU_TTD: "menunggu tanda tangan rektor",
-  DITOLAK: "ditolak rektor",
-  DISETUJUI: "disetujui rektor",
   AKTIF: "aktif",
   NONAKTIF: "nonaktif",
 };
