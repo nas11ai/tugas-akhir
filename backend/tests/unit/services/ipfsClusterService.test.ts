@@ -34,9 +34,8 @@ describe("IpfsClusterService", () => {
       // Arrange
       const mockContent = Buffer.from("test content");
       const mockCid = "QmTestCID123";
-      const mockGatewayUrl = `${
-        process.env.IPFS_GATEWAY_URL || "http://localhost:8080"
-      }/ipfs/${mockCid}`;
+      const mockGatewayUrl = `${process.env.IPFS_GATEWAY_URL || "http://localhost:8080"
+        }/ipfs/${mockCid}`;
 
       mockMakeClusterRequest.mockResolvedValue({
         status: 200,
@@ -406,6 +405,22 @@ describe("IpfsClusterService", () => {
       // Assert
       expect(result).toEqual([]);
     });
+
+    it("should handle network error during getAllocations", async () => {
+      // Arrange
+      const networkError = new Error("Network error");
+
+      mockMakeClusterRequest.mockRejectedValue(networkError);
+
+      // Act & Assert
+      await expect(ipfsClusterService.getAllocations()).rejects.toThrow(
+        "Network error"
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "Error getting allocations:",
+        networkError
+      );
+    });
   });
 
   describe("getAllocation", () => {
@@ -448,6 +463,23 @@ describe("IpfsClusterService", () => {
       expect(result).toBeNull();
       expect(mockLogger.warn).toHaveBeenCalledWith(
         `Failed to get allocation for CID ${mockCid}: 404`
+      );
+    });
+
+    it("should handle network error during getAllocation", async () => {
+      // Arrange
+      const mockCid = "QmTestCID123";
+      const networkError = new Error("Network error");
+
+      mockMakeClusterRequest.mockRejectedValue(networkError);
+
+      // Act & Assert
+      await expect(ipfsClusterService.getAllocation(mockCid)).rejects.toThrow(
+        "Network error"
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        `Error getting allocation for CID ${mockCid}:`,
+        networkError
       );
     });
   });
@@ -547,6 +579,22 @@ describe("IpfsClusterService", () => {
         "Failed to trigger recovery for all pins: 500"
       );
     });
+
+    it("should handle network error during recoverAll", async () => {
+      // Arrange
+      const networkError = new Error("Network error");
+
+      mockMakeClusterRequest.mockRejectedValue(networkError);
+
+      // Act & Assert
+      await expect(ipfsClusterService.recoverAll()).rejects.toThrow(
+        "Network error"
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "Error recovering all pins:",
+        networkError
+      );
+    });
   });
 
   describe("info", () => {
@@ -639,6 +687,22 @@ describe("IpfsClusterService", () => {
         "Failed to get cluster version: 500"
       );
     });
+
+    it("should handle network error during getVersion", async () => {
+      // Arrange
+      const networkError = new Error("Network error");
+
+      mockMakeClusterRequest.mockRejectedValue(networkError);
+
+      // Act & Assert
+      await expect(ipfsClusterService.getVersion()).rejects.toThrow(
+        "Network error"
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "Error getting cluster version:",
+        networkError
+      );
+    });
   });
 
   describe("getPeers", () => {
@@ -674,6 +738,22 @@ describe("IpfsClusterService", () => {
 
       // Assert
       expect(result).toEqual([]);
+    });
+
+    it("should handle network error during getPeers", async () => {
+      // Arrange
+      const networkError = new Error("Network error");
+
+      mockMakeClusterRequest.mockRejectedValue(networkError);
+
+      // Act & Assert
+      await expect(ipfsClusterService.getPeers()).rejects.toThrow(
+        "Network error"
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "Error getting peers:",
+        networkError
+      );
     });
   });
 
