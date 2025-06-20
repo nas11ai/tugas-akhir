@@ -1232,6 +1232,76 @@ describe("Ijazah API Integration Tests", () => {
       expect([400, 401]).toContain(response.status);
       expect(response.body.success).toBe(false);
     });
+
+    it("should handle multer unexpected field error", async () => {
+      // Arrange
+      const ijazahData = TestDataGenerator.generateIjazahData();
+      const photoPath = path.resolve(__dirname, "../../assets/test-photo.png");
+
+      // Ensure test photo exists
+      if (!fs.existsSync(photoPath)) {
+        const dir = path.dirname(photoPath);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+        // Create a minimal PNG file
+        const pngHeader = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+        fs.writeFileSync(photoPath, pngHeader);
+      }
+
+      // Act - Upload file with field name other than "photo"
+      const response = await request(app)
+        .post("/api/ijazah")
+        .set("Authorization", `Bearer ${akademikToken}`)
+        .set("x-fabric-token", "mock-fabric-token")
+        .field("nama", ijazahData.nama)
+        .field("nomorDokumen", ijazahData.nomorDokumen)
+        .attach("document", photoPath); // Using "document" instead of "photo" to trigger unexpected field error
+
+      // Assert - Include 401 for authentication errors
+      expect([400, 401, 500]).toContain(response.status);
+      expect(response.body.success).toBe(false);
+
+      // Check for unexpected field error message only if not an auth error
+      if (response.status !== 401) {
+        const errorMessage = response.body.message || "";
+        expect(errorMessage.toLowerCase()).toMatch(/unexpected.*field/i);
+      }
+    });
+
+    it("should handle multer unexpected field error in update endpoint", async () => {
+      // Arrange
+      const photoPath = path.resolve(__dirname, "../../assets/test-photo.png");
+
+      // Ensure test photo exists
+      if (!fs.existsSync(photoPath)) {
+        const dir = path.dirname(photoPath);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+        // Create a minimal PNG file
+        const pngHeader = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+        fs.writeFileSync(photoPath, pngHeader);
+      }
+
+      // Act - Upload file with unexpected field name in update endpoint
+      const response = await request(app)
+        .put("/api/ijazah/ijazah_test")
+        .set("Authorization", `Bearer ${akademikToken}`)
+        .set("x-fabric-token", "mock-fabric-token")
+        .field("nama", "Updated Name")
+        .attach("avatar", photoPath); // Using "avatar" instead of "photo" to trigger unexpected field error
+
+      // Assert - Include 401 for authentication errors
+      expect([400, 401, 500]).toContain(response.status);
+      expect(response.body.success).toBe(false);
+
+      // Check for unexpected field error message only if not an auth error
+      if (response.status !== 401) {
+        const errorMessage = response.body.message || "";
+        expect(errorMessage.toLowerCase()).toMatch(/unexpected.*field/i);
+      }
+    });
   });
 
   describe("Photo URL endpoint", () => {
