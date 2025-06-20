@@ -131,7 +131,6 @@ describe("FabricService", () => {
           Organization.AKADEMIK,
           mockUserToken,
           ijazahData,
-          photoFile
         )
       ).rejects.toThrow("Photo is required");
     });

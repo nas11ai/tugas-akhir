@@ -33,7 +33,7 @@ export class FabricService {
     "template.pdf"
   );
 
-  constructor() {}
+  constructor() { }
 
   /**
    * Validate user organization access for ijazah operations
@@ -785,9 +785,8 @@ export class FabricService {
   getCertificateDownloadUrl(ipfsCID: string): string | null {
     if (!ipfsCID) return null;
 
-    return `${
-      process.env.IPFS_GATEWAY_URL || "https://gateway.ipfs.io"
-    }/ipfs/${ipfsCID}`;
+    return `${process.env.IPFS_GATEWAY_URL || "https://gateway.ipfs.io"
+      }/ipfs/${ipfsCID}`;
   }
 
   /**
