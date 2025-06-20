@@ -11,13 +11,14 @@ export class FileStorageService {
   private readonly uploadsDir: string;
   private readonly photosDir: string;
   private readonly signaturesDir: string;
+  private initializationPromise: Promise<void>;
 
   constructor(baseDir: string = path.join(process.cwd(), "uploads")) {
     this.uploadsDir = baseDir;
     this.photosDir = path.join(this.uploadsDir, "photos");
     this.signaturesDir = path.join(this.uploadsDir, "signatures");
 
-    this.initializeDirectories();
+    this.initializationPromise = this.initializeDirectories();
   }
 
   /**
@@ -33,6 +34,13 @@ export class FileStorageService {
       logger.error("Failed to initialize storage directories:", error);
       throw error;
     }
+  }
+
+  /**
+   * Ensure directories are initialized before performing operations
+   */
+  private async ensureInitialized(): Promise<void> {
+    await this.initializationPromise;
   }
 
   /**
@@ -63,6 +71,8 @@ export class FileStorageService {
    * Save photo file locally
    */
   async savePhoto(buffer: Buffer, fileName: string): Promise<string> {
+    await this.ensureInitialized();
+
     try {
       // Process and resize photo
       const processedBuffer = await sharp(buffer)
@@ -85,6 +95,8 @@ export class FileStorageService {
    * Save signature file locally
    */
   async saveSignature(buffer: Buffer, fileName: string): Promise<string> {
+    await this.ensureInitialized();
+
     try {
       // Process and resize signature
       const processedBuffer = await sharp(buffer)
@@ -107,6 +119,8 @@ export class FileStorageService {
    * Get photo file
    */
   async getPhoto(fileNameOrPath: string): Promise<Buffer> {
+    await this.ensureInitialized();
+
     try {
       const photoPath = this.resolvePhotoPath(fileNameOrPath);
       const buffer = await fs.readFile(photoPath);
@@ -121,6 +135,8 @@ export class FileStorageService {
    * Get signature file
    */
   async getSignature(fileNameOrPath: string): Promise<Buffer> {
+    await this.ensureInitialized();
+
     try {
       const signaturePath = this.resolveSignaturePath(fileNameOrPath);
       const buffer = await fs.readFile(signaturePath);
@@ -135,6 +151,8 @@ export class FileStorageService {
    * Delete photo file
    */
   async deletePhoto(fileNameOrPath: string): Promise<boolean> {
+    await this.ensureInitialized();
+
     try {
       const photoPath = this.resolvePhotoPath(fileNameOrPath);
       await fs.unlink(photoPath);
@@ -150,6 +168,8 @@ export class FileStorageService {
    * Delete signature file
    */
   async deleteSignature(fileNameOrPath: string): Promise<boolean> {
+    await this.ensureInitialized();
+
     try {
       const signaturePath = this.resolveSignaturePath(fileNameOrPath);
       await fs.unlink(signaturePath);
@@ -165,6 +185,8 @@ export class FileStorageService {
    * Check if photo exists
    */
   async photoExists(fileNameOrPath: string): Promise<boolean> {
+    await this.ensureInitialized();
+
     try {
       const photoPath = this.resolvePhotoPath(fileNameOrPath);
       await fs.access(photoPath);
@@ -178,6 +200,8 @@ export class FileStorageService {
    * Check if signature exists
    */
   async signatureExists(fileNameOrPath: string): Promise<boolean> {
+    await this.ensureInitialized();
+
     try {
       const signaturePath = this.resolveSignaturePath(fileNameOrPath);
       await fs.access(signaturePath);
@@ -217,6 +241,8 @@ export class FileStorageService {
     photos: { count: number; totalSize: number };
     signatures: { count: number; totalSize: number };
   }> {
+    await this.ensureInitialized();
+
     try {
       const [photoFiles, signatureFiles] = await Promise.all([
         fs.readdir(this.photosDir),

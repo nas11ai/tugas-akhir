@@ -65,6 +65,37 @@ describe("FileStorageService", () => {
         { recursive: true }
       );
     });
+
+    it("should handle directory initialization errors", async () => {
+      // Clear previous mocks
+      jest.clearAllMocks();
+
+      const error = new Error("Permission denied");
+      mockFs.mkdir.mockRejectedValue(error);
+
+      // Mock logger to capture error calls
+      const { logger } = require("../../../src/utils/logger");
+
+      // Create the service instance
+      const failingService = new FileStorageService(testUploadsDir);
+
+      // Try to use the service - this should trigger the initialization and fail
+      await expect(failingService.savePhoto(Buffer.from("test"), "test.png"))
+        .rejects.toThrow("Permission denied");
+
+      // Verify mkdir was called and failed
+      expect(mockFs.mkdir).toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalledWith("Failed to initialize storage directories:", error);
+    });
+
+    it("should use default upload directory when no baseDir provided", () => {
+      const defaultService = new FileStorageService();
+      const expectedDefaultPath = path.join(process.cwd(), "uploads");
+
+      expect(defaultService.getPhotoPath("test.png")).toBe(
+        path.join(expectedDefaultPath, "photos", "test.png")
+      );
+    });
   });
 
   describe("savePhoto", () => {
@@ -515,31 +546,209 @@ describe("FileStorageService", () => {
       });
     });
 
-    it("should handle errors when getting file stats", async () => {
-      const photoFiles = ["photo1.png"];
+    it("should handle errors when getting photo file stats", async () => {
+      jest.clearAllMocks();
+
+      const photoFiles = ["photo1.png", "photo2.png"];
       const signatureFiles = ["signature1.png"];
 
       mockFs.readdir
         .mockResolvedValueOnce(photoFiles as any)
         .mockResolvedValueOnce(signatureFiles as any);
 
-      // Mock stat to fail for one file, succeed for another
+      // Mock logger to capture warning calls
+      const { logger } = require("../../../src/utils/logger");
+
+      // Mock stat to fail for both photo files, succeed for signature
       mockFs.stat
-        .mockRejectedValueOnce(new Error("File access error"))
+        .mockRejectedValueOnce(new Error("Photo1 access error"))
+        .mockRejectedValueOnce(new Error("Photo2 access error"))
         .mockResolvedValueOnce({ size: 512 } as any);
 
       const result = await fileStorageService.getStorageStats();
 
       expect(result).toEqual({
         photos: {
-          count: 1,
-          totalSize: 0, // Failed to get size
+          count: 2,
+          totalSize: 0, // Both photo files failed to get size
         },
         signatures: {
           count: 1,
           totalSize: 512,
         },
       });
+
+      // Verify logger.warn was called for each failed photo
+      expect(logger.warn).toHaveBeenCalledWith(
+        "Failed to get stats for photo photo1.png:",
+        expect.any(Error)
+      );
+      expect(logger.warn).toHaveBeenCalledWith(
+        "Failed to get stats for photo photo2.png:",
+        expect.any(Error)
+      );
+      expect(logger.warn).toHaveBeenCalledTimes(2);
+    });
+
+    it("should handle errors when getting signature file stats", async () => {
+      jest.clearAllMocks();
+
+      const photoFiles = ["photo1.png"];
+      const signatureFiles = ["signature1.png", "signature2.png"];
+
+      mockFs.readdir
+        .mockResolvedValueOnce(photoFiles as any)
+        .mockResolvedValueOnce(signatureFiles as any);
+
+      // Mock logger to capture warning calls
+      const { logger } = require("../../../src/utils/logger");
+
+      // Mock stat to succeed for photo, fail for both signatures
+      mockFs.stat
+        .mockResolvedValueOnce({ size: 1024 } as any)
+        .mockRejectedValueOnce(new Error("Signature1 access error"))
+        .mockRejectedValueOnce(new Error("Signature2 access error"));
+
+      const result = await fileStorageService.getStorageStats();
+
+      expect(result).toEqual({
+        photos: {
+          count: 1,
+          totalSize: 1024,
+        },
+        signatures: {
+          count: 2,
+          totalSize: 0, // Both signature files failed to get size
+        },
+      });
+
+      // Verify logger.warn was called for each failed signature
+      expect(logger.warn).toHaveBeenCalledWith(
+        "Failed to get stats for signature signature1.png:",
+        expect.any(Error)
+      );
+      expect(logger.warn).toHaveBeenCalledWith(
+        "Failed to get stats for signature signature2.png:",
+        expect.any(Error)
+      );
+      expect(logger.warn).toHaveBeenCalledTimes(2);
+    });
+
+    it("should handle mixed success and failure for file stats", async () => {
+      jest.clearAllMocks();
+
+      const photoFiles = ["photo1.png", "photo2.png", "photo3.png"];
+      const signatureFiles = ["signature1.png", "signature2.png"];
+
+      mockFs.readdir
+        .mockResolvedValueOnce(photoFiles as any)
+        .mockResolvedValueOnce(signatureFiles as any);
+
+      // Mock logger to capture warning calls
+      const { logger } = require("../../../src/utils/logger");
+
+      // Mock stat: photo1 succeeds, photo2 fails, photo3 succeeds
+      // signature1 fails, signature2 succeeds
+      mockFs.stat
+        .mockResolvedValueOnce({ size: 500 } as any)      // photo1.png
+        .mockRejectedValueOnce(new Error("Photo2 error"))  // photo2.png
+        .mockResolvedValueOnce({ size: 300 } as any)      // photo3.png
+        .mockRejectedValueOnce(new Error("Signature1 error")) // signature1.png
+        .mockResolvedValueOnce({ size: 200 } as any);     // signature2.png
+
+      const result = await fileStorageService.getStorageStats();
+
+      expect(result).toEqual({
+        photos: {
+          count: 3,
+          totalSize: 800, // 500 + 0 + 300
+        },
+        signatures: {
+          count: 2,
+          totalSize: 200, // 0 + 200
+        },
+      });
+
+      // Verify logger.warn was called for failed files only
+      expect(logger.warn).toHaveBeenCalledWith(
+        "Failed to get stats for photo photo2.png:",
+        expect.any(Error)
+      );
+      expect(logger.warn).toHaveBeenCalledWith(
+        "Failed to get stats for signature signature1.png:",
+        expect.any(Error)
+      );
+      expect(logger.warn).toHaveBeenCalledTimes(2);
+    });
+
+    it("should handle all photo files failing to get stats", async () => {
+      jest.clearAllMocks();
+
+      const photoFiles = ["photo1.png", "photo2.png"];
+      const signatureFiles = ["signature1.png"];
+
+      mockFs.readdir
+        .mockResolvedValueOnce(photoFiles as any)
+        .mockResolvedValueOnce(signatureFiles as any);
+
+      // Mock logger to capture warning calls
+      const { logger } = require("../../../src/utils/logger");
+
+      // All photo files fail, signature succeeds
+      mockFs.stat
+        .mockRejectedValueOnce(new Error("Photo1 permission denied"))
+        .mockRejectedValueOnce(new Error("Photo2 file corrupted"))
+        .mockResolvedValueOnce({ size: 1000 } as any);
+
+      const result = await fileStorageService.getStorageStats();
+
+      expect(result).toEqual({
+        photos: {
+          count: 2,
+          totalSize: 0, // All failed
+        },
+        signatures: {
+          count: 1,
+          totalSize: 1000,
+        },
+      });
+
+      expect(logger.warn).toHaveBeenCalledTimes(2);
+    });
+
+    it("should handle all signature files failing to get stats", async () => {
+      jest.clearAllMocks();
+
+      const photoFiles = ["photo1.png"];
+      const signatureFiles = ["signature1.png", "signature2.png"];
+
+      mockFs.readdir
+        .mockResolvedValueOnce(photoFiles as any)
+        .mockResolvedValueOnce(signatureFiles as any);
+
+      // Mock logger to capture warning calls
+      const { logger } = require("../../../src/utils/logger");
+
+      // Photo succeeds, all signature files fail
+      mockFs.stat
+        .mockResolvedValueOnce({ size: 2000 } as any)
+        .mockRejectedValueOnce(new Error("Signature1 not found"))
+        .mockRejectedValueOnce(new Error("Signature2 access denied"));
+
+      const result = await fileStorageService.getStorageStats();
+
+      expect(result).toEqual({
+        photos: {
+          count: 1,
+          totalSize: 2000,
+        },
+        signatures: {
+          count: 2,
+          totalSize: 0, // All failed
+        },
+      });
+
+      expect(logger.warn).toHaveBeenCalledTimes(2);
     });
 
     it("should handle directory read errors", async () => {
@@ -549,6 +758,10 @@ describe("FileStorageService", () => {
       await expect(fileStorageService.getStorageStats()).rejects.toThrow(
         "Directory not accessible"
       );
+
+      // Mock logger to capture error calls
+      const { logger } = require("../../../src/utils/logger");
+      expect(logger.error).toHaveBeenCalledWith("Failed to get storage stats:", error);
     });
 
     it("should handle empty directories", async () => {
@@ -568,6 +781,117 @@ describe("FileStorageService", () => {
           totalSize: 0,
         },
       });
+    });
+
+    it("should handle photos directory read success but signatures directory read failure", async () => {
+      jest.clearAllMocks();
+
+      const photoFiles = ["photo1.png"];
+      const directoryError = new Error("Signatures directory not accessible");
+
+      mockFs.readdir
+        .mockResolvedValueOnce(photoFiles as any)
+        .mockRejectedValueOnce(directoryError);
+
+      await expect(fileStorageService.getStorageStats()).rejects.toThrow(
+        "Signatures directory not accessible"
+      );
+
+      // Mock logger to capture error calls
+      const { logger } = require("../../../src/utils/logger");
+      expect(logger.error).toHaveBeenCalledWith("Failed to get storage stats:", directoryError);
+    });
+
+    it("should handle specific file system errors during stat operations", async () => {
+      jest.clearAllMocks();
+
+      const photoFiles = ["photo1.png"];
+      const signatureFiles = ["signature1.png"];
+
+      mockFs.readdir
+        .mockResolvedValueOnce(photoFiles as any)
+        .mockResolvedValueOnce(signatureFiles as any);
+
+      // Mock logger to capture warning calls
+      const { logger } = require("../../../src/utils/logger");
+
+      // Mock different types of file system errors
+      const enoentError = new Error("ENOENT: no such file or directory");
+      enoentError.name = "ENOENT";
+
+      const epermError = new Error("EPERM: operation not permitted");
+      epermError.name = "EPERM";
+
+      mockFs.stat
+        .mockRejectedValueOnce(enoentError)
+        .mockRejectedValueOnce(epermError);
+
+      const result = await fileStorageService.getStorageStats();
+
+      expect(result).toEqual({
+        photos: {
+          count: 1,
+          totalSize: 0,
+        },
+        signatures: {
+          count: 1,
+          totalSize: 0,
+        },
+      });
+
+      // Verify specific error types are logged
+      expect(logger.warn).toHaveBeenCalledWith(
+        "Failed to get stats for photo photo1.png:",
+        enoentError
+      );
+      expect(logger.warn).toHaveBeenCalledWith(
+        "Failed to get stats for signature signature1.png:",
+        epermError
+      );
+    });
+  });
+
+  // NEW TEST: Testing the singleton export
+  describe("singleton export", () => {
+    it("should export a singleton instance", () => {
+      // This test requires importing the singleton instance
+      // Since we can't modify imports in this test file easily,
+      // this would typically be in a separate test file
+      const { fileStorageService: singletonInstance } = require("../../../src/services/fileStorageService");
+      expect(singletonInstance).toBeInstanceOf(FileStorageService);
+    });
+  });
+
+  // ADDITIONAL TESTS for better coverage
+  describe("edge cases", () => {
+    it("should handle constructor with default parameter", () => {
+      // Test the default constructor parameter
+      const defaultService = new FileStorageService();
+      const expectedDefaultPath = path.join(process.cwd(), "uploads");
+
+      expect(defaultService.getPhotoPath("test.png")).toBe(
+        path.join(expectedDefaultPath, "photos", "test.png")
+      );
+    });
+
+    it("should handle empty filename in generateFileName", () => {
+      const prefix = "test";
+      const originalName = "";
+
+      const result = fileStorageService.generateFileName(prefix, originalName);
+
+      // Should use .png as default extension
+      expect(result).toMatch(/^test_\d+\.png$/);
+    });
+
+    it("should handle filename with multiple dots", () => {
+      const prefix = "test";
+      const originalName = "file.name.with.dots.jpg";
+
+      const result = fileStorageService.generateFileName(prefix, originalName);
+
+      // Should use the last extension
+      expect(result).toMatch(/^test_\d+\.jpg$/);
     });
   });
 });
