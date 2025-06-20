@@ -15,6 +15,11 @@ jest.mock("../../../src/configs/firebase", () => ({
 jest.mock("../../../src/utils/logger");
 
 jest.mock("firebase-admin", () => {
+  // Create the mock Timestamp object directly in the mock
+  const mockTimestamp = {
+    fromDate: jest.fn(),
+  };
+
   const firestore = jest.fn().mockReturnValue({
     collection: jest.fn().mockReturnValue({
       doc: jest.fn().mockReturnValue({
@@ -48,7 +53,9 @@ jest.mock("firebase-admin", () => {
 
   return {
     initializeApp: jest.fn(),
-    firestore,
+    firestore: Object.assign(firestore, {
+      Timestamp: mockTimestamp,
+    }),
     auth,
     credential,
   };
@@ -56,6 +63,9 @@ jest.mock("firebase-admin", () => {
 
 const mockDb = db as jest.Mocked<typeof db>;
 const mockLogger = logger as jest.Mocked<typeof logger>;
+
+// Get access to the mock Timestamp for tests
+const mockTimestamp = jest.requireMock('firebase-admin').firestore.Timestamp;
 
 describe("FirestoreService", () => {
   let firestoreService: FirestoreService;
@@ -216,6 +226,26 @@ describe("FirestoreService", () => {
 
   describe("updateDocument", () => {
     it("should update document successfully", async () => {
+      // Arrange
+      const collection = "test-collection";
+      const docId = "test-doc-id";
+      const data = { name: "Updated Document" };
+
+      mockDoc.update.mockResolvedValue();
+
+      // Act
+      await firestoreService.updateDocument(collection, docId, data);
+
+      // Assert
+      expect(mockDb.collection).toHaveBeenCalledWith(collection);
+      expect(mockCollection.doc).toHaveBeenCalledWith(docId);
+      expect(mockDoc.update).toHaveBeenCalledWith(data);
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        `Document updated in ${collection}/${docId}`
+      );
+    });
+
+    it("should handle update error", async () => {
       // Arrange
       const collection = "test-collection";
       const docId = "test-doc-id";
@@ -552,6 +582,232 @@ describe("FirestoreService", () => {
 
       // Assert
       expect(result).toBe(mockDb);
+    });
+  });
+
+  describe("queryDocuments", () => {
+    it("should query documents with filters successfully", async () => {
+      // Arrange
+      const collection = "test-collection";
+      const filters = [
+        { field: "status", operator: "==" as any, value: "active" },
+        { field: "age", operator: ">=" as any, value: 18 }
+      ];
+      const orderBy = { field: "createdAt", direction: "desc" as const };
+      const limit = 10;
+
+      const mockDocs = [
+        { id: "doc1", data: () => ({ name: "Doc 1", status: "active" }) },
+        { id: "doc2", data: () => ({ name: "Doc 2", status: "active" }) },
+      ];
+
+      const mockSnapshot = {
+        forEach: (callback: any) => mockDocs.forEach(callback),
+      };
+
+      // Create a proper mock query chain that returns itself and has get method
+      const mockQueryChain = {
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        get: jest.fn().mockResolvedValue(mockSnapshot),
+      } as any;
+
+      // Mock the collection to return the query chain
+      mockDb.collection.mockReturnValue(mockQueryChain);
+
+      // Act
+      const result = await firestoreService.queryDocuments(
+        collection,
+        filters,
+        orderBy,
+        limit
+      );
+
+      // Assert
+      expect(result).toEqual([
+        { id: "doc1", name: "Doc 1", status: "active" },
+        { id: "doc2", name: "Doc 2", status: "active" },
+      ]);
+      expect(mockDb.collection).toHaveBeenCalledWith(collection);
+      expect(mockQueryChain.where).toHaveBeenCalledWith("status", "==", "active");
+      expect(mockQueryChain.where).toHaveBeenCalledWith("age", ">=", 18);
+      expect(mockQueryChain.orderBy).toHaveBeenCalledWith("createdAt", "desc");
+      expect(mockQueryChain.limit).toHaveBeenCalledWith(10);
+      expect(mockQueryChain.get).toHaveBeenCalled();
+    });
+
+    it("should query documents without filters and ordering", async () => {
+      // Arrange
+      const collection = "test-collection";
+      const mockDocs = [
+        { id: "doc1", data: () => ({ name: "Doc 1" }) },
+      ];
+
+      const mockSnapshot = {
+        forEach: (callback: any) => mockDocs.forEach(callback),
+      };
+
+      const mockQueryChain = {
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        get: jest.fn().mockResolvedValue(mockSnapshot),
+      } as any;
+
+      mockDb.collection.mockReturnValue(mockQueryChain);
+
+      // Act
+      const result = await firestoreService.queryDocuments(collection);
+
+      // Assert
+      expect(result).toEqual([{ id: "doc1", name: "Doc 1" }]);
+      expect(mockDb.collection).toHaveBeenCalledWith(collection);
+      expect(mockQueryChain.where).not.toHaveBeenCalled();
+      expect(mockQueryChain.orderBy).not.toHaveBeenCalled();
+      expect(mockQueryChain.limit).not.toHaveBeenCalled();
+      expect(mockQueryChain.get).toHaveBeenCalled();
+    });
+
+    it("should query documents with only filters", async () => {
+      // Arrange
+      const collection = "test-collection";
+      const filters = [
+        { field: "status", operator: "==" as any, value: "active" }
+      ];
+
+      const mockDocs = [
+        { id: "doc1", data: () => ({ name: "Doc 1", status: "active" }) },
+      ];
+
+      const mockSnapshot = {
+        forEach: (callback: any) => mockDocs.forEach(callback),
+      };
+
+      const mockQueryChain = {
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        get: jest.fn().mockResolvedValue(mockSnapshot),
+      } as any;
+
+      mockDb.collection.mockReturnValue(mockQueryChain);
+
+      // Act
+      const result = await firestoreService.queryDocuments(collection, filters);
+
+      // Assert
+      expect(result).toEqual([{ id: "doc1", name: "Doc 1", status: "active" }]);
+      expect(mockDb.collection).toHaveBeenCalledWith(collection);
+      expect(mockQueryChain.where).toHaveBeenCalledWith("status", "==", "active");
+      expect(mockQueryChain.orderBy).not.toHaveBeenCalled();
+      expect(mockQueryChain.limit).not.toHaveBeenCalled();
+    });
+
+    it("should query documents with only orderBy", async () => {
+      // Arrange
+      const collection = "test-collection";
+      const orderBy = { field: "name", direction: "asc" as const };
+
+      const mockDocs = [
+        { id: "doc1", data: () => ({ name: "Doc 1" }) },
+      ];
+
+      const mockSnapshot = {
+        forEach: (callback: any) => mockDocs.forEach(callback),
+      };
+
+      const mockQueryChain = {
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        get: jest.fn().mockResolvedValue(mockSnapshot),
+      } as any;
+
+      mockDb.collection.mockReturnValue(mockQueryChain);
+
+      // Act
+      const result = await firestoreService.queryDocuments(collection, [], orderBy);
+
+      // Assert
+      expect(result).toEqual([{ id: "doc1", name: "Doc 1" }]);
+      expect(mockQueryChain.orderBy).toHaveBeenCalledWith("name", "asc");
+      expect(mockQueryChain.where).not.toHaveBeenCalled();
+      expect(mockQueryChain.limit).not.toHaveBeenCalled();
+    });
+
+    it("should query documents with only limit", async () => {
+      // Arrange
+      const collection = "test-collection";
+      const limit = 5;
+
+      const mockDocs = [
+        { id: "doc1", data: () => ({ name: "Doc 1" }) },
+      ];
+
+      const mockSnapshot = {
+        forEach: (callback: any) => mockDocs.forEach(callback),
+      };
+
+      const mockQueryChain = {
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        get: jest.fn().mockResolvedValue(mockSnapshot),
+      } as any;
+
+      mockDb.collection.mockReturnValue(mockQueryChain);
+
+      // Act
+      const result = await firestoreService.queryDocuments(collection, [], undefined, limit);
+
+      // Assert
+      expect(result).toEqual([{ id: "doc1", name: "Doc 1" }]);
+      expect(mockQueryChain.limit).toHaveBeenCalledWith(5);
+      expect(mockQueryChain.where).not.toHaveBeenCalled();
+      expect(mockQueryChain.orderBy).not.toHaveBeenCalled();
+    });
+
+    it("should handle query documents error", async () => {
+      // Arrange
+      const collection = "test-collection";
+      const error = new Error("Query failed");
+
+      const mockQueryChain = {
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        get: jest.fn().mockRejectedValue(error),
+      } as any;
+
+      mockDb.collection.mockReturnValue(mockQueryChain);
+
+      // Act & Assert
+      await expect(
+        firestoreService.queryDocuments(collection)
+      ).rejects.toThrow("Query failed");
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        `Error querying documents from ${collection}:`,
+        error
+      );
+    });
+  });
+
+  describe("convertToTimestamp", () => {
+    it("should convert Date to Firestore Timestamp", () => {
+      // Arrange
+      const testDate = new Date("2023-01-01T00:00:00Z");
+      const expectedTimestamp = { seconds: 1672531200, nanoseconds: 0 };
+
+      // Mock the fromDate function to return our expected result
+      mockTimestamp.fromDate.mockReturnValue(expectedTimestamp);
+
+      // Act
+      const result = firestoreService.convertToTimestamp(testDate);
+
+      // Assert
+      expect(mockTimestamp.fromDate).toHaveBeenCalledWith(testDate);
+      expect(result).toBe(expectedTimestamp);
     });
   });
 });
