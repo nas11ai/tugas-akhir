@@ -794,4 +794,394 @@ describe("UserService", () => {
       );
     });
   });
+
+  describe("updateUser - Error Handling", () => {
+    it("should handle update document error", async () => {
+      // Arrange
+      const uid = "test-uid-123";
+      const existingUser: User = {
+        uid,
+        email: "test@example.com",
+        displayName: "Test User",
+        role: Role.USER,
+        organization: Organization.AKADEMIK,
+        isActive: true,
+        createdAt: new Date("2023-01-01"),
+        updatedAt: new Date("2023-01-01"),
+      };
+
+      const updateData = { displayName: "New Name" };
+      const error = new Error("Update failed");
+
+      mockFirestoreService.getDocument.mockResolvedValue({
+        ...existingUser,
+        createdAt: { toDate: () => existingUser.createdAt },
+        updatedAt: { toDate: () => existingUser.updatedAt },
+      });
+      mockFirestoreService.convertToTimestamp.mockReturnValue({
+        toDate: () => new Date(),
+      } as any);
+      mockFirestoreService.updateDocument.mockRejectedValue(error);
+
+      // Act & Assert
+      await expect(userService.updateUser(uid, updateData)).rejects.toThrow(
+        "Update failed"
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        `Error updating user ${uid}:`,
+        error
+      );
+    });
+  });
+
+  describe("setUserCredentials - Error Handling", () => {
+    it("should handle firestore update error", async () => {
+      // Arrange
+      const uid = "test-uid-123";
+      const credentials: UserCredentials = {
+        username: "testuser",
+        password: "testpass",
+      };
+      const error = new Error("Firestore update failed");
+
+      const existingUser = {
+        uid,
+        email: "test@example.com",
+        createdAt: { toDate: () => new Date() },
+        updatedAt: { toDate: () => new Date() },
+      };
+
+      mockFirestoreService.getDocument.mockResolvedValue(existingUser);
+      mockFirestoreService.updateDocument.mockRejectedValue(error);
+
+      // Act & Assert
+      await expect(
+        userService.setUserCredentials(uid, credentials)
+      ).rejects.toThrow("Firestore update failed");
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        `Error setting Fablo credentials for user ${uid}:`,
+        error
+      );
+    });
+  });
+
+  describe("updateUserAccessToken - Error Handling", () => {
+    it("should handle firestore update error", async () => {
+      // Arrange
+      const uid = "test-uid-123";
+      const accessToken = "new-token-123";
+      const tokenExpiry = new Date("2023-12-31");
+      const error = new Error("Token update failed");
+
+      const existingUser = {
+        uid,
+        email: "test@example.com",
+        createdAt: { toDate: () => new Date() },
+        updatedAt: { toDate: () => new Date() },
+        credentials: {
+          username: "testuser",
+          password: "testpass",
+          accessToken: "old-token",
+          tokenExpiry: new Date("2023-06-30"),
+        },
+      };
+
+      mockFirestoreService.getDocument.mockResolvedValue(existingUser);
+      mockFirestoreService.updateDocument.mockRejectedValue(error);
+
+      // Act & Assert
+      await expect(
+        userService.updateUserAccessToken(uid, accessToken, tokenExpiry)
+      ).rejects.toThrow("Token update failed");
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        `Error updating access token for user ${uid}:`,
+        error
+      );
+    });
+  });
+
+  describe("getFabloCredentials - Error Handling", () => {
+    it("should handle getUserWithCredentials error and return null", async () => {
+      // Arrange
+      const uid = "test-uid-123";
+      const error = new Error("Database error");
+
+      mockFirestoreService.getDocument.mockRejectedValue(error);
+
+      // Act
+      const result = await userService.getFabloCredentials(uid);
+
+      // Assert
+      expect(result).toBeNull();
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        `Error getting Fablo credentials for user ${uid}:`,
+        error
+      );
+    });
+  });
+
+  describe("removeUserCredentials - Error Handling", () => {
+    it("should handle remove credentials error", async () => {
+      // Arrange
+      const uid = "test-uid-123";
+      const error = new Error("Remove failed");
+
+      mockFirestoreService.updateDocument.mockRejectedValue(error);
+
+      // Act & Assert
+      await expect(userService.removeUserCredentials(uid)).rejects.toThrow(
+        "Remove failed"
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        `Error removing credentials for user ${uid}:`,
+        error
+      );
+    });
+  });
+
+  describe("activateUser - Error Handling", () => {
+    it("should handle activation error", async () => {
+      // Arrange
+      const uid = "test-uid-123";
+      const error = new Error("Activation failed");
+
+      // Mock the updateUser method to throw an error
+      jest.spyOn(userService, 'updateUser').mockRejectedValue(error);
+
+      // Act & Assert
+      await expect(userService.activateUser(uid)).rejects.toThrow(
+        "Activation failed"
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        `Error activating user ${uid}:`,
+        error
+      );
+    });
+  });
+
+  describe("deactivateUser - Error Handling", () => {
+    it("should handle deactivation error", async () => {
+      // Arrange
+      const uid = "test-uid-123";
+      const error = new Error("Deactivation failed");
+
+      // Mock the updateUser method to throw an error
+      jest.spyOn(userService, 'updateUser').mockRejectedValue(error);
+
+      // Act & Assert
+      await expect(userService.deactivateUser(uid)).rejects.toThrow(
+        "Deactivation failed"
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        `Error deactivating user ${uid}:`,
+        error
+      );
+    });
+  });
+
+  describe("getUsersByOrganization - Error Handling", () => {
+    it("should handle query error", async () => {
+      // Arrange
+      const organization = Organization.AKADEMIK;
+      const error = new Error("Query failed");
+
+      mockFirestoreService.queryDocuments.mockRejectedValue(error);
+
+      // Act & Assert
+      await expect(
+        userService.getUsersByOrganization(organization)
+      ).rejects.toThrow("Query failed");
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        `Error getting users by organization ${organization}:`,
+        error
+      );
+    });
+  });
+
+  describe("getUsersByRole - Error Handling", () => {
+    it("should handle query error", async () => {
+      // Arrange
+      const role = Role.ADMIN;
+      const error = new Error("Query failed");
+
+      mockFirestoreService.queryDocuments.mockRejectedValue(error);
+
+      // Act & Assert
+      await expect(userService.getUsersByRole(role)).rejects.toThrow(
+        "Query failed"
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        `Error getting users by role ${role}:`,
+        error
+      );
+    });
+  });
+
+  describe("getActiveUsers - Error Handling", () => {
+    it("should handle query error", async () => {
+      // Arrange
+      const error = new Error("Query failed");
+
+      mockFirestoreService.queryDocuments.mockRejectedValue(error);
+
+      // Act & Assert
+      await expect(userService.getActiveUsers()).rejects.toThrow(
+        "Query failed"
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        "Error getting active users:",
+        error
+      );
+    });
+  });
+
+  describe("Edge Cases and Additional Scenarios", () => {
+    it("should handle updateUserAccessToken without token expiry", async () => {
+      // Arrange
+      const uid = "test-uid-123";
+      const accessToken = "new-token-123";
+
+      const existingUser = {
+        uid,
+        email: "test@example.com",
+        createdAt: { toDate: () => new Date() },
+        updatedAt: { toDate: () => new Date() },
+        credentials: {
+          username: "testuser",
+          password: "testpass",
+          accessToken: "old-token",
+        },
+      };
+
+      mockFirestoreService.getDocument.mockResolvedValue(existingUser);
+      mockFirestoreService.convertToTimestamp.mockReturnValue({
+        toDate: () => new Date(),
+      } as any);
+      mockFirestoreService.updateDocument.mockResolvedValue();
+
+      // Act
+      await userService.updateUserAccessToken(uid, accessToken);
+
+      // Assert
+      expect(mockFirestoreService.updateDocument).toHaveBeenCalledWith(
+        "users",
+        uid,
+        expect.objectContaining({
+          credentials: expect.objectContaining({
+            username: "testuser",
+            password: "testpass",
+            accessToken,
+            tokenExpiry: undefined,
+          }),
+        })
+      );
+    });
+
+    it("should handle isTokenExpired with no tokenExpiry", () => {
+      // Arrange
+      const user: UserWithCredentials = {
+        uid: "test-uid",
+        email: "test@example.com",
+        role: Role.USER,
+        organization: Organization.AKADEMIK,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        credentials: {
+          username: "testuser",
+          password: "testpass",
+          accessToken: "token123",
+          // no tokenExpiry
+        },
+      };
+
+      // Act
+      const result = userService.isTokenExpired(user);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it("should handle getUserWithCredentials error", async () => {
+      // Arrange
+      const uid = "test-uid-123";
+      const error = new Error("Firestore error");
+      mockFirestoreService.getDocument.mockRejectedValue(error);
+
+      // Act & Assert
+      await expect(userService.getUserWithCredentials(uid)).rejects.toThrow(
+        "Firestore error"
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        `Error getting user with credentials ${uid}:`,
+        error
+      );
+    });
+
+    it("should create user with minimal required fields", async () => {
+      // Arrange
+      const userData = {
+        uid: "test-uid-123",
+        email: "test@example.com",
+        role: Role.USER,
+        organization: Organization.AKADEMIK,
+        isActive: true,
+        // No displayName, photoURL
+      };
+
+      const mockTimestamp = { toDate: () => new Date() } as any;
+      mockFirestoreService.convertToTimestamp.mockReturnValue(mockTimestamp);
+      mockFirestoreService.createDocument.mockResolvedValue();
+
+      // Act
+      const result = await userService.createUser(userData);
+
+      // Assert
+      expect(result).toEqual(
+        expect.objectContaining({
+          uid: userData.uid,
+          email: userData.email,
+          role: userData.role,
+          organization: userData.organization,
+          isActive: userData.isActive,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+        })
+      );
+
+      // Check that optional fields are not defined or undefined
+      expect(result.displayName).toBeUndefined();
+      expect(result.photoURL).toBeUndefined();
+    });
+
+    it("should handle getFabloCredentials with user that has credentials but missing fields", async () => {
+      // Arrange
+      const uid = "test-uid-123";
+      const mockUser = {
+        uid,
+        email: "test@example.com",
+        organization: Organization.AKADEMIK,
+        createdAt: { toDate: () => new Date() },
+        updatedAt: { toDate: () => new Date() },
+        credentials: {
+          username: "testuser",
+          password: "testpass",
+          // no accessToken
+        },
+      };
+
+      mockFirestoreService.getDocument.mockResolvedValue(mockUser);
+
+      // Act
+      const result = await userService.getFabloCredentials(uid);
+
+      // Assert
+      expect(result).toEqual({
+        username: "testuser",
+        password: "testpass",
+        accessToken: undefined,
+        organization: Organization.AKADEMIK,
+      });
+    });
+  });
 });
