@@ -1284,4 +1284,204 @@ describe("FabricService", () => {
       });
     });
   });
+
+  describe("Final Coverage for Lines 132, 336, 775-776", () => {
+    it("should cover line 132 - PDF generation catch block", async () => {
+      const ijazahData = TestDataGenerator.generateIjazahData();
+
+      // Mock active signature
+      jest.spyOn(fabloService, 'queryChaincode')
+        .mockResolvedValueOnce(JSON.stringify(existingSignature));
+
+      // Mock file operations to succeed initially
+      jest.spyOn(fileStorageService, 'getPhoto')
+        .mockResolvedValueOnce(Buffer.from("photo-data"));
+      jest.spyOn(fileStorageService, 'getSignature')
+        .mockResolvedValueOnce(Buffer.from("signature-data"));
+      jest.spyOn(require('fs/promises'), 'readFile')
+        .mockResolvedValueOnce(Buffer.from("template-data"));
+
+      // Mock PDF operations to fail after some processing
+      const mockPDFDoc = {
+        embedPng: jest.fn().mockRejectedValueOnce(new Error("Embed PNG failed")),
+        getPages: jest.fn(),
+        getForm: jest.fn(),
+        save: jest.fn()
+      };
+
+      const mockPDFDocument = require('pdf-lib').PDFDocument;
+      jest.spyOn(mockPDFDocument, 'load')
+        .mockResolvedValueOnce(mockPDFDoc);
+
+      // This should hit the catch block and line 132 (logger.error)
+      await expect(
+        fabricService.createIjazah(
+          Organization.AKADEMIK,
+          mockUserToken,
+          ijazahData,
+          photoFile
+        )
+      ).rejects.toThrow("Failed to generate certificate PDF");
+    });
+
+    it("should cover line 336 - deletePhoto in updateIjazah with new photo", async () => {
+      const testIjazahId = "test-update-with-new-photo";
+      const testIjazah = {
+        ...existingIjazah,
+        ID: testIjazahId,
+        photoPath: "existing-photo.png"
+      };
+
+      const updateData: Partial<Ijazah> = {
+        nama: "Name with New Photo"
+      };
+
+      // Mock getting existing ijazah
+      jest.spyOn(fabloService, 'queryChaincode')
+        .mockResolvedValueOnce(JSON.stringify(testIjazah));
+
+      // Create buffer with content to trigger photo update path
+      const newPhotoBuffer = Buffer.alloc(100, 'new-photo-content');
+
+      // Mock deletePhoto to throw error - this should hit line 336
+      jest.spyOn(fileStorageService, 'deletePhoto')
+        .mockRejectedValueOnce(new Error("File deletion error on line 336"));
+
+      // The update should fail when deletePhoto throws error
+      await expect(
+        fabricService.updateIjazah(
+          Organization.AKADEMIK,
+          mockUserToken,
+          testIjazahId,
+          updateData,
+          newPhotoBuffer // This triggers the photo update path
+        )
+      ).rejects.toThrow("File deletion error on line 336");
+    });
+
+    it("should cover lines 775-776 - deleteSignature cleanup warning", async () => {
+      const testSignatureId = "test-signature-cleanup-warning";
+
+      // Set up mocks to create the exact scenario for lines 775-776
+      let getSignatureCallCount = 0;
+      jest.spyOn(fabricService, 'getSignature')
+        .mockImplementation(async () => {
+          getSignatureCallCount++;
+          if (getSignatureCallCount === 1) {
+            // First call should succeed (for the actual getSignature in cleanup)
+            return {
+              ID: testSignatureId,
+              filePath: "signature-file.png",
+              IsActive: false
+            } as Signature;
+          } else {
+            // This should never be reached, but just in case
+            throw new Error("Unexpected additional call");
+          }
+        });
+
+      // Mock deleteSignature file operation to succeed
+      jest.spyOn(fileStorageService, 'deleteSignature')
+        .mockResolvedValueOnce(true);
+
+      // But then mock the blockchain operation to also succeed
+      jest.spyOn(fabloService, 'invokeChaincode')
+        .mockResolvedValueOnce(JSON.stringify({ success: true, message: "Deleted" }));
+
+      // Actually, let me trigger the catch block by making getSignature fail
+      jest.spyOn(fabricService, 'getSignature')
+        .mockRejectedValueOnce(new Error("Failed to get signature for cleanup"));
+
+      // Mock blockchain operation to succeed regardless
+      jest.spyOn(fabloService, 'invokeChaincode')
+        .mockResolvedValueOnce(JSON.stringify({ success: true, message: "Deleted successfully" }));
+
+      // This should trigger the catch block with logger.warn at lines 775-776
+      const result = await fabricService.deleteSignature(
+        Organization.AKADEMIK,
+        mockUserToken,
+        testSignatureId
+      );
+
+      expect(result.success).toBe(true);
+    });
+
+    it("should ensure all error logging paths are covered", async () => {
+      // Test for complete error coverage in various scenarios
+      const ijazahData = {
+        ...TestDataGenerator.generateIjazahData(),
+        tanggalLahir: "2023-01-01", // Valid date
+        tanggalLulus: "invalid-date-format", // Invalid date to trigger warning
+      };
+
+      // Mock active signature
+      jest.spyOn(fabloService, 'queryChaincode')
+        .mockResolvedValueOnce(JSON.stringify(existingSignature));
+
+      // Mock all file operations to succeed
+      jest.spyOn(fileStorageService, 'getPhoto')
+        .mockResolvedValueOnce(Buffer.from("photo-data"));
+      jest.spyOn(fileStorageService, 'getSignature')
+        .mockResolvedValueOnce(Buffer.from("signature-data"));
+      jest.spyOn(require('fs/promises'), 'readFile')
+        .mockResolvedValueOnce(Buffer.from("template-data"));
+
+      // Mock PDF operations to succeed but with field errors
+      const mockTextField = {
+        setText: jest.fn().mockImplementation((text) => {
+          if (text.includes('invalid-date-format')) {
+            throw new Error("Invalid date format");
+          }
+        })
+      };
+
+      const mockForm = {
+        getTextField: jest.fn().mockImplementation((fieldName) => {
+          if (fieldName === 'tanggalLulus') {
+            return mockTextField;
+          }
+          return { setText: jest.fn() };
+        })
+      };
+
+      const mockPage = { drawImage: jest.fn() };
+
+      const mockPDFDoc = {
+        embedPng: jest.fn()
+          .mockResolvedValueOnce({ scale: () => ({ width: 100, height: 100 }) })
+          .mockResolvedValueOnce({ scale: () => ({ width: 50, height: 50 }) }),
+        getPages: jest.fn().mockReturnValue([mockPage]),
+        getForm: jest.fn().mockReturnValue(mockForm),
+        save: jest.fn().mockResolvedValue(new Uint8Array([1, 2, 3]))
+      };
+
+      const mockPDFDocument = require('pdf-lib').PDFDocument;
+      jest.spyOn(mockPDFDocument, 'load')
+        .mockResolvedValueOnce(mockPDFDoc);
+
+      // Mock IPFS operations
+      jest.spyOn(ipfsClusterService, 'add')
+        .mockResolvedValueOnce({ cid: 'test-cid', url: 'http://test-url' });
+      jest.spyOn(ipfsClusterService, 'pin')
+        .mockResolvedValueOnce(true);
+
+      // Mock blockchain operation
+      jest.spyOn(fabloService, 'invokeChaincode')
+        .mockResolvedValueOnce(JSON.stringify({
+          ID: 'test-ijazah-id',
+          ...ijazahData,
+          ipfsCID: 'test-cid'
+        }));
+
+      // Should succeed despite date formatting warnings
+      const result = await fabricService.createIjazah(
+        Organization.AKADEMIK,
+        mockUserToken,
+        ijazahData,
+        photoFile
+      );
+
+      expect(result).toBeDefined();
+    });
+  });
 });
