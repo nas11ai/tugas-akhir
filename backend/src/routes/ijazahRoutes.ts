@@ -17,6 +17,7 @@ import {
   validateNimParam,
 } from "../middlewares/validation";
 import { Organization } from "../models/user";
+import expressListRoutes from "express-list-routes";
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
@@ -129,5 +130,9 @@ router.delete(
   validate(validateIdParam),
   ijazahController.deleteIjazah.bind(ijazahController)
 );
+
+expressListRoutes(router, {
+  prefix: "/api/ijazah",
+});
 
 export default router;

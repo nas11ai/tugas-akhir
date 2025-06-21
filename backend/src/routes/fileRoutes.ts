@@ -8,6 +8,7 @@ import {
   getStats,
   healthCheck,
 } from "../controllers/fileController";
+import expressListRoutes from "express-list-routes";
 
 const router = Router();
 
@@ -60,5 +61,9 @@ router.get(
   requireOrganization([Organization.AKADEMIK]),
   healthCheck
 );
+
+expressListRoutes(router, {
+  prefix: "/api/files",
+});
 
 export default router;

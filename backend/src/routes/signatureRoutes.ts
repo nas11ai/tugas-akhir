@@ -13,6 +13,7 @@ import {
   validateUpdateSignature,
 } from "../middlewares/validation";
 import { Organization } from "../models/user";
+import expressListRoutes from "express-list-routes";
 
 // Configure multer for signature file uploads
 const storage = multer.memoryStorage();
@@ -176,5 +177,9 @@ router.get(
   requireOrganization([Organization.AKADEMIK, Organization.REKTOR]),
   signatureController.getSignatureStats.bind(signatureController)
 );
+
+expressListRoutes(router, {
+  prefix: "/api/signature",
+});
 
 export default router;

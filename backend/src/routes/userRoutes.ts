@@ -22,6 +22,7 @@ import {
   deactivateUser,
   enrollFabricCA,
 } from "../controllers/userController";
+import expressListRoutes from "express-list-routes";
 
 const router = Router();
 
@@ -152,5 +153,9 @@ router.post(
   validate(enrollUserValidation),
   enrollFabricCA
 );
+
+expressListRoutes(router, {
+  prefix: "/api/user",
+});
 
 export default router;
